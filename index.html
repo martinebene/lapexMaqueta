@@ -402,6 +402,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></svg>
           Inicio
         </button>
+        <button class="nav-button" data-route="configuracion">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M12 8v5M9.5 10.5h5"/></svg>
+          Agente de Configuración
+        </button>
         <button class="nav-button is-active" data-route="agentes">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-4.2 3-6.3 7-6.3s6.3 2.1 7 6.3"/><path d="M4 7h2M18 7h2M12 2v2"/></svg>
           Agentes de Categoría
@@ -476,6 +480,7 @@
 
     const routeNames = {
       inicio: "Inicio",
+      configuracion: "Agente de Configuración",
       agentes: "Agentes de Categoría",
       skills: "Skills",
       recibido: "Contenido recibido",
@@ -645,6 +650,20 @@
       showToast("Flujo de creación simulado: el editor estructurado se incorporará en otra iteración.");
     }
 
+    function renderConfigAgent() {
+      main.innerHTML = `
+        ${pageHead("Configuración asistida", "Agente de Configuración", "Creá, editá o recibí ayuda conversacional manteniendo el formulario estructurado como estado canónico.")}
+        <section class="placeholder">
+          <h2>Acceso disponible</h2>
+          <p>Esta iteración incorpora el acceso desde la navegación principal. La conversación, el formulario estructurado y la confirmación de cambios se desarrollarán en una iteración específica.</p>
+          <button class="primary-button" id="continue-configuration">Continuar configuración</button>
+        </section>`;
+
+      document.getElementById("continue-configuration").addEventListener("click", () => {
+        showToast("Flujo del Agente de Configuración previsto para una próxima iteración.");
+      });
+    }
+
     function renderPlaceholder(route) {
       main.innerHTML = `
         ${pageHead("Navegación simulada", routeNames[route], "Esta superficie está identificada en el mapa documental, pero su contenido funcional queda expresamente fuera de la primera iteración.")}
@@ -662,6 +681,7 @@
       });
 
       if (state.route === "inicio") renderInicio();
+      else if (state.route === "configuracion") renderConfigAgent();
       else if (state.route === "agentes") renderAgents();
       else renderPlaceholder(state.route);
 
