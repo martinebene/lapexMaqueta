@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 118" role="img" aria-labelledby="title desc">
+  <title id="title">Lapex.ai</title>
+  <desc id="desc">Logo Lapex.ai con slogan AI-Powered Motorsport Analysis</desc>
+  <defs>
+    <linearGradient id="lapexA" x1="110" y1="15" x2="160" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#57b8ff"/>
+      <stop offset="1" stop-color="#1d8dff"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <path fill="#dbe7f6" d="M22 20h19v62h53v17H22z"/>
+    <path fill="url(#lapexA)" d="M103 99H82l39-79h21l39 79h-21l-8-17h-41l8-16h26l-13-28z"/>
+    <path fill="#dbe7f6" d="M183 39h18v7c4-5 12-10 25-10 24 0 42 14 42 37 0 24-18 39-42 39-12 0-20-4-25-10v18h-18zm42 14c-15 0-24 9-24 21s9 21 24 21 24-9 24-21-9-21-24-21z"/>
+    <path fill="#dbe7f6" d="M274 75c0-22 16-39 40-39 22 0 37 15 37 38 0 2 0 4-.2 6h-58c2 10 10 16 22 16 9 0 15-3 19-8l13 9c-8 10-18 15-32 15-24 0-41-16-41-37zm59-8c-2-9-8-15-18-15-11 0-18 6-21 15z"/>
+    <path fill="#dbe7f6" d="M354 39h21l-25 34 27 37h-22l-16-23-16 23h-21l27-37-25-34h22l13 20z" transform="translate(-11 0)"/>
+    <text x="298" y="98" fill="#dbe7f6" font-family="Segoe UI, Arial, sans-serif" font-size="37" font-weight="700">.ai</text>
+    <text x="45" y="116" fill="#f3f7fb" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="500">AI-Powered Motorsport Analysis</text>
+  </g>
+</svg>
