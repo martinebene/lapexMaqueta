@@ -160,10 +160,20 @@ td strong{color:#233748}
 /* Lapex: iteración de sesiones, bibliotecas y cuenta */
 .nav-area.anav{display:flex;flex-direction:column;min-height:0;overflow-y:auto;overflow-x:hidden}
 .nav-empty{display:flex;flex:1;flex-direction:column;min-height:0;gap:12px;padding:4px 4px 0}
-.nav-sessions{overflow-y:auto;overflow-x:hidden;flex:1;min-height:100px;border:1px solid #3c5160;background:#10202c;border-radius:10px;scrollbar-width:thin}
-.nav-sessions button{display:block;width:100%;background:transparent;color:#c0d1dc;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:12px;border-bottom:1px solid #253a48;font-size:12px}
-.nav-sessions button.selected{background:#21515a;box-shadow:inset 3px 0 #50cdd3;color:#fff}
-.nav-sessions button:hover{background:#274554}
+.nav-sessions-panel{display:flex;flex-direction:column;flex:1;min-height:100px;overflow:hidden;background:#10222e;border:1px solid #3c5663;border-radius:9px;box-shadow:inset 0 1px 0 #ffffff0a}
+.nav-record-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;min-height:39px;padding:0 11px;background:#1a3443;border-bottom:1px solid #385360}
+.nav-record-head strong{font-size:10px;letter-spacing:.35px;color:#d5e4ec;font-weight:750}
+.nav-record-count{flex:none;font-size:9px;font-weight:700;color:#88adbc;border:1px solid #466270;border-radius:5px;padding:3px 5px}
+.nav-sessions{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:#55717e #112531}
+.nav-sessions button{display:grid;grid-template-columns:8px minmax(0,1fr);align-items:center;column-gap:9px;width:100%;height:39px;padding:0 11px;border:0;border-bottom:1px solid #2b3f4b;border-radius:0;box-shadow:none;background:#102531;color:#bacfdb;text-align:left;font-size:11px;font-weight:500}
+.nav-sessions button:nth-child(even){background:#142b38}
+.nav-sessions button .record-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-sessions button .record-dot{width:5px;height:5px;border:1px solid #69838f;border-radius:50%}
+.nav-sessions button:hover{background:#274454;color:#fff}
+.nav-sessions button.selected{background:#215463;box-shadow:inset 3px 0 0 #4dd2d4;color:#fff;font-weight:720}
+.nav-sessions button.selected .record-dot{background:#73e4e1;border-color:#73e4e1}
+.nav-sessions button:focus-visible{outline:2px solid #73e4e1;outline-offset:-2px}
+.nav-record-foot{display:flex;align-items:center;flex:none;min-height:28px;padding:0 11px;border-top:1px solid #34505d;background:#162b38;color:#90aab8;font-size:9px}
 .nav-big{width:100%;padding:12px;background:#096e77;border-radius:9px;color:#fff;font-size:12px;font-weight:730}
 .nav-big.secondary{background:#254351;border:1px solid #4a6876}
 .nav-big:disabled{opacity:.43;cursor:not-allowed}
@@ -309,7 +319,7 @@ document.getElementById('mode-tabs').innerHTML=modes.map(function(m){return '<bu
 var nav=document.getElementById('side-nav');nav.classList.toggle('anav',mode==='analysis');
 if(mode==='analysis'){
 if(!active()){
-nav.innerHTML='<div class="nav-empty"><button class="nav-big" data-action="new-session">+ Nueva sesión</button><div class="nav-heading" style="padding:4px 4px 0">Sesiones guardadas</div><div class="nav-sessions" role="listbox">'+state.sessions.map(function(s){return '<button role="option" aria-selected="'+(selectedSession===s.id)+'" title="'+esc(s.name)+'" class="'+(selectedSession===s.id?'selected':'')+'" data-action="choose-session" data-id="'+s.id+'">'+esc(s.name)+'</button>'}).join('')+'</div><button class="nav-big secondary" data-action="open-session"'+(find('sessions',selectedSession)?'':' disabled')+'>Abrir sesión</button></div>';
+nav.innerHTML='<div class="nav-empty"><button class="nav-big" data-action="new-session">+ Nueva sesión</button><div class="nav-sessions-panel"><div class="nav-record-head"><strong>Sesiones guardadas</strong><span class="nav-record-count">'+state.sessions.length+' registros</span></div><div class="nav-sessions" role="listbox" aria-label="Sesiones guardadas">'+state.sessions.map(function(s){return '<button type="button" role="option" aria-selected="'+(selectedSession===s.id)+'" title="'+esc(s.name)+'" class="'+(selectedSession===s.id?'selected':'')+'" data-action="choose-session" data-id="'+s.id+'"><span class="record-dot" aria-hidden="true"></span><span class="record-name">'+esc(s.name)+'</span></button>'}).join('')+'</div><div class="nav-record-foot">Seleccioná un registro para abrirlo</div></div><button class="nav-big secondary" data-action="open-session"'+(find('sessions',selectedSession)?'':' disabled')+'>Abrir sesión</button></div>';
 }else{
 var groups=[['sources','Fuentes de datos',sources,'source'],['context','Contexto',[['pilot','Piloto'],['track','Circuito'],['vehicle','Vehículo']],'context'],['modules','Módulos de análisis',modules,'module']];
 nav.innerHTML='<div class="session-label"><small>Sesión abierta</small><strong>'+esc(active().name)+'</strong><button data-action="leave-session">Salir de la sesión →</button></div>'+
