@@ -158,7 +158,7 @@ td strong{color:#233748}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important}}
 
 /* Lapex: iteración de sesiones, bibliotecas y cuenta */
-.nav-area.anav{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.nav-area.anav{display:flex;flex-direction:column;min-height:0;overflow-y:auto;overflow-x:hidden}
 .nav-empty{display:flex;flex:1;flex-direction:column;min-height:0;gap:12px;padding:4px 4px 0}
 .nav-sessions{overflow-y:auto;overflow-x:hidden;flex:1;min-height:100px;border:1px solid #3c5160;background:#10202c;border-radius:10px;scrollbar-width:thin}
 .nav-sessions button{display:block;width:100%;background:transparent;color:#c0d1dc;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:12px;border-bottom:1px solid #253a48;font-size:12px}
@@ -298,7 +298,7 @@ function ready(s){return !!(s&&s.pilot&&s.track&&s.vehicle&&s.datasets&&s.datase
 function sourceName(key){return (sources.find(function(x){return x[0]===key})||[])[1]||key}
 function moduleName(key){return (modules.find(function(x){return x[0]===key})||[])[1]||key}
 function btn(title,attrs,kind){return '<button type="button" class="btn'+(kind?' '+kind:'')+'" '+attrs+'>'+title+'</button>'}
-function crumb(parts){return '<div class="crumb">'+parts.map(function(p,i){return (i?'<span class="slash">/</span>':'')+(p[1]?'<button data-route="'+p[1]+'">'+esc(p[0])+'</button>':'<span>'+esc(p[0])+'</span>')}).join('')+'</div>'}
+function crumb(parts){return '<div class="crumb">'+parts.map(function(p,i){var dest=p[1]||(i===0?({Recursos:'pilots',Datos:'datasets',Análisis:active()?'session':'analysis-home',Configuración:'settings'}[p[0]]):null);return (i?'<span class="slash">/</span>':'')+(dest?'<button data-route="'+dest+'">'+esc(p[0])+'</button>':'<span>'+esc(p[0])+'</span>')}).join('')+'</div>'}
 function head(parts,title,description,actions){return '<div class="page-head"><div>'+crumb(parts)+'<h1>'+esc(title)+'</h1><p class="lede">'+esc(description)+'</p></div><div class="head-actions">'+(actions||'')+'</div></div>'}
 function note(){return '<div class="demo-note">'+icon('info')+' Prototipo con datos ficticios. No se importan archivos ni se consulta una IA real.</div>'}
 function stat(label,value,detail,ico){return '<div class="card card-pad"><div class="stat-label">'+esc(label)+icon(ico)+'</div><div class="stat-num">'+esc(value)+'</div><div class="stat-foot">'+esc(detail)+'</div></div>'}
