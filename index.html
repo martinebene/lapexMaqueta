@@ -219,6 +219,31 @@ td strong{color:#233748}
 .profile-menu button svg{width:16px;height:16px;color:#59798a}
 @media(max-width:1100px){.data-stats{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:720px){.filters{grid-template-columns:1fr}.analysis-stage{height:auto;grid-template-rows:350px 360px}.data-stats{grid-template-columns:repeat(2,1fr)}.record-actions{flex-wrap:wrap}}
+
+/* Selector de registros para crear sesiones */
+.session-create{display:flex;flex-direction:column;gap:14px;padding-bottom:35px}
+.session-create .create-name{padding:19px 22px}
+.session-create .create-name input{width:100%;max-width:750px;min-height:44px;border:1px solid #d2dde6;border-radius:9px;padding:9px 13px;font-size:14px}
+.create-picker{overflow:hidden}
+.create-picker-head{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:16px 19px;border-bottom:1px solid #e3eaf0}
+.create-picker-head h2{margin:0 0 4px;font-size:14px}
+.create-picker-head p{margin:0;color:#728797;font-size:11px}
+.create-count{background:#edf2f5;color:#6f8492;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:750;white-space:nowrap}
+.create-count.ok{background:#dff4ee;color:#12775a}
+.create-list{max-height:190px;min-height:44px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+.create-grid-head,.create-entry{display:grid;grid-template-columns:60px minmax(0,1fr) minmax(92px,37%);align-items:center;gap:9px}
+.create-grid-head{position:sticky;top:0;z-index:1;background:#eaf0f4;padding:10px 14px;color:#718593;font-size:10px;font-weight:750;letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid #d7e1e7}
+.create-entry{cursor:pointer;padding:10px 14px;min-height:41px;border-bottom:1px solid #e3e9ed;color:#405869;font-size:12px}
+.create-entry:nth-of-type(even){background:#f8fafb}
+.create-entry:hover{background:#eff8f8}
+.create-entry:has(input:checked){background:#dff2f1;box-shadow:inset 3px 0 #13939b}
+.create-entry input{justify-self:center;accent-color:#087f88;width:16px;height:16px}
+.create-entry .mainval{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.create-entry .subval{font-size:11px;color:#738796;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.create-bottom{padding:17px 20px;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.create-bottom .hint{font-size:11px;color:#728695;flex:1}
+.create-bottom button:disabled{background:#a1b0b8;border-color:#a1b0b8;color:#fff;opacity:.8}
+@media(max-width:720px){.create-picker-head{padding:13px}.create-grid-head,.create-entry{grid-template-columns:45px minmax(0,1fr) minmax(70px,34%);padding-left:8px;padding-right:8px}.create-bottom{padding:14px}}
 </style>
 </head>
 <body>
@@ -301,6 +326,7 @@ sessions:[
 {id:'s6',name:'Ensayo de suspensiones',pilot:'p1',track:'t1',vehicle:'v1',datasets:[],analyzed:false},
 {id:'s7',name:'Preparación sin datos',pilot:'',track:'',vehicle:'',datasets:[],analyzed:false}]
 };
+var newDraft=null;
 var mode='analysis',route='analysis-home',sessionId=null,selectedSession='s1',groupOpen={sources:true,context:true,modules:true},sourceKey='run',contextKey='pilot',moduleKey='best',editKind='',editId='',dataId='',filters={q:'',type:'',pilot:'',track:''},fileName='',fileFormat='',importStep=1,chats={},counter=100,toastTimer,profileOpen=false,plan='Free';
 function find(kind,id){return (state[kind]||[]).find(function(x){return x.id===id})}
 function active(){return find('sessions',sessionId)}
@@ -321,7 +347,7 @@ if(mode==='analysis'){
 if(!active()){
 nav.innerHTML='<div class="nav-empty"><button class="nav-big" data-action="new-session">+ Nueva sesión</button><div class="nav-sessions-panel"><div class="nav-record-head"><strong>Sesiones guardadas</strong><span class="nav-record-count">'+state.sessions.length+' registros</span></div><div class="nav-sessions" role="listbox" aria-label="Sesiones guardadas">'+state.sessions.map(function(s){return '<button type="button" role="option" aria-selected="'+(selectedSession===s.id)+'" title="'+esc(s.name)+'" class="'+(selectedSession===s.id?'selected':'')+'" data-action="choose-session" data-id="'+s.id+'"><span class="record-dot" aria-hidden="true"></span><span class="record-name">'+esc(s.name)+'</span></button>'}).join('')+'</div><div class="nav-record-foot">Seleccioná un registro para abrirlo</div></div><button class="nav-big secondary" data-action="open-session"'+(find('sessions',selectedSession)?'':' disabled')+'>Abrir sesión</button></div>';
 }else{
-var groups=[['sources','Fuentes de datos',sources,'source'],['context','Contexto',[['pilot','Piloto'],['track','Circuito'],['vehicle','Vehículo']],'context'],['modules','Módulos de análisis',modules,'module']];
+var groups=[['sources','Fuentes de datos',sources,'source'],['context','Contexto',[['pilot','Piloto'],['track','Circuito'],['vehicle','Vehículo']],'context'],['modules','Módulos de análisis',active().modules?modules.filter(function(x){return active().modules.includes(x[0])}):modules,'module']];
 nav.innerHTML='<div class="session-label"><small>Sesión abierta</small><strong>'+esc(active().name)+'</strong><button data-action="leave-session">Salir de la sesión →</button></div>'+
 groups.map(function(g){return '<div><button class="group-toggle'+(groupOpen[g[0]]?' expanded':'')+'" data-action="toggle-group" data-id="'+g[0]+'">'+g[1]+'<span>'+(groupOpen[g[0]]?'⌄':'›')+'</span></button>'+(groupOpen[g[0]]?'<div class="group-list">'+g[2].map(function(x){var match=route===g[3]+'-view'&&((g[3]==='source'?sourceKey:g[3]==='context'?contextKey:moduleKey)===x[0]);return '<button class="'+(match?'active':'')+'" data-action="subpage" data-type="'+g[3]+'" data-id="'+x[0]+'">'+esc(x[1])+'</button>'}).join('')+'</div>':'')+'</div>'}).join('');
 }
@@ -335,6 +361,52 @@ document.querySelector('.profile-menu').hidden=!profileOpen;
 document.querySelector('.profile-text').innerHTML='Martín Ebene<small class="plan">Plan '+plan+'</small>';
 }
 function analysisHome(){return head([['Análisis']],'Análisis','Seleccioná una sesión guardada o creá una nueva desde el menú lateral.')+note()+'<div class="card">'+empty('folder','No hay sesión abierta','La preparación, los datos y los módulos se muestran cuando abrís una sesión.',btn('Nueva sesión','data-action="new-session"','primary'))+'</div>'}
+
+function draftBlank(){return {name:'',pilot:'',track:'',vehicle:'',targets:[],refs:[],modules:[]}}
+function draftValid(d){
+return !!(d&&d.name.trim()&&find('pilots',d.pilot)&&find('tracks',d.track)&&find('vehicles',d.vehicle)&&d.targets.length&&d.modules.length&&d.targets.every(function(x){return !!find('datasets',x)&&!d.refs.includes(x)})&&d.refs.every(function(x){return !!find('datasets',x)})&&d.modules.every(function(x){return modules.some(function(m){return m[0]===x})}));
+}
+function pickList(key,title,description,items,selected,multi){
+var field={pilot:'pilot',track:'track',vehicle:'vehicle',targets:'targetDataset',refs:'referenceDataset',modules:'selectedModule'}[key];
+var count=multi?selected.length:(selected?1:0);
+return '<section class="card create-picker"><div class="create-picker-head"><div><h2>'+esc(title)+'</h2><p>'+esc(description)+'</p></div><span class="create-count'+(count||key==='refs'?' ok':'')+'" id="count-'+key+'">'+count+(multi?' seleccionados':' seleccionado')+(key==='refs'?' · opcional':' · obligatorio')+'</span></div><div class="create-list" role="group" aria-label="'+esc(title)+'"><div class="create-grid-head"><span>Elegir</span><span>Nombre</span><span>Detalle</span></div>'+
+(items.length?items.map(function(x){var checked=multi?selected.includes(x.id):selected===x.id;return '<label class="create-entry"><input type="'+(multi?'checkbox':'radio')+'" name="'+field+'" value="'+esc(x.id)+'"'+(checked?' checked':'')+'><span class="mainval" title="'+esc(x.name)+'">'+esc(x.name)+'</span><span class="subval" title="'+esc(x.detail||'')+'">'+esc(x.detail||'—')+'</span></label>'}).join(''):'<div class="picker-empty">No hay registros disponibles.</div>')+'</div></section>';
+}
+function draftRead(form){
+var f=new FormData(form);
+return {name:String(f.get('name')||''),pilot:String(f.get('pilot')||''),track:String(f.get('track')||''),vehicle:String(f.get('vehicle')||''),targets:[...new Set(f.getAll('targetDataset'))],refs:[...new Set(f.getAll('referenceDataset'))],modules:[...new Set(f.getAll('selectedModule'))]};
+}
+function draftUpdate(input){
+var form=document.getElementById('create-session-form');if(!form)return;
+var d=draftRead(form);
+if(input&&input.checked&&input.name==='targetDataset')d.refs=d.refs.filter(function(x){return x!==input.value});
+if(input&&input.checked&&input.name==='referenceDataset')d.targets=d.targets.filter(function(x){return x!==input.value});
+form.querySelectorAll('[name="targetDataset"]').forEach(function(el){el.checked=d.targets.includes(el.value)});
+form.querySelectorAll('[name="referenceDataset"]').forEach(function(el){el.checked=d.refs.includes(el.value)});
+newDraft=d;
+[['pilot',d.pilot?1:0],['track',d.track?1:0],['vehicle',d.vehicle?1:0],['targets',d.targets.length],['refs',d.refs.length],['modules',d.modules.length]].forEach(function(item){
+var el=document.getElementById('count-'+item[0]);if(!el)return;var multi=['targets','refs','modules'].includes(item[0]);
+el.textContent=item[1]+(multi?' seleccionados':' seleccionado')+(item[0]==='refs'?' · opcional':' · obligatorio');
+el.classList.toggle('ok',item[1]>0||item[0]==='refs');
+});
+var valid=draftValid(d),button=document.getElementById('create-session-submit'),hint=document.getElementById('create-session-hint');
+if(button)button.disabled=!valid;
+if(hint)hint.textContent=valid?'Configuración completa. Ya podés crear la sesión.':'Seleccioná los campos obligatorios para habilitar Crear sesión.';
+}
+function createSessionPage(){
+var d=newDraft||draftBlank(),data=state.datasets.map(function(x){return {id:x.id,name:x.name,detail:sourceName(x.type)+' · '+x.date}});
+var availableModules=modules.map(function(x){return {id:x[0],name:x[1],detail:'Módulo disponible'}});
+return head([['Análisis','analysis-home'],['Nueva sesión']],'Nueva sesión','Completá el contexto, los datos y los módulos de análisis antes de crearla.',btn('Cancelar','data-action="cancel-new"'))+note()+
+'<form id="create-session-form" class="session-create" novalidate>'+
+'<section class="card create-name"><div class="field"><label for="create-session-name">Nombre de la sesión · obligatorio</label><input id="create-session-name" name="name" type="text" maxlength="80" required autocomplete="off" placeholder="Ej. Ensayo de clasificación" value="'+esc(d.name)+'"></div></section>'+
+pickList('pilot','Piloto','Seleccioná exactamente un piloto.',state.pilots,d.pilot,false)+
+pickList('track','Circuito','Seleccioná exactamente un circuito.',state.tracks,d.track,false)+
+pickList('vehicle','Vehículo','Seleccioná exactamente un vehículo.',state.vehicles,d.vehicle,false)+
+pickList('targets','Datos objetivos','Seleccioná uno o varios conjuntos de datos.',data,d.targets,true)+
+pickList('refs','Datos de referencia','Opcionales: ninguno o varios conjuntos de datos.',data,d.refs,true)+
+pickList('modules','Módulos de análisis','Seleccioná uno o varios módulos habilitados.',availableModules,d.modules,true)+
+'<div class="card create-bottom"><span class="hint" id="create-session-hint">Seleccioná los campos obligatorios para habilitar Crear sesión.</span><button type="submit" id="create-session-submit" class="btn primary" disabled>'+icon('plus')+' Crear sesión</button></div></form>';
+}
 function sessionForm(s){return '<form id="session-form" class="card card-pad"><div class="form-grid"><div class="field full"><label>Nombre de sesión</label><input name="name" required maxlength="80" value="'+esc(s.name)+'"></div><div class="field"><label>Piloto</label><select name="pilot">'+options(state.pilots,s.pilot)+'</select></div><div class="field"><label>Circuito</label><select name="track">'+options(state.tracks,s.track)+'</select></div><div class="field full"><label>Vehículo</label><select name="vehicle">'+options(state.vehicles,s.vehicle)+'</select></div></div><div class="section-title"><h2>Datos asociados</h2></div><div class="checklist">'+state.datasets.map(function(d){return '<label class="checkline"><input type="checkbox" name="dataset" value="'+d.id+'"'+(s.datasets.includes(d.id)?' checked':'')+'><span>'+esc(d.name)+' · '+esc(sourceName(d.type))+'</span></label>'}).join('')+'</div><div style="margin-top:18px"><button class="btn primary" type="submit">Guardar preparación</button></div></form>'}
 function sessionPage(){var s=active();if(!s)return analysisHome();return head([['Análisis','analysis-home'],[s.name]],s.name,'Preparación de la sesión de análisis.',btn('Salir de sesión','data-action="leave-session"'))+note()+(ready(s)?'<div class="summary-box" style="margin:0 0 17px"><strong>Preparación completa</strong><p>Elegí un módulo del menú lateral para explorar el análisis.</p></div>':'<div class="notice" style="margin:0 0 17px">Completá piloto, circuito, vehículo y uno o más conjuntos de datos.</div>')+sessionForm(s)}
 function sourcePage(){var s=active();if(!s)return analysisHome();var arr=state.datasets.filter(function(d){return d.type===sourceKey});return head([['Análisis','analysis-home'],[s.name,'session'],['Fuentes de datos'],[sourceName(sourceKey)]],sourceName(sourceKey),'Seleccioná las fuentes de esta categoría que forman parte de la sesión.',btn('Ver biblioteca','data-route="datasets"'))+note()+'<div class="card card-pad"><form id="sources-form"><div class="checklist">'+arr.map(function(d){return '<label class="checkline"><input type="checkbox" name="source" value="'+d.id+'"'+(s.datasets.includes(d.id)?' checked':'')+'><span><strong>'+esc(d.name)+'</strong><br><small>'+esc(d.date)+' · '+esc(d.obs)+'</small></span></label>'}).join('')+'</div>'+(arr.length?'':'<p class="card-sub">No hay datos de este tipo en la biblioteca.</p>')+'<div style="margin-top:20px"><button class="btn primary" type="submit">Guardar fuentes</button></div></form></div>'}
@@ -357,8 +429,8 @@ function settingsPage(){return head([['Configuración'],['Preferencias']],'Prefe
 function accountPage(){return head([['Configuración'],['Mi cuenta']],'Mi cuenta','Perfil ficticio.')+note()+'<div class="card card-pad"><strong>Martín Ebene</strong><p class="card-sub">Plan '+plan+' · Cuenta de demostración</p></div>'}
 function helpPage(){return head([['Configuración'],['Ayuda']],'Ayuda','Centro de ayuda pendiente de completar.')+note()}
 function profileMenu(){return '<div class="menu-top"><strong>Martín Ebene</strong><small>Plan '+plan+' · Lapex.ai</small></div>'+[['usage','Uso y estadísticas','chart'],['membership','Administrar membresía','settings'],['switch','Cambiar de cuenta','user'],['signout','Cerrar sesión','arrow']].map(function(x){return '<button data-action="profile-option" data-id="'+x[0]+'">'+icon(x[2])+x[1]+'</button>'}).join('')}
-function render(){renderNav();var pages={'analysis-home':analysisHome,session:sessionPage,'source-view':sourcePage,'context-view':contextPage,'module-view':modulePage,pilots:function(){return library('pilots')},tracks:function(){return library('tracks')},vehicles:function(){return library('vehicles')},modules:function(){return library('modules')},'resource-form':resourceForm,datasets:datasetsPage,'data-detail':dataDetail,'data-form':dataForm,import:importPage,settings:settingsPage,account:accountPage,help:helpPage};document.getElementById('workspace').innerHTML=(pages[route]||analysisHome)();var stream=document.getElementById('chat-stream');if(stream)stream.scrollTop=stream.scrollHeight}
-function go(r){route=r;mode=['analysis-home','session','source-view','context-view','module-view'].includes(r)?'analysis':['pilots','tracks','vehicles','modules','resource-form'].includes(r)?'resources':['datasets','data-detail','data-form','import'].includes(r)?'data':'config';profileOpen=false;document.getElementById('app').classList.remove('drawer-open');render();window.scrollTo(0,0)}
+function render(){renderNav();var pages={'analysis-home':analysisHome,'new-session':createSessionPage,session:sessionPage,'source-view':sourcePage,'context-view':contextPage,'module-view':modulePage,pilots:function(){return library('pilots')},tracks:function(){return library('tracks')},vehicles:function(){return library('vehicles')},modules:function(){return library('modules')},'resource-form':resourceForm,datasets:datasetsPage,'data-detail':dataDetail,'data-form':dataForm,import:importPage,settings:settingsPage,account:accountPage,help:helpPage};document.getElementById('workspace').innerHTML=(pages[route]||analysisHome)();var stream=document.getElementById('chat-stream');if(stream)stream.scrollTop=stream.scrollHeight}
+function go(r){route=r;mode=['analysis-home','new-session','session','source-view','context-view','module-view'].includes(r)?'analysis':['pilots','tracks','vehicles','modules','resource-form'].includes(r)?'resources':['datasets','data-detail','data-form','import'].includes(r)?'data':'config';profileOpen=false;document.getElementById('app').classList.remove('drawer-open');render();window.scrollTo(0,0)}
 function toast(s){var root=document.getElementById('toast-root');root.innerHTML='<div class="toast">'+esc(s)+'</div>';clearTimeout(toastTimer);toastTimer=setTimeout(function(){root.innerHTML=''},2600)}
 function dialog(title,body){document.getElementById('dialog-root').innerHTML='<div class="modal-backdrop" data-action="dismiss"><div class="modal" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><h2>'+esc(title)+'</h2>'+body+'</div></div>'}
 function closeDialog(){document.getElementById('dialog-root').innerHTML=''}
@@ -368,7 +440,8 @@ if(a==='toggle-drawer'){document.getElementById('app').classList.toggle('drawer-
 if(a==='close-drawer'){document.getElementById('app').classList.remove('drawer-open');return}
 if(a==='choose-session'){selectedSession=id;renderNav();return}
 if(a==='open-session'){if(find('sessions',selectedSession)){sessionId=selectedSession;go('session')}return}
-if(a==='new-session'){var s='s'+(++counter);state.sessions.unshift({id:s,name:'Nueva sesión '+counter,pilot:'',track:'',vehicle:'',datasets:[],analyzed:false});selectedSession=s;sessionId=s;go('session');return}
+if(a==='new-session'){newDraft=draftBlank();go('new-session');return}
+if(a==='cancel-new'){newDraft=null;go('analysis-home');return}
 if(a==='leave-session'){selectedSession=sessionId;sessionId=null;go('analysis-home');return}
 if(a==='toggle-group'){groupOpen[id]=!groupOpen[id];renderNav();return}
 if(a==='subpage'){if(t.dataset.type==='source')sourceKey=id;if(t.dataset.type==='context')contextKey=id;if(t.dataset.type==='module')moduleKey=id;go(t.dataset.type+'-view');return}
@@ -384,7 +457,15 @@ if(a==='profile-option'){profileOpen=false;document.querySelector('.profile-menu
 if(a==='toggle-plan'){plan=plan==='Free'?'Pro':'Free';closeDialog();render();toast('Plan de demostración: '+plan);return}
 }
 document.addEventListener('click',function(e){var t=e.target.closest('[data-mode],[data-route],[data-action]');if(!t){if(profileOpen&&!e.target.closest('.side-bottom')){profileOpen=false;document.querySelector('.profile-menu').hidden=true}return}if(t.classList.contains('modal-backdrop')&&e.target!==t)return;if(t.dataset.mode){var m=t.dataset.mode;go(m==='analysis'?(active()?'session':'analysis-home'):m==='resources'?'pilots':m==='data'?'datasets':'settings');return}if(t.dataset.route){go(t.dataset.route);return}if(t.dataset.action)act(t)});
-document.addEventListener('submit',function(e){var f=e.target,id=f.id;if(!['session-form','sources-form','context-form','resource-form','data-form','import-form','chat-form'].includes(id))return;e.preventDefault();var data=new FormData(f),s=active();
+document.addEventListener('submit',function(e){var f=e.target,id=f.id;if(!['create-session-form','session-form','sources-form','context-form','resource-form','data-form','import-form','chat-form'].includes(id))return;e.preventDefault();var data=new FormData(f),s=active();
+if(id==='create-session-form'){
+draftUpdate(null);var d=newDraft;
+if(!draftValid(d)){toast('Faltan campos obligatorios');return}
+var sid='s'+(++counter);
+state.sessions.unshift({id:sid,name:d.name.trim(),pilot:d.pilot,track:d.track,vehicle:d.vehicle,
+datasets:d.targets.concat(d.refs),targetDatasets:d.targets.slice(),referenceDatasets:d.refs.slice(),modules:d.modules.slice(),analyzed:false});
+sessionId=sid;selectedSession=sid;moduleKey=d.modules[0];newDraft=null;go('session');toast('Nueva sesión creada (simulación)');return;
+}
 if(id==='session-form'&&s){s.name=String(data.get('name')).trim();s.pilot=data.get('pilot');s.vehicle=data.get('vehicle');s.track=data.get('track');s.datasets=data.getAll('dataset');render();toast('Sesión guardada');return}
 if(id==='sources-form'&&s){s.datasets=s.datasets.filter(function(x){var d=find('datasets',x);return d&&d.type!==sourceKey}).concat(data.getAll('source'));render();toast('Fuentes guardadas');return}
 if(id==='context-form'&&s){s[contextKey]=data.get('value');render();toast('Contexto guardado');return}
@@ -393,8 +474,8 @@ if(id==='data-form'){var d=find('datasets',dataId);if(d)['name','date','time','t
 if(id==='import-form'){var el=f.querySelector('input[type="file"]');if(!el.files.length)return;fileName=el.files[0].name;fileFormat=data.get('format');importStep=2;go('import');return}
 if(id==='chat-form'&&s){var message=String(data.get('message')||'').trim();if(!message)return;var key=s.id+'-'+moduleKey;if(!chats[key])chats[key]=[];chats[key].push({who:'user',text:message},{who:'bot',text:'Respuesta simulada. El módulo «'+moduleName(moduleKey)+'» utilizará la evidencia disponible cuando se implemente el análisis real.'});render();return}
 });
-document.addEventListener('input',function(e){if(e.target.dataset.filter){filters[e.target.dataset.filter]=e.target.value;refreshRows()}});
-document.addEventListener('change',function(e){if(e.target.dataset.filter){filters[e.target.dataset.filter]=e.target.value;refreshRows()}});
+document.addEventListener('input',function(e){if(e.target.closest('#create-session-form'))draftUpdate(e.target);if(e.target.dataset.filter){filters[e.target.dataset.filter]=e.target.value;refreshRows()}});
+document.addEventListener('change',function(e){if(e.target.closest('#create-session-form'))draftUpdate(e.target);if(e.target.dataset.filter){filters[e.target.dataset.filter]=e.target.value;refreshRows()}});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeDialog();profileOpen=false;document.querySelector('.profile-menu').hidden=true;document.getElementById('app').classList.remove('drawer-open')}});
 document.querySelector('.profile-menu').innerHTML=profileMenu();
 render();
