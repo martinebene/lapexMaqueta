@@ -302,7 +302,7 @@ button:not(:disabled){cursor:pointer}
   }
 
   .cn-sidebar-content {
-    @apply no-scrollbar gap-0;
+    @apply overflow-y-auto gap-0;
   }
 
   .cn-sidebar-footer {
