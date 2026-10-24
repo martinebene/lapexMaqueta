@@ -17,14 +17,8 @@
 - `pnpm-lock.yaml` versionado y `pnpm install --frozen-lockfile` para reproducibilidad.
 - Vite con `base: '/lapexMaqueta/'` al publicar en Pages. Compilación/verificación previa a reemplazar `main` y el sitio.
 
-## Estilo visual a resolver antes de instalar componentes
-La dirección SaaS híbrida (barra lateral azul marino oscuro + lienzo claro + acento turquesa) ya es la referencia actual.
-La familia específica shadcn/ui todavía debe validarse visualmente con el director:
-- candidata: **Nova** (compacta y legible para formularios, bibliotecas y dashboards)
-- alternativa: **Vega** (clásica, menos densa)
-- alternativa: **Mira** (mayor densidad, útil para grids técnicos)
-- base neutral/Zinc; contraste de sidebar independiente; radios discretos; fuente Inter/Geist, íconos Lucide.
-- usar shadcn/create para producir preset, archivar sus parámetros, sin inventar un identificador de preset.
+## Estilo visual aprobado
+**Nova**, confirmado por el director en ChatGPT Web, 2026-10-24. Base UI, Tailwind CSS, Inter, Lucide y temática de Lapex: barra lateral azul petróleo oscuro, lienzo claro, acento turquesa; densidad compacta, bordes moderados. `components.json` identifica `base-nova`, y `src/index.css` incorpora las reglas oficiales Nova pertinentes a los componentes instalados. No es un preset exportado de shadcn/create.
 
 Galerías: https://ui.shadcn.com/create · https://ui.shadcn.com/docs/components · https://ui.shadcn.com/blocks/sidebar · https://ui.shadcn.com/blocks
 
@@ -44,3 +38,13 @@ Galerías: https://ui.shadcn.com/create · https://ui.shadcn.com/docs/components
 - La migración **no cambia reglas funcionales aprobadas** ni altera documentación/roadmap de Lapex2.
 - No declarar paridad funcional por mera similitud de capturas: verificar recorridos humanos.
 - La selección final de preset/familia visual precede la generación de los componentes.
+
+## Migración ejecutada en rama (2026-10-24)
+- `src/App.tsx`: shell lateral, navegación contextual, creación de sesiones, fuentes, módulos con chat ilustrativo, recursos, datos, importación, cuenta/menú e indicadores simulados.
+- Componentes oficiales `button, card, checkbox, input, label, table` desde el registro Base UI de shadcn/ui. Estilos Nova a partir de su CSS oficial, ajustados a la paleta de Lapex.
+- `src/i18n/es.json` y react-i18next: catálogo de interfaz español. Quedan pendientes auditoría exhaustiva de textos del catálogo y paridad visual humana.
+- `pnpm-lock.yaml` generado y versionado mediante la Action en la rama de prueba.
+- Compilación TypeScript/Vite y dos pruebas Playwright exitosas (creación de sesión con selección de datos/módulo y consulta filtrada de biblioteca) en [Actions run #40133458742](https://github.com/martinebene/lapexMaqueta/actions/runs/40133458742).
+- Archivo compilado disponible como artefacto `lapex-nova-preview` de esa ejecución. No es todavía una página publicada.
+- No se cambió `main`, el origen de GitHub Pages ni repositorios documentales/de producto de Lapex2.
+- Próxima revisión: abrir el frontend en navegador, evaluar fidelidad visual/funcional y decidir publicación paralela en ruta propia (sin reemplazar la HTML vigente), antes de promover cambios.
