@@ -97,11 +97,11 @@ function picker(key:string,title:string,hint:string,options:PickItem[],selected:
 const count=Array.isArray(selected)?selected.length:selected?1:0;const required=key!=="references"
 return <Card className="picker">
 <CardHeader className="picker-head"><div><CardTitle>{title}</CardTitle><CardDescription>{hint}</CardDescription></div><span className={"picker-count"+(count||!required?" complete":"")}>{t("common.selected",{count})} · {t(required?"common.required":"common.optional")}</span></CardHeader>
-<div className="picker-list" role="group" aria-label={title} tabIndex={0}><div className="picker-columns"><span>{t("picker.choose")}</span><span>{t("picker.record")}</span><span>{t("picker.detail")}</span></div>
+<div className="picker-shell"><div className="picker-columns"><span>{t("picker.choose")}</span><span>{t("picker.record")}</span><span>{t("picker.detail")}</span></div><div className="picker-list" role="group" aria-label={title} tabIndex={0}>
 {options.length?options.map(item=>{const selectedNow=Array.isArray(selected)?selected.includes(item.id):selected===item.id;return <label className={"picker-row"+(selectedNow?" selected":"")} key={item.id}>
 <span className="picker-control">{multiple?<Checkbox checked={selectedNow} onCheckedChange={v=>change(item.id,v===true)} aria-label={item.name}/>:<input type="radio" name={key} checked={selectedNow} onChange={()=>change(item.id,true)} aria-label={item.name}/>}</span>
 <span className="picker-name" title={item.name}>{item.name}</span><span className="picker-detail" title={item.detail}>{item.detail}</span></label>})
-:<p className="muted-blank">{t("library.empty")}</p>}</div></Card>
+:<p className="muted-blank">{t("library.empty")}</p>}</div></div></Card>
 }
 function crumbs():{label:string;onClick?:()=>void}[]{
 const first={label:t("nav."+mode),onClick:()=>selectMode(mode)}
