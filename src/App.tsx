@@ -196,7 +196,7 @@ return <div className="lapex-app style-nova">
 {picker("targets",t("create.targets"),t("create.many"),datasets.map(d=>({id:d.id,name:d.name,detail:t("source."+d.type)+" · "+d.date})),draft.targets,true,(id,v)=>toggleMulti("targets",id,v))}
 {picker("references",t("create.references"),t("create.optionalMany"),datasets.map(d=>({id:d.id,name:d.name,detail:t("source."+d.type)+" · "+d.date})),draft.references,true,(id,v)=>toggleMulti("references",id,v))}
 {picker("modules",t("create.modules"),t("create.many"),resources.modules.map(m=>({id:m.id,name:t("module."+m.id),detail:m.detail})),draft.modules,true,(id,v)=>toggleMulti("modules",id,v))}
-<Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card></Card>
+<Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card>
 </div>}
 
 {view==="session"&&active&&<div className="session-overview">
