@@ -77,10 +77,18 @@ await page.goto("/")
 async function check(selector:string){
  const box=page.locator(selector).first()
  await expect(box).toBeVisible()
- const styles=await box.evaluate(el=>{const s=getComputedStyle(el);return {overflow:s.overflowY,background:s.backgroundColor,height:el.getBoundingClientRect().height,border:s.borderTopWidth}})
- expect(styles.overflow).toBe("scroll")
- expect(styles.height).toBeGreaterThan(190)
- expect(styles.border).not.toBe("0px")
+ const result=await box.evaluate(el=>{
+ const header=el.querySelector("thead") as HTMLElement
+ const body=el.querySelector("tbody") as HTMLElement
+ const h=header.getBoundingClientRect(),b=body.getBoundingClientRect(),outer=el.getBoundingClientRect()
+ return {bodyOverflow:getComputedStyle(body).overflowY,outerOverflow:getComputedStyle(el).overflowY,
+  headerBottom:h.bottom,bodyTop:b.top,height:b.height,border:getComputedStyle(el).borderTopWidth,outerTop:outer.top}
+ })
+ expect(result.outerOverflow).toBe("hidden")
+ expect(result.bodyOverflow).toBe("scroll")
+ expect(result.height).toBeGreaterThan(190)
+ expect(result.bodyTop).toBeGreaterThanOrEqual(result.headerBottom-2)
+ expect(result.border).not.toBe("0px")
 }
 await check(".open-session-scroll")
 await page.locator("[data-sidebar='sidebar']").first().getByRole("button",{name:"Nueva sesión"}).click()
@@ -88,9 +96,14 @@ const areas=page.locator(".picker-list")
 await expect(areas).toHaveCount(6)
 for(let i=0;i<6;i++){
  const area=areas.nth(i)
- const values=await area.evaluate(el=>({overflow:getComputedStyle(el).overflowY,height:el.getBoundingClientRect().height}))
+ const values=await area.evaluate(el=>{
+ const top=el.parentElement!.querySelector(".picker-columns")!.getBoundingClientRect()
+ const body=el.getBoundingClientRect()
+ return {overflow:getComputedStyle(el).overflowY,height:body.height,bodyTop:body.top,headerBottom:top.bottom}
+ })
  expect(values.overflow).toBe("scroll")
  expect(values.height).toBeGreaterThan(190)
+ expect(values.bodyTop).toBeGreaterThanOrEqual(values.headerBottom-2)
 }
 const first=areas.first()
 const contrast=await first.evaluate(el=>{
