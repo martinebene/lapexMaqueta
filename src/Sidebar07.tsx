@@ -1,7 +1,7 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Activity, Layers3, Database, Settings2, Plus, FolderOpen, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut, CircleHelp } from "lucide-react"
+import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut, CircleHelp } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"

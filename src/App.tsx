@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react"
 import type { ChangeEvent, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Search, BarChart3, Send, X, Gauge } from "lucide-react"
+import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Search, BarChart3, Send, X, Gauge, Database, Layers3, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,7 +17,6 @@ type Mode="analysis"|"resources"|"data"|"config"
 type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
-const resourceKinds:ResourceKind[]=["pilots","tracks","vehicles","modules"]
 const sources:SourceKind[]=["weather","run","reference","timing"]
 const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
 const ctxToRes:Record<ContextKey,ResourceKind>={pilot:"pilots",track:"tracks",vehicle:"vehicles"}
