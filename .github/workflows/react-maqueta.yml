@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  pages: write
 jobs:
   verify-preview:
     runs-on: ubuntu-latest
@@ -23,23 +24,31 @@ jobs:
         with:
           node-version: '22'
       - name: Instalar dependencias
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Comprobar tipos y compilar
         run: pnpm run build
       - name: Instalar Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Pruebas de navegación real
         run: pnpm test:e2e
-      - name: Guardar pnpm-lock versionado
-        if: github.ref == 'refs/heads/prototipo/react-shadcn'
+      - name: Publicar Nova en main/nova sin sustituir la maqueta HTML
         run: |
-          git add pnpm-lock.yaml
-          if ! git diff --cached --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore(maqueta): fijar pnpm-lock.yaml"
-            git push origin HEAD:prototipo/react-shadcn
+          set -euo pipefail
+          git fetch origin main
+          git worktree add --detach /tmp/lapex-maqueta-pages origin/main
+          mkdir -p /tmp/lapex-maqueta-pages/nova
+          rsync -a --delete dist/ /tmp/lapex-maqueta-pages/nova/
+          git -C /tmp/lapex-maqueta-pages add nova
+          if ! git -C /tmp/lapex-maqueta-pages diff --cached --quiet; then
+            git -C /tmp/lapex-maqueta-pages config user.name "github-actions[bot]"
+            git -C /tmp/lapex-maqueta-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C /tmp/lapex-maqueta-pages commit -m "build(maqueta): actualizar previsualización React en /nova"
+            git -C /tmp/lapex-maqueta-pages push origin HEAD:main
           fi
+      - name: Solicitar reconstrucción de GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"
       - name: Artefacto compilado para revisión
         uses: actions/upload-artifact@v4
         with:
