@@ -204,7 +204,7 @@ button:not(:disabled){cursor:pointer}
   }
 
   .cn-dropdown-menu-content-logical {
-    @apply ;
+    /* No animation utilities required */
   }
 
   .cn-dropdown-menu-item {
@@ -400,7 +400,7 @@ button:not(:disabled){cursor:pointer}
   }
 
   .cn-tooltip-content-logical {
-    @apply ;
+    /* No animation utilities required */
   }
 
   .cn-tooltip-arrow {
