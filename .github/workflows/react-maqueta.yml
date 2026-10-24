@@ -8,8 +8,12 @@ permissions:
   contents: write
   pages: write
 jobs:
-  verify-preview:
+  publish-nova:
+    name: Compilar y publicar vista previa
     runs-on: ubuntu-latest
+    concurrency:
+      group: lapex-nova-preview
+      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,15 +27,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
       - name: Comprobar tipos y compilar
         run: pnpm run build
-      - name: Instalar Chromium
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Pruebas de navegación real
-        run: pnpm test:e2e
-      - name: Publicar Nova en main/nova sin sustituir la maqueta HTML
+      - name: Publicar Nova en main/nova
         run: |
           set -euo pipefail
           git fetch origin main
@@ -49,9 +50,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"
-      - name: Artefacto compilado para revisión
+      - name: Artefacto compilado
         uses: actions/upload-artifact@v4
         with:
           name: lapex-nova-preview
           path: dist/
           if-no-files-found: error
+  test-browser:
+    name: Navegación con Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
