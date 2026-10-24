@@ -2,23 +2,21 @@
 import { useMemo, useState } from "react"
 import type { ChangeEvent, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Activity, Layers3, Database, Settings2, Plus, FolderOpen, ChevronDown, ChevronRight, UserRound, CircleHelp, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Search, LogOut, CreditCard, RefreshCw, BarChart3, Send, X, Menu, Gauge } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Search, BarChart3, Send, X, Gauge } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft } from "./data"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebar07 } from "./Sidebar07"
 import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind } from "./data"
 
 type Mode="analysis"|"resources"|"data"|"config"
 type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
-const modeItems:{id:Mode;key:string;icon:LucideIcon}[]=[
-{id:"analysis",key:"nav.analysis",icon:Activity},{id:"resources",key:"nav.resources",icon:Layers3},{id:"data",key:"nav.data",icon:Database},{id:"config",key:"nav.config",icon:Settings2}
-]
 const resourceKinds:ResourceKind[]=["pilots","tracks","vehicles","modules"]
 const sources:SourceKind[]=["weather","run","reference","timing"]
 const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
@@ -37,7 +35,6 @@ const [sessions,setSessions]=useState<Session[]>(initialSessions)
 const [activeId,setActiveId]=useState<string|null>(null)
 const [selectedId,setSelectedId]=useState("s1")
 const [draft,setDraft]=useState<Draft>(emptyDraft())
-const [groups,setGroups]=useState({sources:true,context:true,modules:true})
 const [sourceKind,setSourceKind]=useState<SourceKind>("run")
 const [contextKind,setContextKind]=useState<ContextKey>("pilot")
 const [moduleId,setModuleId]=useState("best")
@@ -49,8 +46,6 @@ const [datasetId,setDatasetId]=useState("")
 const [dataDraft,setDataDraft]=useState<Dataset|null>(null)
 const [filter,setFilter]=useState({query:"",type:"",pilot:"",track:""})
 const [plan,setPlan]=useState<"Free"|"Pro">("Free")
-const [profileOpen,setProfileOpen]=useState(false)
-const [mobileMenu,setMobileMenu]=useState(false)
 const [toast,setToast]=useState("")
 const [modal,setModal]=useState<"usage"|"membership"|"switch"|"signout"|null>(null)
 const [importStep,setImportStep]=useState(1)
@@ -68,8 +63,8 @@ const distinct=(field:"track"|"pilot")=>new Set(visibleData.map(d=>d[field]).fil
 const average=visibleData.length/new Set(visibleData.map(d=>d.date)).size || 0
 
 function show(message:string){setToast(message);window.setTimeout(()=>setToast(""),2800)}
-function navigate(target:View,group?:Mode){setView(target);if(group)setMode(group);setProfileOpen(false);setMobileMenu(false)}
-function selectMode(m:Mode){setMode(m);setProfileOpen(false);setMobileMenu(false);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":"settings");if(m==="resources")setKind("pilots")}
+function navigate(target:View,group?:Mode){setView(target);if(group)setMode(group)}
+function selectMode(m:Mode){setMode(m);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":"settings");if(m==="resources")setKind("pilots")}
 function beginNew(){setDraft(emptyDraft());navigate("new","analysis")}
 function openSession(id:string){if(!sessions.some(s=>s.id===id))return;setActiveId(id);setSelectedId(id);navigate("session","analysis")}
 function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);navigate("session","analysis");show(t("create.created"))}
@@ -98,7 +93,7 @@ return {...s,[key]:checked?uniq([...s[key],id]):s[key].filter(x=>x!==id),[other]
 }
 function updateContext(value:string){if(!active)return;setSessions(old=>old.map(s=>s.id===active.id?{...s,[contextKind]:value}:s));show(t("form.saved"))}
 function sendChat(){if(!chatDraft.trim()||!active)return;const key=active.id+"/"+moduleId;const prompt=chatDraft.trim();setChats(old=>({...old,[key]:[...(old[key]??[]),{who:"user",text:prompt},{who:"bot",text:t("module.botReply",{name:t("module."+moduleId)})}]}));setChatDraft("")}
-function profileAction(action:"usage"|"membership"|"switch"|"signout"){setModal(action);setProfileOpen(false)}
+function profileAction(action:"usage"|"membership"|"switch"|"signout"){setModal(action)}
 function picker(key:string,title:string,hint:string,options:PickItem[],selected:string|string[],multiple:boolean,change:(id:string,checked:boolean)=>void):ReactNode{
 const count=Array.isArray(selected)?selected.length:selected?1:0;const required=key!=="references"
 return <Card className="picker">
@@ -154,39 +149,28 @@ return t("app.demo")
 }
 const chatKey=active?.id+"/"+moduleId;
 const history=chats[chatKey]??[];
-return <div className="lapex-app style-nova">
-<aside className={"rail"+(mobileMenu?" mobile-open":"")}>
-<div className="brand"><div className="wordmark">L<span>Λ</span>pex<b>.ai</b></div><div className="brand-caption">{t("app.caption")}</div></div>
-<div className="modes">{modeItems.map(m=><button key={m.id} className={"mode-tab"+(mode===m.id?" active":"")} onClick={()=>selectMode(m.id)} aria-pressed={mode===m.id}><m.icon size={20}/><span>{t(m.key)}</span></button>)}</div>
-<nav className="rail-main" aria-label={t("nav."+mode)}>
-{mode==="analysis"&&(!active?<div className="saved-panel">
-<Button onClick={beginNew}><Plus size={16}/>{t("nav.new")}</Button>
-<div className="session-db"><div className="db-header"><b>{t("nav.saved")}</b><small>{t("common.records",{count:sessions.length})}</small></div><div className="db-rows" role="listbox" aria-label={t("nav.saved")}>{sessions.map(s=><button key={s.id} onClick={()=>setSelectedId(s.id)} role="option" aria-selected={selectedId===s.id} className={"db-row"+(selectedId===s.id?" chosen":"")} title={s.name}><span className="db-dot"/><span>{s.name}</span></button>)}</div><div className="db-foot">{t("nav.recordHelp")}</div></div>
-<Button variant="outline" className="rail-open" onClick={()=>openSession(selectedId)} disabled={!sessions.some(s=>s.id===selectedId)}><FolderOpen size={16}/>{t("nav.open")}</Button></div>
-:<div className="section-menu">
-<div className="session-name"><small>{t("session.title")}</small><strong>{active?.name}</strong><button onClick={()=>{setActiveId(null);navigate("home","analysis")}}>{t("nav.leave")}</button></div>
-{([
-{key:"sources" as const,label:"nav.sources",items:sources.map(id=>({id,label:"source."+id})),on:(id:string)=>{setSourceKind(id as SourceKind);navigate("source","analysis")}},
-{key:"context" as const,label:"nav.context",items:ctxKinds.map(id=>({id,label:names[id]})),on:(id:string)=>{setContextKind(id as ContextKey);navigate("context","analysis")}},
-{key:"modules" as const,label:"nav.modules",items:(active?.modules??[]).map(id=>({id,label:"module."+id})),on:(id:string)=>{setModuleId(id);navigate("module","analysis")}}
-]).map(group=><div key={group.key}><button className="group-trigger" aria-expanded={groups[group.key]} onClick={()=>setGroups(old=>({...old,[group.key]:!old[group.key]}))}>{groups[group.key]?<ChevronDown size={15}/>:<ChevronRight size={15}/>} {t(group.label)}</button>{groups[group.key]&&<div className="group-children">{group.items.map(item=><button key={item.id} className={((view==="source"&&group.key==="sources"&&item.id===sourceKind)||(view==="context"&&group.key==="context"&&item.id===contextKind)||(view==="module"&&group.key==="modules"&&item.id===moduleId))?"active":""} onClick={()=>group.on(item.id)}>{t(item.label)}</button>)}</div>}</div>)}
-</div>)}
-{mode==="resources"&&<div className="section-menu"><div className="menu-caption">{t("nav.resources")}</div>{resourceKinds.map(k=><button key={k} className={"rail-link"+(kind===k?" active":"")} onClick={()=>openLibrary(k)}>{t("nav."+k)}</button>)}</div>}
-{mode==="data"&&<div className="section-menu"><div className="menu-caption">{t("nav.data")}</div><button className={"rail-link"+(view==="datasets"||view==="dataDetail"||view==="dataEdit"?" active":"")} onClick={()=>navigate("datasets","data")}>{t("nav.library")}</button><button className={"rail-link"+(view==="import"?" active":"")} onClick={()=>{setImportStep(1);navigate("import","data")}}>{t("nav.import")}</button></div>}
-{mode==="config"&&<div className="section-menu"><div className="menu-caption">{t("nav.config")}</div>{(["settings","account","help"] as const).map((v)=><button className={"rail-link"+(view===v?" active":"")} key={v} onClick={()=>navigate(v,"config")}>{t(v==="settings"?"nav.preferences":v==="account"?"nav.account":"nav.help")}</button>)}</div>}
-</nav>
-<div className="rail-footer">
-{profileOpen&&<div className="profile-popover" role="menu"><strong>{t("profile.user")}</strong><small>{t("profile.plan",{plan})}</small>{([{k:"usage" as const,icon:BarChart3,text:"profile.usage"},{k:"membership" as const,icon:CreditCard,text:"profile.membership"},{k:"switch" as const,icon:RefreshCw,text:"profile.switch"},{k:"signout" as const,icon:LogOut,text:"profile.signout"}]).map(entry=><button role="menuitem" key={entry.k} onClick={()=>profileAction(entry.k)}><entry.icon size={16}/>{t(entry.text)}</button>)}</div>}
-<button className="profile-trigger" onClick={()=>setProfileOpen(!profileOpen)} aria-expanded={profileOpen} aria-label={t("nav.profile")}><span className="avatar"><UserRound size={18}/></span><span className="profile-info"><strong>{t("profile.user")}</strong><small>{t("profile.plan",{plan})}</small></span><ChevronDown size={16}/></button>
-<button className="rail-help" aria-label={t("nav.help")} title={t("nav.help")} onClick={()=>navigate("help","config")}><CircleHelp size={19}/></button>
-</div></aside>
-<main className="workspace">
-<div className="mobile-bar"><Button variant="outline" onClick={()=>setMobileMenu(!mobileMenu)}><Menu size={18}/> {t("app.title")}</Button></div>
+return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaultOpen>
+<AppSidebar07 mode={mode} plan={plan}
+  onNewSession={beginNew}
+  onOpenSessions={()=>{setActiveId(null);navigate("home","analysis")}}
+  onResource={openLibrary}
+  onData={key=>{if(key==="import")setImportStep(1);navigate(key,"data")}}
+  onConfig={key=>navigate(key,"config")}
+  onProfile={profileAction}
+/>
+<SidebarInset className="workspace">
+<div className="sidebar07-toolbar"><SidebarTrigger aria-label="Alternar barra lateral"/></div>
+
+
 <header className="screen-header"><div><nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav><h1>{pageTitle()}</h1><p>{pageSubtitle()}</p></div>
 <div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&<Button onClick={()=>editResource(null)}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
 <div className="demo-banner"><Gauge size={15}/>{t("app.demo")}</div>
 
-{view==="home"&&<Card className="empty-page"><CardContent><FolderOpen size={34}/><h2>{t("home.empty")}</h2><p>{t("home.description")}</p><Button onClick={beginNew}><Plus size={16}/>{t("nav.new")}</Button></CardContent></Card>}
+{view==="home"&&<Card className="open-sessions-card">
+<CardHeader><CardTitle>{t("nav.saved")}</CardTitle><CardDescription>{t("common.records",{count:sessions.length})} · Seleccioná una sesión y abrila.</CardDescription></CardHeader>
+<CardContent><div className="open-session-scroll"><Table><TableHeader><TableRow><TableHead>Elegir</TableHead><TableHead>{t("common.name")}</TableHead><TableHead>{t("nav.pilots")}</TableHead><TableHead>{t("nav.tracks")}</TableHead></TableRow></TableHeader><TableBody>{sessions.map(session=><TableRow key={session.id} data-state={selectedId===session.id?"selected":undefined} className="open-session-row" onClick={()=>setSelectedId(session.id)}><TableCell><input aria-label={"Seleccionar "+session.name} type="radio" checked={selectedId===session.id} onChange={()=>setSelectedId(session.id)}/></TableCell><TableCell className="font-semibold">{session.name}</TableCell><TableCell>{itemName(session.pilot,resources.pilots)}</TableCell><TableCell>{itemName(session.track,resources.tracks)}</TableCell></TableRow>)}</TableBody></Table></div>
+<div className="open-session-actions"><Button variant="outline" onClick={beginNew}><Plus size={16}/>{t("nav.new")}</Button><Button onClick={()=>openSession(selectedId)} disabled={!sessions.some(s=>s.id===selectedId)}><FolderOpen size={16}/>{t("nav.open")}</Button></div>
+</CardContent></Card>}
 
 {view==="new"&&<div className="new-session">
 <Card><CardHeader><CardTitle>{t("create.name")}</CardTitle><CardDescription>{t("create.nameHint")}</CardDescription></CardHeader><CardContent><Input aria-label={t("create.name")} required maxLength={80} autoComplete="off" value={draft.name} onChange={(e:ChangeEvent<HTMLInputElement>)=>setDraft(d=>({...d,name:e.target.value}))} placeholder={t("create.name")}/></CardContent></Card>
@@ -199,6 +183,11 @@ return <div className="lapex-app style-nova">
 <Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card>
 </div>}
 
+{view==="session"&&active&&<div className="session-shortcuts">
+<div className="session-shortcuts-group"><span>{t("nav.sources")}</span>{(["weather","run","reference","timing"] as SourceKind[]).map(key=><Button key={key} size="sm" variant="outline" onClick={()=>{setSourceKind(key);navigate("source")}}>{t("source."+key)}</Button>)}</div>
+<div className="session-shortcuts-group"><span>{t("nav.context")}</span>{(["pilot","track","vehicle"] as ContextKey[]).map(key=><Button key={key} size="sm" variant="outline" onClick={()=>{setContextKind(key);navigate("context")}}>{t(names[key])}</Button>)}</div>
+<div className="session-shortcuts-group"><span>{t("nav.modules")}</span>{active.modules.map(key=><Button key={key} size="sm" variant="outline" onClick={()=>{setModuleId(key);navigate("module")}}>{t("module."+key)}</Button>)}</div>
+</div>}
 {view==="session"&&active&&<div className="session-overview">
 <Card><CardHeader><CardTitle>{t("nav.context")}</CardTitle></CardHeader><CardContent><div className="summary-grid">{ctxKinds.map(k=><button className="summary-item" key={k} onClick={()=>{setContextKind(k);navigate("context")}}><small>{t(names[k])}</small><strong>{itemName(active[k],resources[ctxToRes[k]])}</strong></button>)}</div></CardContent></Card>
 <Card><CardHeader><CardTitle>{t("nav.sources")}</CardTitle></CardHeader><CardContent><div className="summary-grid"><div className="summary-item"><small>{t("session.targets")}</small><strong>{active.targets.length}</strong></div><div className="summary-item"><small>{t("session.references")}</small><strong>{active.references.length}</strong></div></div></CardContent></Card>
@@ -237,9 +226,8 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 {view==="settings"&&<Card className="edit-card"><CardHeader><CardTitle>{t("settings.title")}</CardTitle></CardHeader><CardContent><label className="stack-fields">{t("settings.speed")}<select><option>km/h</option><option>mph</option></select></label></CardContent></Card>}
 {view==="account"&&<Card className="edit-card"><CardHeader><CardTitle>{t("nav.account")}</CardTitle></CardHeader><CardContent><p>{t("profile.user")} · {t("profile.plan",{plan})}</p><div className="pill-row"><Button onClick={()=>profileAction("membership")}>{t("profile.membership")}</Button><Button variant="outline" onClick={()=>profileAction("usage")}>{t("profile.usage")}</Button></div></CardContent></Card>}
 {view==="help"&&<Card><CardHeader><CardTitle>{t("help.title")}</CardTitle><CardDescription>{t("help.subtitle")}</CardDescription></CardHeader></Card>}
-</main>
-{profileOpen&&<button className="click-dismiss" aria-label={t("common.close")} onClick={()=>setProfileOpen(false)}/>}
+</SidebarInset>}
 {modal&&<div className="modal-shade" onClick={()=>setModal(null)}><div role="dialog" aria-modal="true" aria-label={t("profile."+modal)} className="modal-body" onClick={e=>e.stopPropagation()}><div className="modal-header"><h2>{t("profile."+modal)}</h2><button onClick={()=>setModal(null)} aria-label={t("common.close")}><X size={19}/></button></div><p>{t("profile.notReal")}</p>{modal==="usage"&&<p>{t("data.records")}: {datasets.length} · {t("nav.saved")}: {sessions.length}</p>}{modal==="membership"&&<div className="pill-row"><Button onClick={()=>{setPlan(p=>p==="Free"?"Pro":"Free");setModal(null)}}>{t("profile.plan",{plan})} <Check size={15}/></Button></div>}<Button variant="outline" onClick={()=>setModal(null)}>{t("common.close")}</Button></div></div>}
 {toast&&<div className="toast" role="status">{toast}</div>}
-</div>
+</SidebarProvider>
 }
