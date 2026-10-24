@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { initialDatasets, initialResources, initialSessions, emptyDraft, moduleDefinitions, validDraft } from "./data"
+import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft } from "./data"
 import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind } from "./data"
 
 type Mode="analysis"|"resources"|"data"|"config"
@@ -62,7 +62,6 @@ const [lap,setLap]=useState("best")
 
 const active=sessions.find(x=>x.id===activeId)??null
 const targetDataset=datasets.find(x=>x.id===datasetId)??null
-const activeResource=resources[kind].find(x=>x.id===itemId)??null
 const draftReady=validDraft(draft,resources,datasets)
 const visibleData=useMemo(()=>datasets.filter(d=>(!filter.type||d.type===filter.type)&&(!filter.pilot||d.pilot===filter.pilot)&&(!filter.track||d.track===filter.track)&&(!filter.query||[d.name,d.observation].join(" ").toLowerCase().includes(filter.query.toLowerCase()))),[datasets,filter])
 const distinct=(field:"track"|"pilot")=>new Set(visibleData.map(d=>d[field]).filter(Boolean)).size
@@ -115,7 +114,7 @@ const first={label:t("nav."+mode),onClick:()=>selectMode(mode)}
 if(view==="new")return [first,{label:t("nav.new")}]
 if(view==="home")return [{label:t("nav.analysis")}]
 if(["session","source","context","module"].includes(view)&&active){
-const a=[first,{label:active.name,onClick:()=>navigate("session")}];
+const a:{label:string;onClick?:()=>void}[]=[first,{label:active.name,onClick:()=>navigate("session")}];
 if(view==="source")a.push({label:t("nav.sources")},{label:t("source."+sourceKind)});
 if(view==="context")a.push({label:t("nav.context")},{label:t(names[contextKind])});
 if(view==="module")a.push({label:t("nav.modules")},{label:t("module."+moduleId)});

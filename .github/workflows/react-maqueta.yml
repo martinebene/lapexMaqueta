@@ -1,0 +1,44 @@
+name: Maqueta React Nova
+on:
+  push:
+    branches:
+      - prototipo/react-shadcn
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias
+        run: pnpm install --no-frozen-lockfile
+      - name: Comprobar tipos y compilar
+        run: pnpm run build
+      - name: Guardar pnpm-lock versionado
+        if: github.ref == 'refs/heads/prototipo/react-shadcn'
+        run: |
+          git add pnpm-lock.yaml
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore(maqueta): fijar pnpm-lock.yaml"
+            git push origin HEAD:prototipo/react-shadcn
+          fi
+      - name: Artefacto compilado para revisión
+        uses: actions/upload-artifact@v4
+        with:
+          name: lapex-nova-preview
+          path: dist/
+          if-no-files-found: error
