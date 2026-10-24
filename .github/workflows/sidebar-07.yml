@@ -1,0 +1,67 @@
+name: Maqueta Sidebar 07
+on:
+  push:
+    branches:
+      - prototipo/sidebar-07
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+jobs:
+  publish-sidebar:
+    name: Compilar y publicar Sidebar 07
+    runs-on: ubuntu-latest
+    concurrency:
+      group: lapex-sidebar07-preview
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+      - name: Validar TypeScript y compilar
+        run: pnpm run build
+      - name: Publicar solo /sidebar-07/
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git worktree add --detach /tmp/lapex-sidebar07-pages origin/main
+          mkdir -p /tmp/lapex-sidebar07-pages/sidebar-07
+          rsync -a --delete dist/ /tmp/lapex-sidebar07-pages/sidebar-07/
+          git -C /tmp/lapex-sidebar07-pages add sidebar-07
+          if ! git -C /tmp/lapex-sidebar07-pages diff --cached --quiet; then
+            git -C /tmp/lapex-sidebar07-pages config user.name "github-actions[bot]"
+            git -C /tmp/lapex-sidebar07-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C /tmp/lapex-sidebar07-pages commit -m "build(maqueta): actualizar tercera variante sidebar-07"
+            git -C /tmp/lapex-sidebar07-pages push origin HEAD:main
+          fi
+      - name: Solicitar Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lapex-sidebar07-dist
+          path: dist/
+  test-browser:
+    name: Playwright interfaz Sidebar 07
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install chromium
+      - run: pnpm test:e2e
