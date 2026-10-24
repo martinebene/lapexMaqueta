@@ -177,3 +177,32 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
   .picker-list{height:210px;margin:0 9px 12px}
   .open-session-scroll,.resource-scroll,.records-scroll{height:320px}
 }
+
+
+/* Cabecera fuera de la zona desplazable. Table/Card de shadcn originales intactos. */
+.picker-shell{margin:0 15px 16px;background:#e5edf3;border:1px solid #9fb6c5;border-radius:9px;overflow:hidden;box-shadow:inset 0 1px 5px #17364515}
+.picker-shell .picker-columns{position:relative;top:auto;z-index:1;padding-right:27px;border-bottom:2px solid #9eb7c6}
+.picker-shell .picker-list{height:192px;max-height:none;width:100%;margin:0;border:0;border-radius:0;box-shadow:none;overflow-x:auto;overflow-y:scroll!important;scrollbar-gutter:stable}
+.open-session-scroll,.resource-scroll,.records-scroll{height:auto;overflow:hidden!important;scrollbar-gutter:auto}
+.open-session-scroll [data-slot="table-container"],.resource-scroll [data-slot="table-container"],.records-scroll [data-slot="table-container"]{overflow:visible}
+.open-session-scroll table,.resource-scroll table,.records-scroll table{width:100%;table-layout:fixed}
+.open-session-scroll thead,.resource-scroll thead,.records-scroll thead{position:static;display:table;table-layout:fixed;width:calc(100% - 11px)}
+.open-session-scroll tbody,.resource-scroll tbody,.records-scroll tbody{display:block;width:100%;overflow-x:hidden;overflow-y:scroll;scrollbar-width:thin;scrollbar-color:#6d899a #dae5ed;scrollbar-gutter:stable;overscroll-behavior:contain;background:#e5edf3}
+.open-session-scroll tbody{height:288px}
+.resource-scroll tbody{height:310px}
+.records-scroll tbody{height:345px}
+.open-session-scroll tbody tr,.resource-scroll tbody tr,.records-scroll tbody tr{display:table;table-layout:fixed;width:100%}
+.open-session-scroll th:nth-child(1),.open-session-scroll td:nth-child(1){width:12%}
+.open-session-scroll th:nth-child(2),.open-session-scroll td:nth-child(2){width:40%}
+.open-session-scroll th:nth-child(3),.open-session-scroll td:nth-child(3){width:24%}
+.open-session-scroll th:nth-child(4),.open-session-scroll td:nth-child(4){width:24%}
+.resource-scroll th:nth-child(1),.resource-scroll td:nth-child(1){width:27%}
+.resource-scroll th:nth-child(2),.resource-scroll td:nth-child(2){width:37%}
+.resource-scroll th:nth-child(3),.resource-scroll td:nth-child(3){width:36%}
+.records-scroll th:nth-child(1),.records-scroll td:nth-child(1){width:20%}
+.records-scroll th:nth-child(2),.records-scroll td:nth-child(2){width:12%}
+.records-scroll th:nth-child(3),.records-scroll td:nth-child(3){width:9%}
+.records-scroll th:nth-child(4),.records-scroll td:nth-child(4){width:22%}
+.records-scroll th:nth-child(5),.records-scroll td:nth-child(5){width:37%}
+.open-session-scroll tbody:focus-visible,.resource-scroll tbody:focus-visible,.records-scroll tbody:focus-visible{outline:2px solid #087f88;outline-offset:-2px}
+@media(max-width:767px){.picker-shell{margin:0 9px 12px}.picker-shell .picker-list{height:176px}.open-session-scroll,.resource-scroll,.records-scroll{overflow-x:auto!important}.open-session-scroll table{min-width:520px}.resource-scroll table{min-width:540px}.records-scroll table{min-width:740px}}
