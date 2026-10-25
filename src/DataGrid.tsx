@@ -5,13 +5,15 @@ import {ArrowDownUp,ChevronDown,ChevronRight,Search} from "lucide-react"
 import {Table,TableHeader,TableBody,TableRow,TableHead,TableCell} from "@/components/ui/table"
 import {Input} from "@/components/ui/input"
 export interface GridColumn<T>{key:string;title:string;value:(r:T)=>string|number;render?:(r:T)=>ReactNode;filter?:boolean;width?:number}
-interface Props<T extends {id:string}>{label:string;rows:T[];columns:GridColumn<T>[];selection?:"single"|"multiple";selected?:string|string[];onSelect?:(id:string,checked:boolean)=>void;disabled?:(r:T)=>boolean;groups?:string[];detail?:(r:T)=>ReactNode;actions?:(r:T)=>ReactNode;searchable?:boolean}
-export function DataGrid<T extends {id:string}>({label,rows,columns,selection,selected,onSelect,disabled,groups=[],detail,actions,searchable=true}:Props<T>){
+export interface GridGrouping<T>{key:string;title:string;value:(r:T)=>string}
+interface Props<T extends {id:string}>{label:string;rows:T[];columns:GridColumn<T>[];selection?:"single"|"multiple";selected?:string|string[];onSelect?:(id:string,checked:boolean)=>void;disabled?:(r:T)=>boolean;groups?:string[];groupers?:GridGrouping<T>[];detail?:(r:T)=>ReactNode;actions?:(r:T)=>ReactNode;searchable?:boolean}
+export function DataGrid<T extends {id:string}>({label,rows,columns,selection,selected,onSelect,disabled,groups=[],groupers=[],detail,actions,searchable=true}:Props<T>){
 const [query,setQuery]=useState("")
 const [filters,setFilters]=useState<Record<string,string>>({})
 const [group,setGroup]=useState("")
 const [sorting,setSorting]=useState({key:"",desc:false})
 const [expanded,setExpanded]=useState<string[]>([])
+const [advancedFilters,setAdvancedFilters]=useState(false)
 const filterCols=columns.filter(c=>c.filter)
 const visible=useMemo(()=>{
 const q=query.toLowerCase().trim()
@@ -22,18 +24,20 @@ return sorted
 const grouped=useMemo(()=>{
 if(!group)return [["",visible] as [string,T[]]]
 const col=columns.find(c=>c.key===group)
+const extra=groupers.find(g=>g.key===group)
 const m=new Map<string,T[]>()
-visible.forEach(r=>{const val=String(col?.value(r)??"")||"Sin asignar";m.set(val,[...(m.get(val)??[]),r])})
+visible.forEach(r=>{const val=String(col?.value(r)??extra?.value(r)??"")||"Sin asignar";m.set(val,[...(m.get(val)??[]),r])})
 return [...m.entries()].sort((a,b)=>a[0].localeCompare(b[0],"es",{numeric:true}))
-},[visible,columns,group])
+},[visible,columns,group,groupers])
 const span=columns.length+Number(!!selection)+Number(!!actions)+Number(!!detail)
 const widths=<colgroup>{selection&&<col style={{width:34}}/>}{columns.map(c=><col key={c.key} style={c.width?{width:String(c.width)+"%"}:undefined}/>)}{actions&&<col style={{width:150}}/>}{detail&&<col style={{width:42}}/>}</colgroup>
 const selectedNow=(id:string)=>Array.isArray(selected)?selected.includes(id):selected===id
 return <section className="dg" aria-label={label}>
-{(searchable||filterCols.length>0||groups.length>0)&&<div className="dg-toolbar">
+{(searchable||filterCols.length>0||groups.length>0||groupers.length>0)&&<div className="dg-toolbar">
 {searchable&&<label className="dg-search"><Search size={14}/><Input aria-label={"Buscar en "+label} placeholder="Buscar" value={query} onChange={e=>setQuery(e.target.value)}/></label>}
-{filterCols.map(c=><label key={c.key} className="dg-filter"><span>{c.title}</span><select aria-label={"Filtrar "+c.title} value={filters[c.key]??""} onChange={e=>setFilters(f=>({...f,[c.key]:e.target.value}))}><option value="">Todos</option>{[...new Set(rows.map(r=>String(c.value(r))))].filter(Boolean).sort().map(v=><option key={v}>{v}</option>)}</select></label>)}
-{groups.length>0&&<label className="dg-filter"><span>Agrupar por</span><select aria-label={"Agrupar "+label} value={group} onChange={e=>setGroup(e.target.value)}><option value="">Sin agrupar</option>{groups.map(k=><option key={k} value={k}>{columns.find(c=>c.key===k)?.title??k}</option>)}</select></label>}
+{filterCols.filter(c=>filterCols.length<=3||advancedFilters||c.key==="type"||c.key==="track"||c.key==="category"||c.key==="vehicleType").map(c=><label key={c.key} className="dg-filter"><span>{c.title}</span><select aria-label={"Filtrar "+c.title} value={filters[c.key]??""} onChange={e=>setFilters(f=>({...f,[c.key]:e.target.value}))}><option value="">Todos</option>{[...new Set(rows.map(r=>String(c.value(r))))].filter(Boolean).sort().map(v=><option key={v}>{v}</option>)}</select></label>)}
+{filterCols.length>3&&<button type="button" className="dg-advanced" onClick={()=>setAdvancedFilters(x=>!x)}>{advancedFilters?"Menos filtros":"Filtros avanzados"}</button>}
+{(groups.length>0||groupers.length>0)&&<label className="dg-filter"><span>Agrupar por</span><select aria-label={"Agrupar "+label} value={group} onChange={e=>setGroup(e.target.value)}><option value="">Sin agrupar</option>{groups.map(k=><option key={k} value={k}>{columns.find(c=>c.key===k)?.title??k}</option>)}{groupers.map(g=><option key={g.key} value={g.key}>{g.title}</option>)}</select></label>}
 </div>}
 <div className="dg-panel"><div className="dg-head"><Table>{widths}<TableHeader><TableRow>{selection&&<TableHead aria-label="Selección"/>}{columns.map(c=><TableHead key={c.key}><button type="button" className="dg-sort" aria-label={"Ordenar por "+c.title} onClick={()=>setSorting(s=>({key:c.key,desc:s.key===c.key?!s.desc:false}))}>{c.title}<ArrowDownUp size={13}/></button></TableHead>)}{actions&&<TableHead>Acciones</TableHead>}{detail&&<TableHead aria-label="Detalle"/>}</TableRow></TableHeader></Table></div>
 <div className="dg-rows" role="region" aria-label={"Registros de "+label} tabIndex={0}><Table>{widths}<TableBody>
