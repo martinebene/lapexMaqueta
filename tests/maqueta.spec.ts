@@ -79,7 +79,7 @@ test("Recursos: pilotos editables, circuitos agrupables y módulos desactivables
  await expect(page.getByText("Chubut (2)")).toBeVisible()
  await side.getByRole("button",{name:"Módulos de análisis"}).click()
  await page.getByRole("button",{name:"Desactivar"}).first().click()
- await expect(page.getByRole("button",{name:"Activar"})).toHaveCount(1)
+ await expect(page.getByRole("button",{name:"Activar",exact:true})).toHaveCount(1)
  await side.getByRole("button",{name:"Nueva sesión"}).click()
  await expect(page.getByRole("region",{name:"Registros de Módulos de análisis"}).getByRole("checkbox",{name:"Seleccionar Mejor vuelta"})).toHaveCount(0)
 })
