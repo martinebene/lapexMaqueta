@@ -1,14 +1,16 @@
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import type { ChangeEvent, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Search, BarChart3, Send, X, Database, Layers3, UserRound } from "lucide-react"
+import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Search, BarChart3, Send, X, Database, Layers3, UserRound, BookOpen, HardDrive, Settings2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft } from "./data"
+import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing } from "./data"
+import { DataGrid } from "./DataGrid"
+import type { GridColumn } from "./DataGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar07 } from "./Sidebar07"
 import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind } from "./data"
@@ -17,7 +19,6 @@ type Mode="analysis"|"resources"|"data"|"config"
 type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
-const sources:SourceKind[]=["weather","run","reference","timing"]
 const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
 const ctxToRes:Record<ContextKey,ResourceKind>={pilot:"pilots",track:"tracks",vehicle:"vehicles"}
 const names:Record<ContextKey,string>={pilot:"create.pilot",track:"create.track",vehicle:"create.vehicle"}
@@ -43,7 +44,9 @@ const [editName,setEditName]=useState("")
 const [editDetail,setEditDetail]=useState("")
 const [datasetId,setDatasetId]=useState("")
 const [dataDraft,setDataDraft]=useState<Dataset|null>(null)
-const [filter,setFilter]=useState({query:"",type:"",pilot:"",track:""})
+const [inlineId,setInlineId]=useState<string|null>(null)
+const [inlineDraft,setInlineDraft]=useState<Resource>({id:"",name:"",detail:""})
+const [moduleSettings,setModuleSettings]=useState<string|null>(null)
 const [plan,setPlan]=useState<"Free"|"Pro">("Free")
 const [toast,setToast]=useState("")
 const [modal,setModal]=useState<"usage"|"membership"|"switch"|"signout"|null>(null)
@@ -57,9 +60,9 @@ const [lap,setLap]=useState("best")
 const active=sessions.find(x=>x.id===activeId)??null
 const targetDataset=datasets.find(x=>x.id===datasetId)??null
 const draftReady=validDraft(draft,resources,datasets)
-const visibleData=useMemo(()=>datasets.filter(d=>(!filter.type||d.type===filter.type)&&(!filter.pilot||d.pilot===filter.pilot)&&(!filter.track||d.track===filter.track)&&(!filter.query||[d.name,d.observation].join(" ").toLowerCase().includes(filter.query.toLowerCase()))),[datasets,filter])
-const distinct=(field:"track"|"pilot")=>new Set(visibleData.map(d=>d[field]).filter(Boolean)).size
-const average=visibleData.length/new Set(visibleData.map(d=>d.date)).size || 0
+const distinctTracks=new Set(datasets.map(d=>d.track).filter(Boolean)).size
+const storageUsed=datasets.reduce((s,d)=>s+(d.sizeMB??0),0)
+const storageTotal=2048
 
 function show(message:string){setToast(message);window.setTimeout(()=>setToast(""),2800)}
 function navigate(target:View,group?:Mode){setView(target);if(group)setMode(group)}
@@ -67,16 +70,16 @@ function selectMode(m:Mode){setMode(m);setView(m==="analysis"?(active?"session":
 function beginNew(){setDraft(emptyDraft());navigate("new","analysis")}
 function openSession(id:string){if(!sessions.some(s=>s.id===id))return;setActiveId(id);setSelectedId(id);navigate("session","analysis")}
 function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);navigate("session","analysis");show(t("create.created"))}
-function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value}))}
+function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value,...(key==="vehicle"?{setup:""}:{})}))}
 function toggleMulti(key:"targets"|"references"|"modules",id:string,checked:boolean){
 setDraft(old=>{
-const next={...old,[key]:checked?uniq([...old[key],id]):old[key].filter(x=>x!==id)};
+const next={...old,[key]:checked?(key==="targets"?[id]:uniq([...old[key],id])):old[key].filter(x=>x!==id)};
 if(checked&&key==="targets")next.references=old.references.filter(x=>x!==id);
 if(checked&&key==="references")next.targets=old.targets.filter(x=>x!==id);
 return next;
 })
 }
-function openLibrary(k:ResourceKind){setKind(k);navigate("library","resources")}
+function openLibrary(k:ResourceKind){setKind(k);setInlineId(null);setModuleSettings(null);navigate("library","resources")}
 function editResource(id:string|null){const item=resources[kind].find(x=>x.id===id);setItemId(id);setEditName(item?.name??"");setEditDetail(item?.detail??"");navigate("resourceEdit","resources")}
 function saveResource(){if(!editName.trim())return;setResources(old=>({...old,[kind]:itemId?old[kind].map(x=>x.id===itemId?{...x,name:editName.trim(),detail:editDetail}:x):[...old[kind],{id:"r"+Date.now(),name:editName.trim(),detail:editDetail}]}));navigate("library","resources");show(t("form.saved"))}
 function deleteResource(id:string){if(!window.confirm(t("data.deleteConfirm")))return;setResources(old=>({...old,[kind]:old[kind].filter(x=>x.id!==id)}));show(t("data.deleted"))}
@@ -87,12 +90,46 @@ function toggleSource(id:string,checked:boolean){
 if(!active)return;
 setSessions(old=>old.map(s=>{if(s.id!==active.id)return s;
 const ref=sourceKind==="reference";const key=ref?"references":"targets";const other=ref?"targets":"references";
-return {...s,[key]:checked?uniq([...s[key],id]):s[key].filter(x=>x!==id),[other]:checked?s[other].filter(x=>x!==id):s[other]};
+return {...s,[key]:checked?(ref?uniq([...s[key],id]):[id]):s[key].filter(x=>x!==id),[other]:checked?s[other].filter(x=>x!==id):s[other]};
 }))
 }
-function updateContext(value:string){if(!active)return;setSessions(old=>old.map(s=>s.id===active.id?{...s,[contextKind]:value}:s));show(t("form.saved"))}
+function updateContext(_value:string){show("El contexto queda bloqueado al iniciar la sesión.")}
 function sendChat(){if(!chatDraft.trim()||!active)return;const key=active.id+"/"+moduleId;const prompt=chatDraft.trim();setChats(old=>({...old,[key]:[...(old[key]??[]),{who:"user",text:prompt},{who:"bot",text:t("module.botReply",{name:t("module."+moduleId)})}]}));setChatDraft("")}
 function profileAction(action:"usage"|"membership"|"switch"|"signout"){setModal(action)}
+function beginInline(){setInlineId("__new__");setInlineDraft({id:"__new__",name:"",detail:""})}
+function saveInline(){
+ if(!inlineDraft.name.trim())return
+ const next={...inlineDraft,name:inlineDraft.name.trim()}
+ setResources(old=>({...old,[kind]:inlineId==="__new__"?[...old[kind],{...next,id:"r"+Date.now()}]:old[kind].map(x=>x.id===inlineId?{...x,...next,id:x.id,vehicleType:x.vehicleType}:x)}))
+ setInlineId(null)
+ show(t("form.saved"))
+}
+function updateObservation(id:string,value:string){setDatasets(old=>old.map(d=>d.id===id?{...d,observation:value}:d))}
+function detailDataset(d:Dataset){
+ return <div className="dg-detail"><strong>{d.name}</strong><span>Registro: {d.id}</span><span>Tipo: {t("source."+d.type)}</span><span>Inicio: {d.date} {d.time}</span><span>Dispositivo: {d.device??"—"}</span><span>Mejor vuelta: {d.bestLap??"No aplica"}</span><span>Duración: {d.duration??"—"}</span><span>Canales: {d.channels??"No aplica"}</span><span>{d.observation}</span></div>
+}
+function datasetColumns():GridColumn<Dataset>[] {
+ return [
+ {key:"name",title:"Nombre",value:d=>d.name},
+ {key:"date",title:"Fecha y hora",value:d=>d.date+" "+d.time},
+ {key:"track",title:"Circuito",value:d=>itemName(d.track,resources.tracks),filter:true},
+ {key:"bestLap",title:"Mejor vuelta",value:d=>d.bestLap??"—"},
+ {key:"device",title:"Dispositivo",value:d=>d.device??"—",filter:true},
+ {key:"type",title:"Tipo",value:d=>t("source."+d.type),filter:true}
+ ]
+}
+function resourceInfo(r:Resource){
+ if(kind==="pilots")return <div className="dg-detail"><strong>{r.name}</strong><span>Nombre corto: {r.shortName??"—"}</span><span>Apodo: {r.nickname??"—"}</span><span>Localidad: {r.city??"—"} · {r.country??"—"}</span><span>Correo: {r.email??"—"}</span><span>Teléfono: {r.phone??"—"}</span><span>Experiencia: {r.experience??"—"}/10</span><span>Velocidad: {r.speed??"—"}/10</span><span>{r.description??r.detail}</span></div>
+ if(kind==="vehicles")return <div className="dg-detail"><strong>{r.name}</strong><span>Tipo: {r.vehicleType??"—"}</span><span>Peso referencia: {r.referenceWeight??"—"} kg</span><span>Tracción: {r.drivenWheels??"—"}</span><span>Potencia: {r.enginePower??"—"}</span><span>Setups: {(r.setups??[]).map(s=>s.name).join(", ")||"Sin setups"}</span></div>
+ if(kind==="tracks")return <div className="dg-detail"><strong>{r.name}</strong><span>País: {r.country??"—"} · Provincia: {r.province??"—"}</span><span>Longitud: {r.lengthKm??"—"} km</span><span>Conjuntos de segmentación: {r.segments??0}</span>{r.geometry?<svg viewBox="0 0 180 78" role="img" aria-label={"Geometría esquemática de "+r.name} className="track-geometry"><polyline points="12,54 45,12 148,23 12,54" fill="none" stroke="currentColor" strokeWidth="3"/></svg>:<span>Geometría no disponible</span>}</div>
+ return <div className="dg-detail"><strong>{r.name}</strong><span>{r.detail}</span><span>Requisitos: {(r.requirements??[]).join("; ")||"Sin requisitos declarados"}</span></div>
+}
+function editable(r:Resource,k:keyof Resource){
+ if(inlineId!==r.id)return String(r[k]??"—")||"—"
+ return <Input aria-label={"Editar "+String(k)+" de "+r.name} value={String(inlineDraft[k]??"")} onChange={e=>setInlineDraft(d=>({...d,[k]:e.target.value}))}/>
+}
+function moduleAvailable(r:Resource){return r.enabled!==false&&moduleMissing(r,draft,datasets).length===0}
+
 function picker(key:string,title:string,hint:string,options:PickItem[],selected:string|string[],multiple:boolean,change:(id:string,checked:boolean)=>void):ReactNode{
 const count=Array.isArray(selected)?selected.length:selected?1:0;const required=key!=="references"
 return <Card className="picker">
@@ -158,11 +195,9 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   onProfile={profileAction}
 />
 <SidebarInset className="workspace">
-<div className="sidebar07-toolbar"><SidebarTrigger aria-label="Alternar barra lateral"/></div>
-
-
-<header className="screen-header"><div><nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
-<div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&<Button onClick={()=>editResource(null)}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
+<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/><nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
+<header className="screen-header"><div><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
+<div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={beginInline}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
 
 {view==="home"&&<Card className="open-sessions-card">
 <CardHeader><CardTitle>{t("nav.saved")}</CardTitle><CardDescription>{t("common.records",{count:sessions.length})} · Seleccioná una sesión y abrila.</CardDescription></CardHeader>
@@ -170,14 +205,17 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 <div className="open-session-actions"><Button variant="outline" onClick={beginNew}><Plus size={16}/>{t("nav.new")}</Button><Button onClick={()=>openSession(selectedId)} disabled={!sessions.some(s=>s.id===selectedId)}><FolderOpen size={16}/>{t("nav.open")}</Button></div>
 </CardContent></Card>}
 
+
 {view==="new"&&<div className="new-session">
-<Card><CardHeader><CardTitle>{t("create.name")}</CardTitle><CardDescription>{t("create.nameHint")}</CardDescription></CardHeader><CardContent><Input aria-label={t("create.name")} required maxLength={80} autoComplete="off" value={draft.name} onChange={(e:ChangeEvent<HTMLInputElement>)=>setDraft(d=>({...d,name:e.target.value}))} placeholder={t("create.name")}/></CardContent></Card>
-{picker("pilot",t("create.pilot"),t("create.one"),resources.pilots,draft.pilot,false,(id)=>setSingle("pilot",id))}
-{picker("track",t("create.track"),t("create.one"),resources.tracks,draft.track,false,(id)=>setSingle("track",id))}
-{picker("vehicle",t("create.vehicle"),t("create.one"),resources.vehicles,draft.vehicle,false,(id)=>setSingle("vehicle",id))}
-{picker("targets",t("create.targets"),t("create.many"),datasets.map(d=>({id:d.id,name:d.name,detail:t("source."+d.type)+" · "+d.date})),draft.targets,true,(id,v)=>toggleMulti("targets",id,v))}
-{picker("references",t("create.references"),t("create.optionalMany"),datasets.map(d=>({id:d.id,name:d.name,detail:t("source."+d.type)+" · "+d.date})),draft.references,true,(id,v)=>toggleMulti("references",id,v))}
-{picker("modules",t("create.modules"),t("create.many"),resources.modules.map(m=>({id:m.id,name:t("module."+m.id),detail:m.detail})),draft.modules,true,(id,v)=>toggleMulti("modules",id,v))}
+<Card className="session-name-row"><div><CardTitle>{t("create.name")}</CardTitle><CardDescription>{t("create.nameHint")}</CardDescription></div><Input aria-label={t("create.name")} required maxLength={80} autoComplete="off" value={draft.name} onChange={(e:ChangeEvent<HTMLInputElement>)=>setDraft(d=>({...d,name:e.target.value}))} placeholder={t("create.name")}/></Card>
+<div className="context-three">
+<Card><CardHeader><CardTitle>{t("create.pilot")}</CardTitle></CardHeader><CardContent><DataGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]}/></CardContent></Card>
+<Card><CardHeader><CardTitle>{t("create.vehicle")}</CardTitle></CardHeader><CardContent><DataGrid label="Vehículos disponibles" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent></Card>
+<Card><CardHeader><CardTitle>{t("create.track")}</CardTitle></CardHeader><CardContent><DataGrid label="Circuitos disponibles" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"distance",title:"Distancia km",value:r=>r.distanceKm??"—"},{key:"type",title:"Tipo",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]}/></CardContent></Card>
+</div>
+<Card><CardHeader><CardTitle>Setup del vehículo</CardTitle><CardDescription>Elegí un setup del vehículo seleccionado (datos ilustrativos).</CardDescription></CardHeader><CardContent><select aria-label="Setup del vehículo" className="setup-select" disabled={!draft.vehicle} value={draft.setup} onChange={e=>setDraft(d=>({...d,setup:e.target.value}))}><option value="">Seleccionar setup</option>{resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></CardContent></Card>
+{(["targets","references"] as const).map(role=><Card key={role}><CardHeader><CardTitle>{t(role==="targets"?"create.targets":"create.references")}</CardTitle><CardDescription>{role==="targets"?"Un rodaje objetivo como máximo; también podés dejarlo sin asignar.":"Podés elegir varias referencias, incluso sin objetivo."}</CardDescription></CardHeader><CardContent><DataGrid label={role==="targets"?"Datos objetivos":"Datos de referencia"} rows={datasets.filter(d=>role==="references"||d.type==="run")} selection={role==="targets"?"single":"multiple"} selected={draft[role]} onSelect={(id,checked)=>toggleMulti(role,id,checked)} disabled={d=>role==="targets"&&draft.references.includes(d.id)||role==="references"&&draft.targets.includes(d.id)} columns={datasetColumns()} groups={["type","track","date"]} detail={detailDataset}/></CardContent></Card>)}
+<Card><CardHeader><CardTitle>{t("create.modules")}</CardTitle><CardDescription>Los módulos no elegibles indican requisitos pendientes.</CardDescription></CardHeader><CardContent><DataGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)} selection="multiple" selected={draft.modules} disabled={r=>!moduleAvailable(r)} onSelect={(id,checked)=>toggleMulti("modules",id,checked)} columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos"}]} detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent></Card>
 <Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card>
 </div>}
 
@@ -192,9 +230,9 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 <Card><CardHeader><CardTitle>{t("session.modules")}</CardTitle></CardHeader><CardContent><div className="pill-row">{active.modules.map(id=><Button key={id} variant="outline" size="sm" onClick={()=>{setModuleId(id);navigate("module")}}>{t("module."+id)}<ArrowRight size={14}/></Button>)}</div></CardContent></Card>
 </div>}
 
-{view==="source"&&active&&<Card><CardHeader><CardTitle>{t("source."+sourceKind)}</CardTitle><CardDescription>{t("session.subtitle")}</CardDescription></CardHeader><CardContent>{picker("sources",t("source."+sourceKind),t("create.many"),datasets.filter(d=>d.type===sourceKind).map(d=>({id:d.id,name:d.name,detail:d.date+" · "+d.observation})),sourceKind==="reference"?active.references:active.targets,true,(id,v)=>toggleSource(id,v))}</CardContent></Card>}
+{view==="source"&&active&&<Card><CardHeader><CardTitle>{t("source."+sourceKind)}</CardTitle><CardDescription>{t("session.subtitle")}</CardDescription></CardHeader><CardContent>{picker("sources",t("source."+sourceKind),t("create.many"),datasets.filter(d=>sourceKind==="reference"?d.type==="run":d.type===sourceKind).map(d=>({id:d.id,name:d.name,detail:d.date+" · "+d.observation})),sourceKind==="reference"?active.references:active.targets,true,(id,v)=>toggleSource(id,v))}</CardContent></Card>}
 
-{view==="context"&&active&&picker("context",t(names[contextKind]),t("create.one"),resources[ctxToRes[contextKind]],active[contextKind],false,(id)=>updateContext(id))}
+{view==="context"&&active&&<Card><CardHeader><CardTitle>{t(names[contextKind])}</CardTitle></CardHeader><CardContent><p>{itemName(active[contextKind],resources[ctxToRes[contextKind]])}</p><small>Contexto fijado al crear la sesión.</small></CardContent></Card>}
 
 {view==="module"&&active&&<div className="module-split"><Card className="module-top"><CardHeader><CardTitle>{t("module.demo")} · {t("module."+moduleId)}</CardTitle></CardHeader><CardContent><label className="field-label" htmlFor="lap">{t("module.lap")}</label><select id="lap" value={lap} onChange={e=>setLap(e.target.value)}><option value="best">{t("module.bestLap")}</option><option value="last">{t("module.lastLap")}</option><option value="reference">{t("module.referenceLap")}</option></select>
 {moduleId==="sectors"?<div className="sector-grid">{["1","2","3"].map((id,i)=><div className="sector" key={id}><small>Sector {id}</small><strong>{["32,14","37,20","33,04"][i]} s</strong><span>{["+0,22","−0,18","−0,17"][i]} s</span></div>)}</div>:
@@ -203,20 +241,73 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 </CardContent></Card>
 <Card className="module-chat"><CardHeader><CardTitle>{t("module.chat")}</CardTitle></CardHeader><div className="chat-messages"><div className="chat-bubble bot">{t("module.botIntro",{name:t("module."+moduleId)})}</div>{history.map((message,i)=><div key={i} className={"chat-bubble "+message.who}>{message.text}</div>)}</div><div className="chat-composer"><textarea aria-label={t("module.ask")} placeholder={t("module.ask")} value={chatDraft} onChange={e=>setChatDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat()}}}/><Button onClick={sendChat} disabled={!chatDraft.trim()}><Send size={16}/>{t("module.send")}</Button></div></Card></div>}
 
-{view==="library"&&<Card><CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{t("library.subtitle")}</CardDescription></CardHeader><CardContent><div className="resource-scroll" role="region" aria-label={t("nav."+kind)} tabIndex={0}><Table><TableHeader><TableRow><TableHead>{t("common.name")}</TableHead><TableHead>{t("common.detail")}</TableHead><TableHead>{t("common.actions")}</TableHead></TableRow></TableHeader><TableBody>{resources[kind].map(item=><TableRow key={item.id}><TableCell className="font-semibold">{item.name}</TableCell><TableCell>{item.detail}</TableCell><TableCell><div className="action-buttons"><Button size="sm" variant="outline" onClick={()=>editResource(item.id)}><Pencil size={14}/>{t("common.edit")}</Button><Button size="sm" variant="ghost" onClick={()=>deleteResource(item.id)} aria-label={t("common.delete")}><Trash2 size={15}/></Button></div></TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card>}
+
+{view==="library"&&<div className="resources-page"><Card><CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{t("library.subtitle")}</CardDescription></CardHeader><CardContent><DataGrid
+label={t("nav."+kind)} rows={inlineId==="__new__"&&kind!=="modules"?[inlineDraft,...resources[kind]]:resources[kind]}
+columns={kind==="pilots"?[
+ {key:"name",title:"Nombre",value:r=>r.name,render:r=>editable(r,"name")},
+ {key:"number",title:"Número",value:r=>r.number??"—",render:r=>editable(r,"number")}
+]:kind==="vehicles"?[
+ {key:"name",title:"Nombre",value:r=>r.name,render:r=>editable(r,"name")},
+ {key:"category",title:"Categoría",value:r=>r.category??"—",render:r=>editable(r,"category")},
+ {key:"brand",title:"Marca y modelo",value:r=>(r.manufacturer??"")+" "+(r.model??""),render:r=>inlineId===r.id?<div className="inline-pair">{editable(r,"manufacturer")}{editable(r,"model")}</div>:(r.manufacturer??"")+" "+(r.model??"")},
+ {key:"setups",title:"Setups",value:r=>r.setups?.length??0}
+]:kind==="tracks"?[
+ {key:"name",title:"Nombre",value:r=>r.name,render:r=>editable(r,"name")},
+ {key:"country",title:"País",value:r=>r.country??"—",render:r=>editable(r,"country"),filter:true},
+ {key:"province",title:"Provincia",value:r=>r.province??"—",render:r=>editable(r,"province"),filter:true},
+ {key:"type",title:"Tipo",value:r=>r.trackType??"—",render:r=>editable(r,"trackType")},
+ {key:"length",title:"Longitud km",value:r=>r.lengthKm??"—"},
+ {key:"segments",title:"Conjuntos",value:r=>r.segments??0}
+]:[
+ {key:"name",title:"Módulo",value:r=>r.name},
+ {key:"enabled",title:"Estado",value:r=>r.enabled!==false?"Activado":"Desactivado"},
+ {key:"needs",title:"Dependencias",value:r=>r.requirements?.length??0}
+]}
+groups={kind==="tracks"?["country","province"]:[]}
+detail={resourceInfo}
+actions={r=>kind==="modules"?<>
+<Button variant="outline" size="sm" onClick={()=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===r.id?{...x,enabled:x.enabled===false}:x)}))}>{r.enabled===false?"Activar":"Desactivar"}</Button>
+<Button size="sm" variant="outline" aria-label={"Configurar "+r.name} onClick={()=>setModuleSettings(r.id)}><Settings2 size={14}/></Button>
+<a className="dg-doc-link" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/MODULOS-ANALISIS.md" target="_blank" rel="noopener noreferrer" aria-label={"Documentación de "+r.name}><BookOpen size={14}/></a>
+</>:inlineId===r.id?<><Button size="sm" onClick={saveInline} disabled={!inlineDraft.name.trim()}>Guardar</Button><Button size="sm" variant="outline" onClick={()=>setInlineId(null)}>Cancelar</Button></>:<>
+<Button size="sm" variant="outline" onClick={()=>{setInlineId(r.id);setInlineDraft({...r})}}><Pencil size={14}/>Editar</Button>
+<Button size="sm" variant="ghost" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={14}/></Button>
+</>}
+ /></CardContent></Card>
+{kind==="modules"&&moduleSettings&&<Card><CardHeader><CardTitle>Configuración general · {itemName(moduleSettings,resources.modules)}</CardTitle></CardHeader><CardContent><p>La única configuración funcional de esta vista es la disponibilidad en la selección de módulos para nuevas sesiones.</p><Button size="sm" variant="outline" onClick={()=>setModuleSettings(null)}>Cerrar</Button></CardContent></Card>}
+</div>}
 
 {view==="resourceEdit"&&<Card className="edit-card"><CardHeader><CardTitle>{t(itemId?"common.edit":"form.newResource")}</CardTitle></CardHeader><CardContent><div className="stack-fields"><label>{t("common.name")}<Input value={editName} onChange={e=>setEditName(e.target.value)}/></label><label>{t("form.description")}<Input value={editDetail} onChange={e=>setEditDetail(e.target.value)}/></label><div className="pill-row"><Button variant="outline" onClick={()=>navigate("library")}>{t("common.cancel")}</Button><Button onClick={saveResource} disabled={!editName.trim()}>{t("common.save")}</Button></div></div></CardContent></Card>}
 
-{view==="datasets"&&<div className="data-page">
-<div className="stats-grid">{([{k:"data.records",v:visibleData.length,icon:Database},{k:"data.tracks",v:distinct("track"),icon:Layers3},{k:"data.pilots",v:distinct("pilot"),icon:UserRound},{k:"data.perday",v:average.toFixed(1).replace(".",","),icon:BarChart3}]).map(metric=><Card key={metric.k}><CardContent className="metric"><div><small>{t(metric.k)}</small><strong>{metric.v}</strong></div><metric.icon size={20}/></CardContent></Card>)}</div>
-<Card><CardHeader><CardTitle>{t("data.filters")}</CardTitle></CardHeader><CardContent><div className="filters"><div><label>{t("common.search")}</label><div className="search-wrap"><Search size={15}/><Input aria-label={t("common.search")} value={filter.query} onChange={e=>setFilter(f=>({...f,query:e.target.value}))}/></div></div><div><label>{t("data.type")}</label><select value={filter.type} onChange={e=>setFilter(f=>({...f,type:e.target.value}))}><option value="">{t("common.all")}</option>{sources.map(x=><option key={x} value={x}>{t("source."+x)}</option>)}</select></div><div><label>{t("nav.pilots")}</label><select value={filter.pilot} onChange={e=>setFilter(f=>({...f,pilot:e.target.value}))}><option value="">{t("common.all")}</option>{resources.pilots.map(x=><option value={x.id} key={x.id}>{x.name}</option>)}</select></div><div><label>{t("nav.tracks")}</label><select value={filter.track} onChange={e=>setFilter(f=>({...f,track:e.target.value}))}><option value="">{t("common.all")}</option>{resources.tracks.map(x=><option value={x.id} key={x.id}>{x.name}</option>)}</select></div></div></CardContent></Card>
-<Card className="records-card"><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>{t("data.matches",{count:visibleData.length,total:datasets.length})}</CardDescription></CardHeader><CardContent><div className="records-scroll" role="region" aria-label={t("nav.library")} tabIndex={0}><Table><TableHeader><TableRow><TableHead>{t("common.name")}</TableHead><TableHead>{t("common.date")}</TableHead><TableHead>{t("common.time")}</TableHead><TableHead>{t("common.observations")}</TableHead><TableHead>{t("common.actions")}</TableHead></TableRow></TableHeader><TableBody>{visibleData.map(d=><TableRow key={d.id}><TableCell className="font-semibold">{d.name}</TableCell><TableCell>{d.date}</TableCell><TableCell>{d.time}</TableCell><TableCell>{d.observation}</TableCell><TableCell><div className="action-buttons"><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>{t("common.view")}</Button><Button size="sm" variant="outline" onClick={()=>editDataset(d.id)}>{t("common.edit")}</Button><Button size="sm" variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/>{t("common.share")}</Button><Button size="sm" variant="ghost" onClick={()=>removeDataset(d.id)} aria-label={t("common.delete")}><Trash2 size={15}/></Button></div></TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card></div>}
 
-{view==="dataDetail"&&targetDataset&&<Card><CardHeader><CardTitle>{targetDataset.name}</CardTitle><div className="action-buttons"><Button onClick={()=>editDataset(targetDataset.id)}><Pencil size={15}/>{t("common.edit")}</Button><Button variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={15}/>{t("common.share")}</Button></div></CardHeader><CardContent><div className="summary-grid">{([["common.name",targetDataset.name],["common.date",targetDataset.date],["common.time",targetDataset.time],["common.observations",targetDataset.observation],["data.type",t("source."+targetDataset.type)],["nav.pilots",itemName(targetDataset.pilot,resources.pilots)],["nav.tracks",itemName(targetDataset.track,resources.tracks)]] as [string,string][]).map(([key,val])=><div key={key} className="summary-item"><small>{t(key)}</small><strong>{val}</strong></div>)}</div></CardContent></Card>}
+{view==="datasets"&&<div className="data-page">
+<div className="stats-grid stats-data">
+<Card><CardContent className="metric"><div><small>Registros</small><strong>{datasets.length}</strong></div><Database size={20}/></CardContent></Card>
+<Card><CardContent className="metric"><div><small>Circuitos</small><strong>{distinctTracks}</strong></div><Layers3 size={20}/></CardContent></Card>
+<Card><CardContent className="source-stat"><strong>Fuentes de datos</strong><div>{(["run","weather","timing"] as const).map(tp=><span key={tp}>{t("source."+tp)}: <b>{datasets.filter(d=>d.type===tp).length}</b></span>)}</div></CardContent></Card>
+<Card className="storage-stat"><CardContent><HardDrive size={19}/><strong>Almacenamiento</strong><span>{storageUsed} MB usados / {storageTotal} MB totales</span><progress aria-label="Almacenamiento usado" value={storageUsed} max={storageTotal}/></CardContent></Card>
+<Card className="docs-stat"><CardContent><BookOpen size={19}/><strong>Documentación</strong><a target="_blank" rel="noopener noreferrer" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/IMPORTACION-DATOS.md">Cómo importar datos</a><a target="_blank" rel="noopener noreferrer" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/MODELO-DATOS.md">Cómo funcionan los registros</a></CardContent></Card>
+</div>
+<Card><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>Filtros avanzados, agrupaciones y observaciones editables.</CardDescription></CardHeader><CardContent>
+<DataGrid label="Biblioteca de datos" rows={datasets} columns={[
+ {key:"name",title:"Nombre",value:d=>d.name},
+ {key:"id",title:"ID",value:d=>d.id},
+ {key:"date",title:"Fecha",value:d=>d.date},
+ {key:"time",title:"Hora",value:d=>d.time},
+ {key:"track",title:"Circuito",value:d=>itemName(d.track,resources.tracks),filter:true},
+ {key:"type",title:"Tipo de origen",value:d=>t("source."+d.type),filter:true},
+ {key:"month",title:"Mes",value:d=>d.date.slice(0,7)},
+ {key:"observation",title:"Observaciones",value:d=>d.observation,render:d=><Input aria-label={"Observaciones de "+d.name} defaultValue={d.observation} onBlur={e=>updateObservation(d.id,e.target.value)}/>}
+ ]} groups={["track","type","month"]} detail={detailDataset}
+ actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/></Button><Button size="sm" variant="ghost" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={14}/></Button></>}/>
+</CardContent></Card></div>}
+
+{view==="dataDetail"&&targetDataset&&<Card><CardHeader><CardTitle>{targetDataset.name}</CardTitle><div className="action-buttons"><Button onClick={()=>editDataset(targetDataset.id)}><Pencil size={15}/>{t("common.edit")}</Button><Button variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={15}/>{t("common.share")}</Button></div></CardHeader><CardContent><div className="summary-grid">{([["common.name",targetDataset.name],["common.date",targetDataset.date],["common.time",targetDataset.time],["common.observations",targetDataset.observation],["data.type",t("source."+targetDataset.type)],["data.type",targetDataset.device??"—"],["nav.tracks",itemName(targetDataset.track,resources.tracks)]] as [string,string][]).map(([key,val])=><div key={key} className="summary-item"><small>{t(key)}</small><strong>{val}</strong></div>)}</div></CardContent></Card>}
 
 {view==="dataEdit"&&dataDraft&&<Card className="edit-card"><CardHeader><CardTitle>{t("common.edit")}</CardTitle></CardHeader><CardContent><div className="stack-fields">
 {(["name","date","time","observation"] as const).map(k=><label key={k}>{t(k==="observation"?"common.observations":"common."+k)}<Input type={k==="date"?"date":k==="time"?"time":"text"} value={dataDraft[k]} onChange={e=>setDataDraft(old=>old?{...old,[k]:e.target.value}:old)}/></label>)}
-<label>{t("data.type")}<select value={dataDraft.type} onChange={e=>setDataDraft(old=>old?{...old,type:e.target.value as SourceKind}:old)}>{sources.map(x=><option key={x} value={x}>{t("source."+x)}</option>)}</select></label>
+<label>{t("data.type")}<select value={dataDraft.type} onChange={e=>setDataDraft(old=>old?{...old,type:e.target.value as Dataset["type"]}:old)}>{(["run","weather","timing"] as const).map(x=><option key={x} value={x}>{t("source."+x)}</option>)}</select></label>
 <div className="pill-row"><Button variant="outline" onClick={()=>navigate("dataDetail")}>{t("common.cancel")}</Button><Button onClick={saveDataset}>{t("common.save")}</Button></div></div></CardContent></Card>}
 
 {view==="import"&&<Card className="edit-card"><CardHeader><CardTitle>{importStep===1?t("nav.import"):t("import.prep")}</CardTitle><CardDescription>{t(importStep===1?"import.noRead":"import.prepHint")}</CardDescription></CardHeader><CardContent>{importStep===1?<div className="stack-fields"><label>{t("import.file")}<Input type="file" accept=".csv,.txt,.xlsx,.xls,.json,.xrk,.xrz" onChange={e=>setFilename(e.target.files?.[0]?.name??"")}/></label><label>{t("import.type")}<select value={fileType} onChange={e=>setFileType(e.target.value)}><option value="">{t("import.select")}</option>{["CSV","TXT","XLSX","XRK","XRZ","Otro"].map(x=><option key={x}>{x}</option>)}</select></label><Button disabled={!filename||!fileType} onClick={()=>setImportStep(2)}>{t("import.continue")}<ArrowRight size={16}/></Button></div>:<div className="stack-fields"><p>{filename} · {fileType}</p><p>{t("import.prepHint")}</p><Button variant="outline" onClick={()=>setImportStep(1)}>{t("common.back")}</Button></div>}</CardContent></Card>}

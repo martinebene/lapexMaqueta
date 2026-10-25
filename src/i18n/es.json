@@ -23,9 +23,9 @@
   "nav.context": "Contexto",
   "nav.recordHelp": "Seleccioná un registro para abrirlo",
   "source.weather": "Datos meteorológicos",
-  "source.run": "Rodaje analizado",
+  "source.run": "Rodaje",
   "source.reference": "Rodajes de referencia",
-  "source.timing": "Cronometraje oficial",
+  "source.timing": "Cronometraje",
   "module.best": "Mejor vuelta",
   "module.gforce": "Fuerza G",
   "module.sectors": "Análisis de parciales",
@@ -97,7 +97,7 @@
   "library.empty": "No hay registros.",
   "data.subtitle": "Estadísticas y gestión de conjuntos de datos importados.",
   "data.records": "Registros",
-  "data.tracks": "Circuitos distintos",
+  "data.tracks": "Circuitos",
   "data.pilots": "Pilotos distintos",
   "data.perday": "Archivos por día",
   "data.perdayHint": "Promedio por día con registros",
@@ -135,5 +135,6 @@
   "stats.laps": "Vueltas",
   "stats.channels": "Canales",
   "stats.seconds": "Segundos",
-  "stats.delta": "Diferencia"
+  "stats.delta": "Diferencia",
+  "create.setup": "Setup del vehículo"
 }
