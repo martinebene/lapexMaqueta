@@ -2,7 +2,7 @@
 import { useState } from "react"
 import type { ChangeEvent, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Search, BarChart3, Send, X, Database, Layers3, UserRound, BookOpen, HardDrive, Settings2 } from "lucide-react"
+import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Send, X, Database, Layers3, BookOpen, HardDrive, Settings2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -80,7 +80,6 @@ return next;
 })
 }
 function openLibrary(k:ResourceKind){setKind(k);setInlineId(null);setModuleSettings(null);navigate("library","resources")}
-function editResource(id:string|null){const item=resources[kind].find(x=>x.id===id);setItemId(id);setEditName(item?.name??"");setEditDetail(item?.detail??"");navigate("resourceEdit","resources")}
 function saveResource(){if(!editName.trim())return;setResources(old=>({...old,[kind]:itemId?old[kind].map(x=>x.id===itemId?{...x,name:editName.trim(),detail:editDetail}:x):[...old[kind],{id:"r"+Date.now(),name:editName.trim(),detail:editDetail}]}));navigate("library","resources");show(t("form.saved"))}
 function deleteResource(id:string){if(!window.confirm(t("data.deleteConfirm")))return;setResources(old=>({...old,[kind]:old[kind].filter(x=>x.id!==id)}));show(t("data.deleted"))}
 function editDataset(id:string){const d=datasets.find(x=>x.id===id);if(!d)return;setDatasetId(id);setDataDraft({...d});navigate("dataEdit","data")}
@@ -93,7 +92,6 @@ const ref=sourceKind==="reference";const key=ref?"references":"targets";const ot
 return {...s,[key]:checked?(ref?uniq([...s[key],id]):[id]):s[key].filter(x=>x!==id),[other]:checked?s[other].filter(x=>x!==id):s[other]};
 }))
 }
-function updateContext(_value:string){show("El contexto queda bloqueado al iniciar la sesión.")}
 function sendChat(){if(!chatDraft.trim()||!active)return;const key=active.id+"/"+moduleId;const prompt=chatDraft.trim();setChats(old=>({...old,[key]:[...(old[key]??[]),{who:"user",text:prompt},{who:"bot",text:t("module.botReply",{name:t("module."+moduleId)})}]}));setChatDraft("")}
 function profileAction(action:"usage"|"membership"|"switch"|"signout"){setModal(action)}
 function beginInline(){setInlineId("__new__");setInlineDraft({id:"__new__",name:"",detail:""})}
