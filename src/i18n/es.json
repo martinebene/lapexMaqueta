@@ -136,5 +136,7 @@
   "stats.channels": "Canales",
   "stats.seconds": "Segundos",
   "stats.delta": "Diferencia",
-  "create.setup": "Setup del vehículo"
+  "create.setup": "Setup del vehículo",
+  "data.linkedDelete": "El registro está vinculado a una sesión y no puede eliminarse desde esta maqueta.",
+  "data.device": "Dispositivo"
 }
