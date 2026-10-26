@@ -442,8 +442,7 @@ test("Biblioteca: agrupación inicialmente abierta, grupo sin circuito y contado
  await side.getByRole("button",{name:"Biblioteca de datos"}).click()
  await page.getByRole("combobox",{name:"Agrupar Biblioteca de datos"}).selectOption("track")
  const area=page.getByRole("region",{name:"Registros de Biblioteca de datos"})
- console.log("GROUP_DEBUG", await area.locator("tbody").evaluate(el=>({text:(el as HTMLElement).innerText.slice(0,1300),buttons:Array.from(el.querySelectorAll("button")).filter(b=>/grupo/i.test(b.getAttribute("aria-label")??"")).map(b=>({label:b.getAttribute("aria-label"),row:b.closest("tr")?.innerText.slice(0,140)})).slice(0,12)})))
- const missing=area.locator("tbody tr").filter({has:area.getByRole("button",{name:"Contraer grupo Sin circuito"})})
+ const missing=area.locator('tbody tr:has(button[aria-label="Contraer grupo Sin circuito"])')
  await expect(missing).toBeVisible()
  await expect(missing).toContainText("Sin circuito")
  await expect(missing).toContainText("(1)")
@@ -514,7 +513,7 @@ test("Vehículo y setups: selección vinculada, columnas, altura y estado vacío
  await expect(setups.getByRole("radio")).toHaveCount(0)
  await expect(page.getByRole("status").filter({hasText:"Este vehículo no tiene setups cargados."})).toBeVisible()
  await vehicles.locator("tbody tr").filter({hasText:"GT-04"}).click()
- await setups.getByRole("textbox",{name:"Buscar en Setups del vehículo"}).fill("Clasificación")
+ await page.getByRole("textbox",{name:"Buscar en Setups del vehículo"}).fill("Clasificación")
  await expect(setups.getByRole("radio")).toHaveCount(1)
 })
 
