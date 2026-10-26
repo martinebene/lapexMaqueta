@@ -269,8 +269,17 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   </div></CardContent>
  </Card>
  <Card className="session-context-card">
-  <CardHeader><SessionCardHeading title={t("create.track")} complete={Boolean(draft.track)}/></CardHeader>
-  <CardContent><ShadcnGrid label="Circuitos disponibles" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"distance",title:"Distancia km",value:r=>r.distanceKm??"—"},{key:"type",title:"Tipo",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]}/></CardContent>
+  <CardHeader><SessionCardHeading title={t("create.track")} complete={Boolean(draft.track)}/><CardDescription>El circuito es obligatorio; las segmentaciones son opcionales.</CardDescription></CardHeader>
+  <CardContent><div className="vehicle-card-grid track-card-grid">
+   <Card className="vehicle-inner-card">
+    <CardHeader><CardTitle>Seleccionar circuito</CardTitle><CardDescription>Un circuito por sesión</CardDescription></CardHeader>
+    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]}/></CardContent>
+   </Card>
+   <Card className="vehicle-inner-card">
+    <CardHeader><CardTitle>Conjuntos de segmentación</CardTitle><CardDescription>{draft.track?"Opcional: uno o varios conjuntos":"Elegí primero un circuito"}</CardDescription></CardHeader>
+    <CardContent><ShadcnGrid label="Segmentaciones del circuito" tableHeight="264px" rows={resources.tracks.find(r=>r.id===draft.track)?.segmentSets??[]} selection="multiple" selected={draft.segmentSetIds??[]} onSelect={(id,checked)=>setDraft(d=>({...d,segmentSetIds:checked?uniq([...d.segmentSetIds,id]):d.segmentSetIds.filter(x=>x!==id)}))} emptyMessage={draft.track?"Este circuito no tiene conjuntos cargados":"Elegí primero un circuito."} columns={[{key:"name",title:"Nombre",value:x=>x.name||"Sin nombre"},{key:"type",title:"Tipo",value:x=>x.type==="analysis"?"Parciales":"Nomenclatura de curvas"}]}/></CardContent>
+   </Card>
+  </div></CardContent>
  </Card>
 </div>
 {(["targets","references"] as const).map(role=>{
@@ -283,8 +292,11 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
  </Card>
 })}
 <Card className="session-context-card">
- <CardHeader><SessionCardHeading title={t("create.modules")} complete={draft.modules.length>0&&draft.modules.every(id=>{const r=resources.modules.find(x=>x.id===id);return Boolean(r&&r.enabled!==false&&moduleAvailable(r))})}/><CardDescription>Los módulos no elegibles indican requisitos pendientes.</CardDescription></CardHeader>
- <CardContent><ShadcnGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)} selection="multiple" selected={draft.modules} disabled={r=>!moduleAvailable(r)} onSelect={(id,checked)=>toggleMulti("modules",id,checked)} columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos",status:r=>moduleAvailable(r)?"success":"error"}]} detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent>
+ <CardHeader><SessionCardHeading title={t("create.modules")} complete={draft.modules.length>0&&draft.modules.every(id=>{const r=resources.modules.find(x=>x.id===id);return Boolean(r&&r.enabled!==false&&moduleAvailable(r))})}/><CardDescription>Activá los módulos habilitados. Los que incumplen requisitos permanecen desactivados.</CardDescription></CardHeader>
+ <CardContent><ShadcnGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)}
+ leadingControl={r=><Switch aria-label={"Activar módulo "+r.name} checked={draft.modules.includes(r.id)&&moduleAvailable(r)} disabled={!moduleAvailable(r)} onCheckedChange={checked=>toggleMulti("modules",r.id,checked)}/>}
+ columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos",status:r=>moduleAvailable(r)?"success":"error"}]}
+ detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent>
 </Card>
 <Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card>
 </div>}
