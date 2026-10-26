@@ -18,9 +18,13 @@ Sólo existe una maqueta vigente: rama `prototipo/sidebar-07`, publicada en http
 
 **Integración autorizada y realizada:** los siete usos anteriores de `DataGrid` se sustituyeron por `src/ShadcnGrid.tsx` basado en `ShadcnTable`/`useShadcnTable` (edición Base UI). Se eliminó `src/DataGrid.tsx`. Cada uso mantiene sus columnas, selección, filtros, agrupación, acciones, detalle y edición externa. Los componentes nuevos del registro se copiaron selectivamente, sin sobrescribir componentes shadcn/ui existentes; no repetir `--overwrite` sobre los archivos compartidos. La interfaz actual queda sujeta a revisión visual del director y nuevas iteraciones de diseño. Ver [criterios](docs/CRITERIOS-DISENO-FRONTEND.md#decisión-de-tablas-avanzadas--2026-10-26).
 
+## Storybook — mantenimiento obligatorio
+
+El catálogo Storybook usa componentes originales del repositorio y se publica desde el mismo workflow que la maqueta (un solo commit Pages), en /lapexMaqueta/storybook/. Configuración: .storybook/; historias: src/stories/*.stories.tsx. Los estilos compartidos se importan desde src/index.css y src/layout.css con la clase style-nova. **Al agregar o modificar sustancialmente un componente reutilizable, actualizar sus historias, variantes y estados en el mismo cambio.** No crear implementaciones paralelas para Storybook, no añadir Chromatic u otros servicios externos, ni convertir páginas completas en historias.
+
 ## Verificación
 
-Para cambios de código: `pnpm build`, `pnpm test:e2e`, pruebas específicas de selección, filtros, agrupación, edición y detalle, y revisión del preview. No afirmar pruebas visuales no ejecutadas.
+Para cambios de código: `pnpm build`, `pnpm build:storybook`, `pnpm test:e2e`, `pnpm test:storybook:smoke`, pruebas específicas de selección, filtros, agrupación, edición y detalle, y revisión del preview. No afirmar pruebas visuales no ejecutadas.
 
 ## Proveniencia de las skills
 

@@ -3,9 +3,10 @@
 **Única variante vigente** aprobada para iteración visual y funcional. No es el código de producción ni implica GO de los hitos de Lapex2.
 
 - **Vista previa canónica:** https://martinebene.github.io/lapexMaqueta/maqueta/
+- **Catálogo Storybook:** https://martinebene.github.io/lapexMaqueta/storybook/
 - **Entrada alternativa:** https://martinebene.github.io/lapexMaqueta/ (redirecciona a la vista previa)
 - **Fuente activa:** rama `prototipo/sidebar-07`.
-- **Publicación:** GitHub Actions `.github/workflows/maqueta.yml` compila, prueba y publica exclusivamente `/maqueta/` en `main`.
+- **Publicación:** GitHub Actions `.github/workflows/maqueta.yml` publica `/maqueta/` y `/storybook/` en **un único commit** a `main`. No hay dos despliegues que compitan.
 - **Stack:** React, TypeScript, Vite, Tailwind CSS, shadcn/ui (Base UI, estilo Nova), Lucide y react-i18next.
 - **Tests:** `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm test:e2e`.
 
@@ -31,3 +32,15 @@ Instaladas en el repositorio: [shadcn/ui](.agents/skills/shadcn/SKILL.md) y [Sha
 ## Conservación de una única variante
 
 La HTML inicial, React Nova y el anterior sitio `/sidebar-07/` se retiraron de la publicación activa y de los flujos de trabajo. El historial de Git conserva los commits anteriores sin mantener una segunda aplicación visible.
+
+## Storybook de componentes reales
+
+Storybook 10.6.3 con React/Vite reutiliza los archivos de src/components/ui y el adaptador src/ShadcnGrid.tsx. Importa src/index.css, src/layout.css y el tema .style-nova; **no duplica los componentes** ni sus estilos. Las historias editables están en src/stories/*.stories.tsx.
+
+Comandos para agentes o CI (no hay que instalar nada en los equipos del director):
+- pnpm storybook — catálogo de desarrollo en puerto 6006.
+- pnpm build:storybook — salida estática storybook-static/.
+- pnpm test:storybook:smoke — navegador Chromium sobre Storybook compilado con el prefijo Pages /lapexMaqueta/storybook/.
+- pnpm build y pnpm test:e2e — las verificaciones originales de la maqueta.
+
+**Regla de continuidad:** todo componente reutilizable nuevo o modificado significativamente debe crear o actualizar su historia Storybook en el mismo cambio, incluyendo estados pertinentes. Las pantallas completas siguen revisándose únicamente en la maqueta navegable. No se incorporan servicios de pago ni otros destinos de hosting.
