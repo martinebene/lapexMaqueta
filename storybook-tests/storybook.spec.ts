@@ -54,7 +54,7 @@ test("Storybook: buscador usa un borde único y permite escribir",async({page})=
 })
 
 test("Storybook: tabla real con filtros y agrupación interactivos",async({page})=>{
-  await page.goto(base+"/iframe.html?id=tablas-shadcn-grid--con-filtro-y-agrupacion&viewMode=story")
+  await page.goto(base+"/iframe.html?id=tablas-shadcngrid--con-filtro-y-agrupacion&viewMode=story")
   const group=page.getByRole("combobox",{name:"Agrupar Registros de prueba"})
   await expect(group).toBeVisible()
   await group.selectOption("track")
