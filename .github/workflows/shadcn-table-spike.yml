@@ -38,6 +38,8 @@ jobs:
           HTML
           cat > src/table-spike.tsx <<'TSX'
           import {useMemo} from "react"
+          import "./index.css"
+          import "./layout.css"
           import {createRoot} from "react-dom/client"
           import {ShadcnTable,useShadcnTable} from "./components/ui/shadcn-table"
           type Row = {id:string;name:string;category:string;year:number}
