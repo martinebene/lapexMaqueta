@@ -32,7 +32,7 @@ function SectionStatus({title,complete}:{title:string;complete:boolean}){
  </span>
 }
 function SessionCardHeading({title,complete}:{title:string;complete:boolean}){
- return <div className="session-card-title"><SectionStatus title={title} complete={complete}/><CardTitle>{title}</CardTitle></div>
+ return <div className="session-card-title"><SectionStatus title={title} complete={complete}/><CardTitle role="heading" aria-level={2}>{title}</CardTitle></div>
 }
 
 export default function App(){
