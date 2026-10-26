@@ -1,0 +1,69 @@
+name: Maqueta Lapex
+on:
+  push:
+    branches:
+      - prototipo/sidebar-07
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+jobs:
+  publish-maqueta:
+    name: Compilar y publicar Maqueta Lapex
+    runs-on: ubuntu-latest
+    concurrency:
+      group: lapex-maqueta-preview
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+      - name: Validar TypeScript y compilar
+        run: pnpm run build
+      - name: Publicar solo /maqueta/
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git worktree add --detach /tmp/lapex-maqueta-pages origin/main
+          mkdir -p /tmp/lapex-maqueta-pages/maqueta
+          rsync -a --delete dist/ /tmp/lapex-maqueta-pages/maqueta/
+          rm -rf /tmp/lapex-maqueta-pages/sidebar-07
+          printf '%s\n' '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0; url=./maqueta/"><link rel="canonical" href="https://martinebene.github.io/lapexMaqueta/maqueta/"><title>Lapex · Maqueta</title><script>location.replace(new URL("./maqueta/", location.href))</script></head><body><p>Vista previa vigente: <a href="./maqueta/">Maqueta Lapex</a>.</p></body></html>' > /tmp/lapex-maqueta-pages/index.html
+          git -C /tmp/lapex-maqueta-pages add -A index.html maqueta sidebar-07
+          if ! git -C /tmp/lapex-maqueta-pages diff --cached --quiet; then
+            git -C /tmp/lapex-maqueta-pages config user.name "github-actions[bot]"
+            git -C /tmp/lapex-maqueta-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C /tmp/lapex-maqueta-pages commit -m "build(maqueta): actualizar vista previa Maqueta Lapex"
+            git -C /tmp/lapex-maqueta-pages push origin HEAD:main
+          fi
+      - name: Solicitar Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lapex-maqueta-dist
+          path: dist/
+  test-browser:
+    name: Playwright interfaz Maqueta Lapex
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install chromium
+      - run: pnpm test:e2e

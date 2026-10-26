@@ -1,11 +1,11 @@
-# Lapex — maqueta interactiva (Sidebar 07)
+# Lapex — maqueta interactiva
 
 **Única variante vigente** aprobada para iteración visual y funcional. No es el código de producción ni implica GO de los hitos de Lapex2.
 
-- **Vista previa canónica:** https://martinebene.github.io/lapexMaqueta/sidebar-07/
+- **Vista previa canónica:** https://martinebene.github.io/lapexMaqueta/maqueta/
 - **Entrada alternativa:** https://martinebene.github.io/lapexMaqueta/ (redirecciona a la vista previa)
 - **Fuente activa:** rama `prototipo/sidebar-07`.
-- **Publicación:** GitHub Actions `.github/workflows/sidebar-07.yml` compila, prueba y publica exclusivamente `/sidebar-07/` en `main`.
+- **Publicación:** GitHub Actions `.github/workflows/maqueta.yml` compila, prueba y publica exclusivamente `/maqueta/` en `main`.
 - **Stack:** React, TypeScript, Vite, Tailwind CSS, shadcn/ui (Base UI, estilo Nova), Lucide y react-i18next.
 - **Tests:** `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm test:e2e`.
 
@@ -26,4 +26,4 @@ Shadcn Table es una implementación de terceros: evaluar adopción y compatibili
 
 ## Conservación de una única variante
 
-La HTML inicial y React Nova se retiraron de la publicación activa y de los flujos de trabajo. El historial de Git conserva los commits anteriores sin mantener una segunda aplicación visible.
+La HTML inicial, React Nova y el anterior sitio `/sidebar-07/` se retiraron de la publicación activa y de los flujos de trabajo. El historial de Git conserva los commits anteriores sin mantener una segunda aplicación visible.

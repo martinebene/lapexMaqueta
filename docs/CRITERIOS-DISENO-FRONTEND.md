@@ -39,7 +39,7 @@ Utilizar los componentes establecidos del frontend definitivo para que la maquet
 
 ## Estado operativo y mantenimiento
 
-La versión **Sidebar 07** es la única maqueta activa. Su fuente se mantiene en `prototipo/sidebar-07` y su única publicación funcional en `/sidebar-07/`, con redirección desde la URL raíz. No generar variantes paralelas sin autorización expresa.
+La versión **Maqueta Lapex** es la única maqueta activa. La rama técnica original `prototipo/sidebar-07` se conserva por continuidad histórica; no constituye una variante separada. La publicación está en `/maqueta/` y la URL raíz redirige allí. No generar variantes paralelas sin autorización expresa.
 
 La implementación actual de `src/DataGrid.tsx` es una **composición propia sobre `Table`**, no el paquete de terceros Shadcn Table ni el patrón oficial completo de TanStack Table. Al iterar, evaluar primero reutilizar la implementación documentada más próxima antes de ampliar ese código o sumar CSS particular. No alterar reglas del producto para adecuarlas al prototipo.
 
