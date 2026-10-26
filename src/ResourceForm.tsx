@@ -56,14 +56,14 @@ export function ResourceForm({kind,initial,editing,onSave,onCancel}:Props){
    if(!(value.setups??[]).length||value.setups?.some(s=>!s.name.trim()))return setValidation("El vehículo debe tener al menos un setup con nombre.")
   }
   if(kind==="tracks"&&!value.trackType)return setValidation("Elegí el tipo de trazado.")
-  if(kind==="pilots"&&(["experience","speed"] as const).some(k=>value[k]!=null&&(!Number.isInteger(value[k])||value[k]!>=1||value[k]!>10)))return setValidation("Las valoraciones deben ser números enteros entre 1 y 10.")
+  if(kind==="pilots"&&(["experience","speed"] as const).some(k=>value[k]!=null&&(!Number.isInteger(value[k])||(value[k] as number)<1||(value[k] as number)>10)))return setValidation("Las valoraciones deben ser números enteros entre 1 y 10.")
   const attrs=Object.fromEntries(attributesText.split("\n").map(t=>t.split(":").map(s=>s.trim())).filter(([k,v])=>k&&v))
   onSave({...value,name:value.name.trim(),tags:tagsText.split(",").map(s=>s.trim()).filter(Boolean),customAttributes:attrs,segments:value.segmentSets?.length??value.segments})
  }
  return <Card className="resource-form-card">
   <CardHeader><CardTitle>{editing?"Editar":"Nuevo"} · {kind==="pilots"?"Piloto":kind==="vehicles"?"Vehículo":"Circuito"}</CardTitle><CardDescription>Los campos con * son obligatorios. Los demás son opcionales, según la especificación del producto.</CardDescription></CardHeader>
   <CardContent>
-   <form className="resource-form" onSubmit={e=>{e.preventDefault();submit()}}>
+   <form noValidate className="resource-form" onSubmit={e=>{e.preventDefault();submit()}}>
     <div className="resource-form-fields">
      {fields.map(f=>{
       const key=f.key as keyof Resource
