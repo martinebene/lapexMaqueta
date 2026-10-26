@@ -8,7 +8,7 @@ import type { Resource, ResourceKind, Setup, SegmentSet } from "./data"
 
 const vehicleTypes=["Moto de velocidad","Karting","Auto de Fórmula","Auto de Turismo","Vehículo de Rally"]
 type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void}
-type StrKey="name"|"detail"|"number"|"shortName"|"nickname"|"nationality"|"city"|"province"|"country"|"birthDate"|"photo"|"email"|"phone"|"description"|"drivingStyle"|"manufacturer"|"model"|"enginePower"|"category"|"vehicleType"|"drivenWheels"|"location"|"direction"
+type StrKey="name"|"detail"|"number"|"shortName"|"nickname"|"nationality"|"city"|"province"|"country"|"birthDate"|"photo"|"email"|"phone"|"description"|"drivingStyle"|"manufacturer"|"model"|"enginePower"|"category"|"vehicleType"|"drivenWheels"|"location"|"direction"|"trackType"
 type NumericKey="experience"|"speed"|"referenceWeight"|"handicapBallastWeight"|"dragCoefficient"|"lengthKm"|"distanceKm"
 type FormField={key:StrKey|NumericKey;label:string;required?:boolean;type?:"date"|"email"|"number"|"url"|"text"|"textarea"|"select";options?:string[];note?:string}
 const pilotFields:FormField[]=[
@@ -28,7 +28,7 @@ const vehicleFields:FormField[]=[
  {key:"description",label:"Descripción",type:"textarea"}
 ]
 const trackFields:FormField[]=[
- {key:"name",label:"Nombre",required:true},{key:"trackType",label:"Trazado",type:"select",required:true,options:["Cerrado","Abierto"]} as FormField,
+ {key:"name",label:"Nombre",required:true},{key:"trackType",label:"Trazado",type:"select",required:true,options:["Cerrado","Abierto"]},
  {key:"direction",label:"Sentido de recorrido"},
  {key:"country",label:"País"},{key:"province",label:"Provincia / jurisdicción"},{key:"city",label:"Localidad"},
  {key:"location",label:"Ubicación / referencia geográfica"},
