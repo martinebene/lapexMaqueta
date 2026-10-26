@@ -30,7 +30,7 @@ const meta = {
   args: { label:"Registros de prueba", rows:records, columns },
   parameters: { layout: "fullscreen" },
   decorators: [(Story: () => React.ReactNode) => <div className="mx-auto w-full max-w-[1150px] p-5"><Story/></div>],
-} satisfies Meta<typeof ShadcnGrid>
+} satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
 export const Normal: Story = {}
