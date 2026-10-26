@@ -235,7 +235,7 @@ test("Buscadores InputGroup estándar: sin doble borde en todas las tablas",asyn
  await page.goto("/")
  const side=page.locator("[data-sidebar='sidebar']").first()
  const inspect=async(label:string)=>{
-  const grid=page.getByRole("region",{name:label}).locator(".dg-search-row").first()
+  const grid=page.locator("section.shadcn-grid").filter({has:page.getByRole("region",{name:label})}).locator(".dg-search-row").first()
   const wrapper=grid.locator('[data-slot="input-group"]')
   const input=wrapper.locator('[data-slot="input-group-control"]')
   const addon=wrapper.locator('[data-slot="input-group-addon"]')
