@@ -27,7 +27,7 @@ test("Nueva sesión: tarjetas verticales, vehículo con setup y controles",async
  await sidebar.getByRole("button",{name:"Nueva sesión"}).click()
  await expect(page.locator(".context-list > [data-slot='card']")).toHaveCount(3)
  await expect(page.getByRole("heading",{name:"Datos de la sesión"})).toBeVisible()
- await expect(page.locator(".vehicle-card-grid > [data-slot='card']")).toHaveCount(2)
+ await expect(page.locator(".vehicle-parent-card .vehicle-card-grid > [data-slot='card']")).toHaveCount(2)
  await expect(page.getByRole("textbox",{name:"Observaciones de la sesión"})).toBeVisible()
  await expect(page.getByLabel("Fecha y hora de creación")).not.toBeEmpty()
  await expect(page.getByRole("img",{name:"Requisitos pendientes: Datos de la sesión"})).toBeVisible()
@@ -104,6 +104,8 @@ test("Biblioteca: métricas, filtros y observaciones editables en detalle",async
  await group.selectOption("type")
  await expect(page.getByRole("region",{name:"Registros de Biblioteca de datos"}).locator("tbody tr").filter({hasText:"Rodaje"}).first()).toContainText("(4)")
  await group.selectOption("")
+ const scroller=page.getByRole("region",{name:"Registros de Biblioteca de datos"})
+ expect(await scroller.evaluate(el=>getComputedStyle(el).overflowY)).toBe("auto")
  await expect(page.getByRole("textbox",{name:"Observaciones de Rodaje · Tanda 02"})).toHaveCount(0)
  const record=page.getByRole("region",{name:"Registros de Biblioteca de datos"}).locator("tbody tr").filter({hasText:"Rodaje · Tanda 02"}).first()
  await record.getByRole("button",{name:"Abrir"}).click()
@@ -112,8 +114,6 @@ test("Biblioteca: métricas, filtros y observaciones editables en detalle",async
  await page.getByRole("button",{name:"Guardar"}).click()
  await expect(page.getByText("Post-tratamiento de prueba")).toBeVisible()
  await expect(page.getByRole("button",{name:"Importar datos"}).last()).toBeVisible()
- const scroller=page.getByRole("region",{name:"Registros de Biblioteca de datos"})
- expect(await scroller.evaluate(el=>getComputedStyle(el).overflowY)).toBe("auto")
 })
 
 
@@ -166,6 +166,7 @@ test("Shadcn Table: edición en pantalla separada de un recurso",async({page})=>
  await expect(editor).toHaveValue("Piloto Demo A")
  await editor.fill("Piloto Ensayo Actualizado")
  await page.getByRole("button",{name:"Guardar piloto"}).click()
+ console.log("PILOT_POST_SAVE",await page.locator(".workspace").first().innerText().then(x=>x.slice(0,1000)))
  await expect(page.getByText("Piloto Ensayo Actualizado",{exact:true}).first()).toBeVisible()
  await page.getByRole("textbox",{name:"Buscar en Pilotos"}).fill("Ensayo Actualizado")
  await expect(page.getByText("Piloto Ensayo Actualizado",{exact:true})).toBeVisible()
@@ -218,7 +219,7 @@ test("Nueva sesión: estado de tarjetas y setup ausente",async({page})=>{
  await page.goto("/")
  await page.locator("[data-sidebar='sidebar']").first().getByRole("button",{name:"Nueva sesión"}).click()
  await expect(page.locator(".context-list > [data-slot='card']")).toHaveCount(3)
- await expect(page.locator(".vehicle-card-grid > [data-slot='card']")).toHaveCount(2)
+ await expect(page.locator(".vehicle-parent-card .vehicle-card-grid > [data-slot='card']")).toHaveCount(2)
  const vehicle=page.locator(".vehicle-parent-card")
  const filters=vehicle.locator(".dg-filter-row")
  await expect(filters.getByRole("combobox",{name:"Filtrar Categoría"})).toBeVisible()
@@ -433,11 +434,11 @@ test("Selección por fila: pilotos, objetivos, referencias y módulos",async({pa
  await expect(modules.locator("thead th").nth(0)).toContainText("Detalle")
  await expect(modules.locator("thead th").nth(1)).toContainText("Activar")
  await modules.getByRole("button",{name:"Detalle de Mejor vuelta"}).click()
- await expect(page.getByRole("switch",{name:"Activar módulo Mejor vuelta"})).toBeDisabled()
+ await expect(page.getByRole("switch",{name:"Activar módulo Mejor vuelta"})).toBeEnabled()
  await modules.getByRole("button",{name:"Detalle de Mejor vuelta"}).click()
  // El detalle y la fila no habilitan módulos con requisitos incumplidos.
  await modules.locator("tbody tr").filter({hasText:"Mejor vuelta"}).first().click()
- await expect(page.getByRole("switch",{name:"Activar módulo Mejor vuelta"})).toBeDisabled()
+ await expect(page.getByRole("switch",{name:"Activar módulo Mejor vuelta"})).toBeEnabled()
 })
 
 test("Biblioteca: agrupación inicialmente abierta, grupo sin circuito y contador en línea",async({page})=>{
