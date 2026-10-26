@@ -113,10 +113,24 @@ jobs:
           await page.getByRole('combobox',{name:'Agrupar registros'}).selectOption('category');
           if((await page.getByTestId('grouped').innerText())!=='1')throw Error('Agrupación fallida');
           await page.getByRole('combobox',{name:'Agrupar registros'}).selectOption('');
-          const radio=page.getByRole('radio').first();
-          await radio.waitFor();
-          await radio.click();
-          if((await page.getByTestId('selected').innerText())!=='1')throw Error('Selección única fallida');
+          const radio=page.getByRole('radio',{includeHidden:true}).first();
+          await radio.waitFor({state:'attached'});
+          const detail=await radio.evaluate(el=>{
+            const chain=[];let n=el;
+            for(let i=0;i<6 && n;i++,n=n.parentElement){
+              const st=getComputedStyle(n);
+              chain.push({tag:n.tagName,class:n.className,display:st.display,visibility:st.visibility,opacity:st.opacity,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height});
+            }
+            return chain;
+          });
+          console.log('Diagnóstico radio:',JSON.stringify(detail));
+          await page.screenshot({path:'table-spike.png',fullPage:true});
+          if(await radio.isVisible()) {
+            await radio.click();
+            if((await page.getByTestId('selected').innerText())!=='1')throw Error('Selección única fallida');
+          } else {
+            throw Error('Selector radio presente en DOM pero oculto visualmente, detalle='+JSON.stringify(detail));
+          }
           if(failures.length)throw Error('Errores en navegador: '+failures.join('; '));
           await page.screenshot({path:'table-spike.png',fullPage:true});
           await browser.close();
