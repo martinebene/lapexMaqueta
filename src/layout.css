@@ -382,3 +382,14 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
  .session-card-title [data-slot="card-title"]{font-size:15px}
  .vehicle-inner-card .dg-filter-row{flex-wrap:wrap}
 }
+
+/* El único icono de orden es el nativo de Shadcn Table; evitar recorte de su caja. */
+.shadcn-grid .dg-rows thead th [class*="overflow-hidden"]{overflow:visible!important}
+.shadcn-grid .dg-rows thead th button[aria-label^="Ordenar por"]{
+ display:inline-flex!important; flex:0 0 23px!important;
+ width:23px!important;min-width:23px!important; height:24px!important;
+ align-items:center;justify-content:center;margin-left:2px!important;
+ opacity:.72!important;
+}
+.shadcn-grid .dg-rows thead th button[aria-label^="Ordenar por"]:focus-visible,
+.shadcn-grid .dg-rows thead th button[aria-label^="Ordenar por"]:hover{opacity:1!important}
