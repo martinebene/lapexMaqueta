@@ -282,10 +282,11 @@ test("Buscadores InputGroup estándar: sin doble borde en todas las tablas",asyn
 })
 
 test("Buscador estándar conserva icono y borde único en teléfono",async({page})=>{
- await page.setViewportSize({width:390,height:844})
+ await page.setViewportSize({width:1280,height:800})
  await page.goto("/")
- const input=page.getByRole("textbox",{name:"Buscar en Pilotos disponibles"})
  await page.locator("[data-sidebar='sidebar']").first().getByRole("button",{name:"Nueva sesión"}).click()
+ await page.setViewportSize({width:390,height:844})
+ const input=page.getByRole("textbox",{name:"Buscar en Pilotos disponibles"})
  await expect(input).toBeVisible()
  const styles=await input.evaluate(el=>({
   innerBorder:getComputedStyle(el).borderTopWidth,
