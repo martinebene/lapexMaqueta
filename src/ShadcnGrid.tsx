@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
-import { ArrowDownUp, Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Search, SlidersHorizontal } from "lucide-react"
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
+import { Button } from "@/components/ui/button"
 import {
   ShadcnTable,
   useShadcnTable,
@@ -64,16 +65,6 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       id: col.key,
       accessorFn: (record: T) => latest.current.columns.find(c => c.key === col.key)?.value(record) ?? "",
       header: col.title,
-      Header: ({ column }) => (
-        <button
-          type="button"
-          className="dg-sort"
-          aria-label={"Ordenar por " + col.title}
-          onClick={event => { event.stopPropagation(); column.toggleSorting() }}
-        >
-          {col.title}<ArrowDownUp size={13} aria-hidden="true" />
-        </button>
-      ),
       Cell: ({ row }) => {
         const current = latest.current.columns.find(c => c.key === col.key)
         if (!current) return "—"
@@ -83,7 +74,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       enableGrouping: true,
       enableColumnFilter: Boolean(col.filter),
       filterFn: "equalsString",
-      size: col.width ? Math.max(90, col.width * 10) : 160,
+      size: col.width ? Math.max(90, col.width * 8) : Math.max(86, Math.min(155, col.title.length * 7 + 38)),
     }))
     for (const g of groupers) {
       fields.push({
@@ -103,7 +94,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       enableGrouping: false,
       enableColumnFilter: false,
       Cell: ({ row }) => <div className="dg-actions">{latest.current.actions?.(row.original)}</div>,
-      size: 160,
+      size: 138,
     })
     return fields
     // Structural signature intentionally captures definition changes, not render functions.
@@ -120,6 +111,8 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     enableSelectAll: false,
     enableSorting: true,
     enableGrouping: groups.length > 0 || groupers.length > 0,
+    enableExpanding: true,
+    enableGlobalFilterRankedResults: false,
     enableColumnFilters: true,
     columnFilterDisplayMode: "custom",
     enableGlobalFilter: searchable,
@@ -144,6 +137,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       density: "compact",
       showGlobalFilter: false,
       showColumnFilters: false,
+      expanded: true,
       columnVisibility: Object.fromEntries(groupers.map(g => [g.key, false])),
     },
     state: { rowSelection: currentSelected },
@@ -161,8 +155,10 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       "aria-label": "Seleccionar " + String(latest.current.columns[0]?.value(row.original) ?? row.original.id),
     }),
     stExpandButtonProps: ({ row }) => ({
-      "aria-label": "Detalle de " + String(latest.current.columns[0]?.value(row.original) ?? row.original.id),
-      title: row.getIsExpanded() ? "Ocultar detalle" : "Ver detalle",
+      "aria-label": row.getIsGrouped()
+        ? (row.getIsExpanded() ? "Contraer grupo " : "Expandir grupo ") + String(row.groupingValue ?? "")
+        : "Detalle de " + String(latest.current.columns[0]?.value(row.original) ?? row.original.id),
+      title: row.getIsGrouped() ? (row.getIsExpanded() ? "Contraer grupo" : "Expandir grupo") : (row.getIsExpanded() ? "Ocultar detalle" : "Ver detalle"),
     }),
     renderDetailPanel: props.detail ? ({ row }) => latest.current.detail?.(row.original) : undefined,
     stTableBodyRowProps: ({ row, isDetailPanel }) => ({
@@ -171,6 +167,10 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     }),
     localization: {
       language: "es",
+      sortByColumnAsc: "Ordenar por {column}",
+      sortByColumnDesc: "Ordenar por {column}",
+      sortedByColumnAsc: "Ordenar por {column}",
+      sortedByColumnDesc: "Ordenar por {column}",
       noRecordsToDisplay: "No hay registros",
       toggleSelectRow: "Seleccionar registro",
       expand: "Expandir detalle",
@@ -194,56 +194,66 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       {(searchable || filterCols.length > 0 || availableGroupings.length > 0) && (
         <div className="dg-toolbar">
           {searchable && (
-            <label className="dg-search">
-              <Search size={14} aria-hidden="true" />
-              <Input
-                aria-label={"Buscar en " + label}
-                placeholder="Buscar"
-                value={query}
-                onChange={event => { setQuery(event.target.value); table.setGlobalFilter(event.target.value) }}
-              />
-            </label>
+            <div className="dg-search-row">
+              <InputGroup className="dg-search">
+                <InputGroupAddon align="inline-start"><Search aria-hidden="true" /></InputGroupAddon>
+                <InputGroupInput
+                  aria-label={"Buscar en " + label}
+                  placeholder="Buscar"
+                  value={query}
+                  onChange={event => { setQuery(event.target.value); table.setGlobalFilter(event.target.value) }}
+                />
+              </InputGroup>
+            </div>
           )}
-          {visibleFilterCols.map(col => (
-            <label key={col.key} className="dg-filter">
-              <span>{col.title}</span>
-              <select
-                aria-label={"Filtrar " + col.title}
-                value={filters[col.key] ?? ""}
-                onChange={event => {
-                  const value = event.target.value
-                  setFilters(old => ({ ...old, [col.key]: value }))
-                  table.getColumn(col.key)?.setFilterValue(value || undefined)
-                }}
-              >
-                <option value="">Todos</option>
-                {[...new Set(rows.map(row => String(col.value(row))))].filter(Boolean).sort((a, b) => a.localeCompare(b, "es", { numeric: true })).map(value => (
-                  <option value={value} key={value}>{value}</option>
-                ))}
-              </select>
-            </label>
-          ))}
+          {(visibleFilterCols.length > 0 || availableGroupings.length > 0) && (
+            <div className="dg-filter-row">
+              {visibleFilterCols.map(col => (
+                <label key={col.key} className="dg-filter">
+                  <span>{col.title}</span>
+                  <select
+                    aria-label={"Filtrar " + col.title}
+                    value={filters[col.key] ?? ""}
+                    onChange={event => {
+                      const value = event.target.value
+                      setFilters(old => ({ ...old, [col.key]: value }))
+                      table.getColumn(col.key)?.setFilterValue(value || undefined)
+                    }}
+                  >
+                    <option value="">Todos</option>
+                    {[...new Set(rows.map(row => String(col.value(row))))].filter(Boolean).sort((a, b) => a.localeCompare(b, "es", { numeric: true })).map(value => (
+                      <option value={value} key={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+              {availableGroupings.length > 0 && (
+                <label className="dg-filter dg-group-filter">
+                  <span>Agrupar por</span>
+                  <select
+                    aria-label={"Agrupar " + label}
+                    value={group}
+                    onChange={event => {
+                      const value = event.target.value
+                      setGroup(value)
+                      table.setGrouping(value ? [value] : [])
+                      if (value) table.setExpanded(true)
+                    }}
+                  >
+                    <option value="">Sin agrupar</option>
+                    {availableGroupings.map(({ key, title }) => <option key={key} value={key}>{title}</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
           {filterCols.length > 3 && (
-            <button type="button" className="dg-advanced" onClick={() => setAdvancedFilters(value => !value)}>
-              {advancedFilters ? "Menos filtros" : "Filtros avanzados"}
-            </button>
-          )}
-          {availableGroupings.length > 0 && (
-            <label className="dg-filter">
-              <span>Agrupar por</span>
-              <select
-                aria-label={"Agrupar " + label}
-                value={group}
-                onChange={event => {
-                  const value = event.target.value
-                  setGroup(value)
-                  table.setGrouping(value ? [value] : [])
-                }}
-              >
-                <option value="">Sin agrupar</option>
-                {availableGroupings.map(({ key, title }) => <option key={key} value={key}>{title}</option>)}
-              </select>
-            </label>
+            <div className="dg-advanced-row">
+              <Button type="button" variant="outline" size="sm" className="dg-advanced" aria-expanded={advancedFilters} onClick={() => setAdvancedFilters(value => !value)}>
+                <SlidersHorizontal data-icon="inline-start" aria-hidden="true" />
+                {advancedFilters ? "Menos filtros" : "Filtros avanzados"}
+              </Button>
+            </div>
           )}
         </div>
       )}

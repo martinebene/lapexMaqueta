@@ -315,3 +315,33 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
   .shadcn-grid .dg-rows { height: 268px; }
   .shadcn-grid .dg-rows table { min-width: 580px; }
 }
+
+
+/* Segunda iteración: componentes compactos de Shadcn Table y toolbar. */
+.shadcn-grid .dg-toolbar{display:flex;flex-direction:column;align-items:stretch;gap:9px}
+.shadcn-grid .dg-search-row{width:100%;display:flex;align-items:center}
+.shadcn-grid .dg-search{min-width:0;width:100%;max-width:440px;flex:0 1 440px}
+.shadcn-grid .dg-search [data-slot="input-group-control"]{padding-left:7px!important;min-width:0}
+.shadcn-grid .dg-search svg{position:static;inset:auto;flex-shrink:0;pointer-events:none}
+.shadcn-grid .dg-filter-row{width:100%;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.shadcn-grid .dg-filter-row .dg-filter{min-width:110px;flex:1 1 134px;max-width:240px}
+.shadcn-grid .dg-filter-row .dg-group-filter{margin-left:0}
+.shadcn-grid .dg-advanced-row{width:100%;display:flex;justify-content:flex-end}
+.shadcn-grid .dg-advanced{height:30px;padding:0 10px;font-size:11px}
+.shadcn-grid .dg-rows table{width:100%;min-width:0;table-layout:fixed}
+.shadcn-grid .dg-rows th,
+.shadcn-grid .dg-rows td{min-width:0!important;max-width:none!important;overflow-wrap:anywhere;white-space:normal}
+.shadcn-grid .dg-rows th{padding:7px 5px!important}
+.shadcn-grid .dg-rows td{padding:7px 6px!important}
+.shadcn-grid .dg-rows thead th button[aria-label^="Ordenar por"]{width:auto!important;min-width:0!important;margin-left:3px;padding:0}
+.shadcn-grid .dg-rows thead th button[aria-label^="Ordenar por"] svg{width:15px;height:15px}
+.shadcn-grid .dg-rows thead th>div{gap:2px}
+.shadcn-grid .dg-rows tbody tr:has(button[aria-label^="Contraer grupo"]),
+.shadcn-grid .dg-rows tbody tr:has(button[aria-label^="Expandir grupo"]){background:#d6e7eb;font-weight:700}
+.shadcn-grid .dg-actions{min-width:0;gap:3px}
+.shadcn-grid .dg-actions [data-slot="button"]{white-space:nowrap}
+.shadcn-grid .dg-rows [data-slot="input"]{min-width:0}
+@media(max-width:760px){
+ .shadcn-grid .dg-filter-row .dg-filter{flex:1 1 125px;max-width:none}
+ .shadcn-grid .dg-rows table{min-width:680px}
+}
