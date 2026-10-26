@@ -26,11 +26,11 @@ function SelectableGrid({multiple}:{multiple:boolean}) {
 }
 const meta = {
   title: "Tablas/ShadcnGrid",
-  component: ShadcnGrid,
+  component: ShadcnGrid<DemoRecord>,
   args: { label:"Registros de prueba", rows:records, columns },
   parameters: { layout: "fullscreen" },
   decorators: [(Story: () => React.ReactNode) => <div className="mx-auto w-full max-w-[1150px] p-5"><Story/></div>],
-} satisfies Meta
+} satisfies Meta<typeof ShadcnGrid<DemoRecord>>
 export default meta
 type Story = StoryObj<typeof meta>
 export const Normal: Story = {}
