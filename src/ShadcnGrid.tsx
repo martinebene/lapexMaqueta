@@ -111,7 +111,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     enableSelectAll: false,
     enableSorting: true,
     enableGrouping: groups.length > 0 || groupers.length > 0,
-    enableExpanding: true,
+    enableExpanding: groups.length > 0 || groupers.length > 0 || Boolean(props.detail),
     enableGlobalFilterRankedResults: false,
     enableColumnFilters: true,
     columnFilterDisplayMode: "custom",
@@ -137,7 +137,6 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       density: "compact",
       showGlobalFilter: false,
       showColumnFilters: false,
-      expanded: true,
       columnVisibility: Object.fromEntries(groupers.map(g => [g.key, false])),
     },
     state: { rowSelection: currentSelected },
@@ -237,7 +236,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
                       const value = event.target.value
                       setGroup(value)
                       table.setGrouping(value ? [value] : [])
-                      if (value) table.setExpanded(true)
+                      table.setExpanded({})
                     }}
                   >
                     <option value="">Sin agrupar</option>
