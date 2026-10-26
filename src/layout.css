@@ -269,3 +269,49 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .docs-stat a{font-size:12px;color:#057d8a;text-decoration:underline}
 @media(max-width:1250px){.context-three{grid-template-columns:1fr}.stats-data{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-data .docs-stat{grid-column:span 1}}
 @media(max-width:700px){.session-name-row{grid-template-columns:1fr}.stats-data{grid-template-columns:1fr}.dg-panel{overflow-x:auto}.dg-panel table{min-width:590px}}
+
+
+/* Tablas avanzadas: Shadcn Table Base UI, dentro del contenedor Lapex. */
+.shadcn-grid .dg-rows {
+  height: 270px;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+}
+.shadcn-grid .dg-rows table {
+  width: 100%;
+  min-width: max-content;
+  font-size: 11px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.shadcn-grid .dg-rows thead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--color-muted, #dce8ef);
+}
+.shadcn-grid .dg-rows thead th {
+  background: #dce8ef;
+  color: #385668;
+  font-size: 11px;
+  border-bottom: 2px solid #a7c1cd;
+}
+.shadcn-grid .dg-rows tbody tr:nth-of-type(even) { background: #eef4f7; }
+.shadcn-grid .dg-rows tbody tr:nth-of-type(odd) { background: #fff; }
+.shadcn-grid .dg-rows tbody tr:hover { background: #e4f5f5; }
+.shadcn-grid .dg-rows tbody tr[data-state="selected"] { background: #ceeae8; }
+.shadcn-grid .dg-rows tbody td { color: #2d4b58; font-size: 11px; }
+.shadcn-grid .dg-rows button[aria-label^="Ordenar por"] {
+  min-width: 90px;
+  font: inherit;
+  justify-content: space-between;
+  color: inherit;
+}
+.shadcn-grid [data-slot="table-container"] { overflow: visible; }
+.shadcn-grid .dg-actions { min-width: 130px; }
+.shadcn-grid .dg-expanded { background: #f4f8fa; }
+@media (max-width: 700px) {
+  .shadcn-grid .dg-rows { height: 268px; }
+  .shadcn-grid .dg-rows table { min-width: 580px; }
+}
