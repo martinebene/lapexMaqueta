@@ -20,7 +20,7 @@ Seguir [CRITERIOS-DISENO-FRONTEND.md](docs/CRITERIOS-DISENO-FRONTEND.md): prefer
 - https://www.shadcn-table.com/docs/examples/customized-grouping
 - https://www.shadcn-table.com/docs/examples/detail-panel
 
-**Decisión 2026-10-26:** Shadcn Table edición Base UI es la biblioteca preferente para futuras tablas avanzadas. La migración de `src/DataGrid.tsx` queda condicionada a pruebas de paridad y aprobación visual, sin migración automática. Ver los [criterios](docs/CRITERIOS-DISENO-FRONTEND.md#decisión-de-tablas-avanzadas--2026-10-26).
+**Integración 2026-10-26:** Los siete usos de `DataGrid.tsx` fueron sustituidos por [ShadcnGrid.tsx](src/ShadcnGrid.tsx), adaptador sobre **Shadcn Table Base UI/TanStack v9**. Se eliminó `DataGrid.tsx`, se instalaron selectivamente los archivos nuevos del registro sin reemplazar los componentes existentes, y se añadieron pruebas de selección, filtros, agrupación, detalle y edición. El director puede inspeccionar el resultado en la [maqueta canónica](https://martinebene.github.io/lapexMaqueta/maqueta/) y continuar iterándolo. Ver los [criterios](docs/CRITERIOS-DISENO-FRONTEND.md#decisión-de-tablas-avanzadas--2026-10-26).
 
 **Documentación normativa del producto:** https://github.com/martinebene/Lapex2, comenzando por `AGENTS.md`, especificaciones y decisiones vigentes. La maqueta emplea datos sintéticos; no sustituye requisitos aprobados ni constituye autorización de implementación. Las definiciones aún abiertas para H2 figuran en P-09 y D-066.
 

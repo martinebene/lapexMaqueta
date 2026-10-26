@@ -43,9 +43,9 @@ Utilizar los componentes establecidos del frontend definitivo para que la maquet
 
 La [prueba aislada en GitHub Actions](https://github.com/martinebene/lapexMaqueta/actions/runs/40359545445) aprobó instalación, TypeScript/Vite, búsqueda, filtro exacto, agrupación y radio único mediante Playwright. No validó exhaustivamente edición, panel de detalle, todos los filtros combinados ni los flujos completos de Lapex.
 
-**Decisión de integración:** `DataGrid.tsx` sigue vigente hasta una migración controlada que preserve selección única/múltiple, filas no elegibles, filtros simultáneos, búsqueda, agrupaciones, ordenamiento, edición, detalles, acciones, accesibilidad, localización y aspecto Nova. Hacer pruebas Playwright y revisión visual humana antes de sustituirlo. No mantener dos grillas funcionales estables ni publicar una segunda maqueta.
+**Integración realizada:** los siete usos de `DataGrid.tsx` se reemplazaron por `src/ShadcnGrid.tsx`, que utiliza `ShadcnTable` y `useShadcnTable` del registro Base UI. `DataGrid.tsx` fue eliminado. La selección (única o múltiple), filtros, agrupación, detalles, acciones y edición de datos de la maqueta se conservan en el adaptador. Se conservaron las pruebas funcionales previas y se añadieron pruebas de regresión para la biblioteca, selección múltiple y edición inline. La revisión visual del director y posteriores mejoras forman parte de la iteración, no de la habilitación técnica inicial. Sólo se mantiene una maqueta publicada.
 
-**Riesgo concreto:** el registro del tercero incorporó más de 100 archivos e intentó sobrescribir componentes shadcn existentes en el entorno temporal. Para integrarlo en la rama real, inspeccionar cambios con `--dry-run`/`--diff`, no usar `--overwrite` global sobre componentes existentes sin revisión/autorización específica, y preferir integración selectiva. La decisión de usar la biblioteca no concede por sí misma GO para ejecutar la migración.
+**Riesgo mitigado:** el registro de terceros se instaló inicialmente en una copia temporal, desde la cual se incorporaron **sólo componentes nuevos**, las dependencias y su lockfile. Los componentes shadcn/ui previamente instalados y el tema global no se sobrescribieron. Para futuras actualizaciones inspeccionar el diff antes de aplicar y evitar `--overwrite` global. El tamaño del registro agrega responsabilidad de mantenimiento.
 
 **Skills de asistencia:** [shadcn/ui](../.agents/skills/shadcn/SKILL.md) y [Shadcn Table](../.agents/skills/shadcn-table/SKILL.md), copias oficiales versionadas en el repositorio para uso por agentes compatibles o lectura desde ChatGPT Web.
 
@@ -53,6 +53,6 @@ La [prueba aislada en GitHub Actions](https://github.com/martinebene/lapexMaquet
 
 La versión **Maqueta Lapex** es la única maqueta activa. La rama técnica original `prototipo/sidebar-07` se conserva por continuidad histórica; no constituye una variante separada. La publicación está en `/maqueta/` y la URL raíz redirige allí. No generar variantes paralelas sin autorización expresa.
 
-La implementación actual de `src/DataGrid.tsx` es una **composición propia sobre `Table`**, no el paquete de terceros Shadcn Table ni el patrón oficial completo de TanStack Table. Al iterar, evaluar primero reutilizar la implementación documentada más próxima antes de ampliar ese código o sumar CSS particular. No alterar reglas del producto para adecuarlas al prototipo.
+La implementación vigente es `src/ShadcnGrid.tsx`, **adaptador sobre Shadcn Table Base UI** con responsabilidades de datos y UI propias de Lapex. La biblioteca incorpora su código fuente bajo `src/components/ui/shadcn-table/`; los componentes oficiales de shadcn/ui permanecen separados. Antes de añadir excepciones, consultar la skill y opciones documentadas del tercero. No alterar reglas del producto para adecuarlas al prototipo.
 
 La integración de estas pautas en la documentación normativa de Lapex2 sigue pendiente de reconciliación, sin aprobación ni GO automáticos.

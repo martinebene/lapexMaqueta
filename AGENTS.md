@@ -14,9 +14,9 @@ Sólo existe una maqueta vigente: rama `prototipo/sidebar-07`, publicada en http
 - **Toda decisión o modificación sobre grillas:** consultar [skill oficial Shadcn Table](.agents/skills/shadcn-table/SKILL.md) y documentación API. Usar exclusivamente edición Base UI. El spike de [2026-10-26](https://github.com/martinebene/lapexMaqueta/actions/runs/40359545445) verificó filtros, agrupación y radio, no toda la paridad.
 - **ChatGPT Web:** leer estas skills mediante GitHub; su presencia en el repositorio no las registra como herramientas nativas de ChatGPT. Agentes de código compatibles sí pueden descubrirlas en `.agents/skills/`. Context7 puede complementar documentación actual cuando esté disponible.
 
-## Decisión sobre DataGrid
+## Tablas avanzadas integradas
 
-Shadcn Table es **preferente para tablas avanzadas**, pero `src/DataGrid.tsx` continúa activo hasta superar una migración completa y la revisión visual, según [criterios](docs/CRITERIOS-DISENO-FRONTEND.md#decisión-de-tablas-avanzadas--2026-10-26). No instalar automáticamente todo el registro ni sobrescribir con `--overwrite` componentes shadcn compartidos: primero consultar `--dry-run` y `--diff`. No crear una segunda maqueta.
+**Integración autorizada y realizada:** los siete usos anteriores de `DataGrid` se sustituyeron por `src/ShadcnGrid.tsx` basado en `ShadcnTable`/`useShadcnTable` (edición Base UI). Se eliminó `src/DataGrid.tsx`. Cada uso mantiene sus columnas, selección, filtros, agrupación, acciones, detalle y edición externa. Los componentes nuevos del registro se copiaron selectivamente, sin sobrescribir componentes shadcn/ui existentes; no repetir `--overwrite` sobre los archivos compartidos. La interfaz actual queda sujeta a revisión visual del director y nuevas iteraciones de diseño. Ver [criterios](docs/CRITERIOS-DISENO-FRONTEND.md#decisión-de-tablas-avanzadas--2026-10-26).
 
 ## Verificación
 
