@@ -324,44 +324,63 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 <Card className="module-chat"><CardHeader><CardTitle>{t("module.chat")}</CardTitle></CardHeader><div className="chat-messages"><div className="chat-bubble bot">{t("module.botIntro",{name:t("module."+moduleId)})}</div>{history.map((message,i)=><div key={i} className={"chat-bubble "+message.who}>{message.text}</div>)}</div><div className="chat-composer"><textarea aria-label={t("module.ask")} placeholder={t("module.ask")} value={chatDraft} onChange={e=>setChatDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat()}}}/><Button onClick={sendChat} disabled={!chatDraft.trim()}><Send size={16}/>{t("module.send")}</Button></div></Card></div>}
 
 
-{view==="library"&&<div className="resources-page"><Card><CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{t("library.subtitle")}</CardDescription></CardHeader><CardContent><ShadcnGrid
-label={t("nav."+kind)} rows={inlineId==="__new__"&&kind!=="modules"?[inlineDraft,...resources[kind]]:resources[kind]}
-columns={kind==="pilots"?[
- {key:"name",title:"Nombre",value:r=>r.name,render:r=>editable(r,"name")},
- {key:"number",title:"Número",value:r=>r.number??"—",render:r=>editable(r,"number")}
-]:kind==="vehicles"?[
- {key:"name",title:"Nombre",value:r=>r.name,render:r=>editable(r,"name")},
- {key:"category",title:"Categoría",value:r=>r.category??"—",render:r=>editable(r,"category")},
- {key:"brand",title:"Marca y modelo",value:r=>(r.manufacturer??"")+" "+(r.model??""),render:r=>inlineId===r.id?<div className="inline-pair">{editable(r,"manufacturer")}{editable(r,"model")}</div>:(r.manufacturer??"")+" "+(r.model??"")},
+{view==="library"&&<div className="resources-page"><Card>
+<CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{t("library.subtitle")}</CardDescription></CardHeader>
+<CardContent><ShadcnGrid label={t("nav."+kind)} rows={resources[kind]}
+ columns={kind==="pilots"?[
+ {key:"name",title:"Nombre",value:r=>r.name},
+ {key:"number",title:"Número",value:r=>r.number??"—"}
+ ]:kind==="vehicles"?[
+ {key:"name",title:"Nombre",value:r=>r.name},
+ {key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},
+ {key:"brand",title:"Marca y modelo",value:r=>(r.manufacturer??"")+" "+(r.model??"")},
  {key:"setups",title:"Setups",value:r=>r.setups?.length??0}
-]:kind==="tracks"?[
- {key:"name",title:"Nombre",value:r=>r.name,render:r=>editable(r,"name")},
- {key:"country",title:"País",value:r=>r.country??"—",render:r=>editable(r,"country"),filter:true},
- {key:"province",title:"Provincia",value:r=>r.province??"—",render:r=>editable(r,"province"),filter:true},
- {key:"type",title:"Tipo",value:r=>r.trackType??"—",render:r=>editable(r,"trackType")},
+ ]:kind==="tracks"?[
+ {key:"name",title:"Nombre",value:r=>r.name},
+ {key:"country",title:"País",value:r=>r.country??"—",filter:true},
+ {key:"province",title:"Provincia",value:r=>r.province??"—",filter:true},
+ {key:"type",title:"Tipo",value:r=>r.trackType??"—"},
  {key:"length",title:"Longitud km",value:r=>r.lengthKm??"—"},
- {key:"segments",title:"Conjuntos",value:r=>r.segments??0}
-]:[
+ {key:"segments",title:"Conjuntos",value:r=>r.segmentSets?.length??r.segments??0}
+ ]:[
  {key:"name",title:"Módulo",value:r=>r.name},
- {key:"enabled",title:"Estado",value:r=>r.enabled!==false?"Activado":"Desactivado"},
+ {key:"enabled",title:"Estado",value:r=>r.enabled!==false?"Activado":"Desactivado",status:r=>r.enabled!==false?"success":"error"},
  {key:"needs",title:"Dependencias",value:r=>r.requirements?.length??0}
-]}
-groups={kind==="tracks"?["country","province"]:[]}
-detail={resourceInfo}
-actions={r=>kind==="modules"?<>
-<Button variant="outline" size="sm" onClick={()=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===r.id?{...x,enabled:x.enabled===false}:x)}))}>{r.enabled===false?"Activar":"Desactivar"}</Button>
-<Button size="sm" variant="outline" aria-label={"Configurar "+r.name} onClick={()=>setModuleSettings(r.id)}><Settings2 size={14}/></Button>
-<a className="dg-doc-link" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/MODULOS-ANALISIS.md" target="_blank" rel="noopener noreferrer" aria-label={"Documentación de "+r.name}><BookOpen size={14}/></a>
-</>:inlineId===r.id?<><Button size="sm" onClick={saveInline} disabled={!inlineDraft.name.trim()}>Guardar</Button><Button size="sm" variant="outline" onClick={()=>setInlineId(null)}>Cancelar</Button></>:<>
-<Button size="sm" variant="outline" onClick={()=>{setInlineId(r.id);setInlineDraft({...r})}}><Pencil size={14}/>Editar</Button>
-<Button size="sm" variant="ghost" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={14}/></Button>
-</>}
- /></CardContent></Card>
-{kind==="modules"&&moduleSettings&&<Card><CardHeader><CardTitle>Configuración general · {itemName(moduleSettings,resources.modules)}</CardTitle></CardHeader><CardContent><p>La única configuración funcional de esta vista es la disponibilidad en la selección de módulos para nuevas sesiones.</p><Button size="sm" variant="outline" onClick={()=>setModuleSettings(null)}>Cerrar</Button></CardContent></Card>}
-</div>}
+ ]}
+ groups={kind==="tracks"?["country","province"]:[]}
+ detail={resourceInfo}
+ leadingControl={kind==="modules"?(r=><Switch aria-label={"Habilitar módulo "+r.name} checked={r.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===r.id?{...x,enabled:checked}:x)}))}/>):undefined}
+ actions={r=>kind==="modules"?<>
+  <Button size="sm" variant="outline" onClick={()=>{setModuleSettings(r.id);navigate("moduleEdit","resources")}}><Pencil size={14}/>Editar</Button>
+  <Button size="sm" variant="outline" aria-label={"Configurar "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleConfig","resources")}}><Settings2 size={14}/>Configurar</Button>
+  <Button size="sm" variant="outline" aria-label={"Documentación de "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources")}}><BookOpen size={14}/>Documentación</Button>
+ </>:<>
+  <Button size="sm" variant="outline" onClick={()=>beginResource(r.id)}><Pencil size={14}/>Editar</Button>
+  <Button size="sm" variant="ghost" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={14}/></Button>
+ </>}/>
+</CardContent></Card></div>}
 
-{view==="resourceEdit"&&<Card className="edit-card"><CardHeader><CardTitle>{t(itemId?"common.edit":"form.newResource")}</CardTitle></CardHeader><CardContent><div className="stack-fields"><label>{t("common.name")}<Input value={editName} onChange={e=>setEditName(e.target.value)}/></label><label>{t("form.description")}<Input value={editDetail} onChange={e=>setEditDetail(e.target.value)}/></label><div className="pill-row"><Button variant="outline" onClick={()=>navigate("library")}>{t("common.cancel")}</Button><Button onClick={saveResource} disabled={!editName.trim()}>{t("common.save")}</Button></div></div></CardContent></Card>}
+{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} onSave={saveResource} onCancel={()=>navigate("library","resources")}/>}
 
+{["moduleEdit","moduleConfig","moduleDoc"].includes(view)&&moduleSettings&&(()=>{const module=resources.modules.find(x=>x.id===moduleSettings);if(!module)return null;return <Card className="edit-card">
+ <CardHeader><CardTitle>{view==="moduleDoc"?"Documentación":view==="moduleConfig"?"Configurar módulo":"Editar módulo"} · {module.name}</CardTitle><CardDescription>{module.detail}</CardDescription></CardHeader>
+ <CardContent><div className="stack-fields">
+  {view==="moduleDoc"?<>
+    <h3>Descripción y requisitos</h3><p>{module.detail}</p>
+    <p>{(module.requirements??[]).join("; ")||"No hay requisitos declarados en la maqueta."}</p>
+    <p>Los módulos son código integrado de Lapex. Esta página representa la documentación propia del módulo; sus contratos completos se desarrollan en los hitos correspondientes.</p>
+    <a href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/MODULOS-ANALISIS.md" target="_blank" rel="noopener noreferrer">Consultar especificación oficial <BookOpen size={14}/></a>
+  </>:view==="moduleConfig"?<>
+    <label className="module-config-row">Disponibilidad para nuevas sesiones <Switch aria-label={"Habilitar módulo "+module.name} checked={module.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===module.id?{...x,enabled:checked}:x)}))}/></label>
+    <p>Desactivar el módulo solamente lo retira de las nuevas selecciones; no afecta sesiones existentes.</p>
+  </>:<>
+    <p><strong>Nombre:</strong> {module.name}</p><p><strong>Descripción:</strong> {module.detail}</p>
+    <p><strong>Requisitos declarados:</strong> {(module.requirements??[]).join("; ")}</p>
+    <p>La implementación de un módulo es código de plataforma; no admite edición desde un formulario de usuario. La gestión de disponibilidad está en Configurar.</p>
+    <Button variant="outline" onClick={()=>navigate("moduleConfig","resources")}>Ir a configuración</Button>
+  </>}
+  <Button variant="outline" onClick={()=>openLibrary("modules")}>Volver a módulos</Button>
+ </div></CardContent></Card>})()}
 
 {view==="datasets"&&<div className="data-page">
 <div className="stats-grid stats-data">
@@ -371,7 +390,7 @@ actions={r=>kind==="modules"?<>
 <Card className="storage-stat"><CardContent><HardDrive size={19}/><strong>Almacenamiento</strong><span>{storageUsed} MB usados / {storageTotal} MB totales (simulado)</span><progress aria-label="Almacenamiento usado" value={storageUsed} max={storageTotal}/></CardContent></Card>
 <Card className="docs-stat"><CardContent><BookOpen size={19}/><strong>Documentación</strong><a target="_blank" rel="noopener noreferrer" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/IMPORTACION-DATOS.md">Cómo importar datos</a><a target="_blank" rel="noopener noreferrer" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/MODELO-DATOS.md">Cómo funcionan los registros</a></CardContent></Card>
 </div>
-<Card><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>Filtros avanzados, agrupaciones y observaciones editables.</CardDescription></CardHeader><CardContent>
+<Card><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>Filtros avanzados y agrupaciones; las observaciones se editan dentro de cada registro.</CardDescription></CardHeader><CardContent>
 <ShadcnGrid label="Biblioteca de datos" rows={datasets} columns={[
  {key:"name",title:"Nombre",value:d=>d.name,filter:true},
  {key:"id",title:"ID",value:d=>d.id,filter:true},
@@ -379,7 +398,7 @@ actions={r=>kind==="modules"?<>
  {key:"time",title:"Hora",value:d=>d.time,filter:true},
  {key:"track",title:"Circuito",value:d=>itemName(d.track,resources.tracks),filter:true},
  {key:"type",title:"Tipo de origen",value:d=>t("source."+d.type),filter:true},
- {key:"observation",title:"Observaciones",value:d=>d.observation,filter:true,render:d=><Input aria-label={"Observaciones de "+d.name} defaultValue={d.observation} onBlur={e=>updateObservation(d.id,e.target.value)}/>}
+ {key:"observation",title:"Observaciones",value:d=>d.observation,filter:true}
  ]} groups={["track","type"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}
  actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/></Button><Button size="sm" variant="ghost" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={14}/></Button></>}/>
 </CardContent></Card></div>}
