@@ -100,10 +100,10 @@ export const getLeadingDisplayColumnIds = <TData extends ST_RowData>(
     tableOptions.positionActionsColumn === 'first' &&
       showRowActionsColumn(tableOptions) &&
       'st-row-actions',
+    showRowSelectionColumn(tableOptions) && 'st-row-select',
     tableOptions.positionExpandColumn === 'first' &&
       showRowExpandColumn(tableOptions) &&
       'st-row-expand',
-    showRowSelectionColumn(tableOptions) && 'st-row-select',
     showRowNumbersColumn(tableOptions) && 'st-row-numbers',
   ].filter(Boolean) as ST_DisplayColumnIds[];
 

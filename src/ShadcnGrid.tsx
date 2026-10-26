@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react"
-import type { ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,8 @@ export interface GridColumn<T> {
   render?: (record: T) => ReactNode
   filter?: boolean
   width?: number
+  /** Estilo semántico para estados de las celdas, no modifica el filtro. */
+  status?: (record: T) => "success" | "error" | undefined
 }
 export interface GridGrouping<T> {
   key: string
@@ -34,9 +36,30 @@ interface Props<T extends { id: string }> {
   groupers?: GridGrouping<T>[]
   detail?: (record: T) => ReactNode
   actions?: (record: T) => ReactNode
+  advancedFilterColumns?: GridGrouping<T>[]
+  emptyMessage?: string
+  /** Permite igualar altura entre tablas vecinas (vehículo/setup). */
+  tableHeight?: string
   searchable?: boolean
 }
 
+function missingLabel(key: string, title: string) {
+  const labels: Record<string, string> = {
+    track: "Sin circuito", month: "Sin mes", season: "Sin temporada",
+    category: "Sin categoría", vehicleType: "Sin tipo", type: "Sin tipo",
+    country: "Sin país", province: "Sin provincia", device: "Sin dispositivo",
+  }
+  return labels[key] ?? "Sin " + title.toLocaleLowerCase("es")
+}
+function normalizedGroupValue(value: unknown, key: string, title: string) {
+  const text = value == null ? "" : String(value).trim()
+  return !text || text === "—" || text === "-" ? missingLabel(key, title) : text
+}
+function clickedControl(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest(
+    'button, a, input, textarea, select, [role="checkbox"], [role="radio"], [role="button"], [contenteditable="true"], [data-no-row-select]'
+  ))
+}
 function selectedState(selected?: string | string[]) {
   const ids = Array.isArray(selected) ? selected : selected ? [selected] : []
   return Object.fromEntries(ids.map(id => [id, true])) as Record<string, true>
@@ -59,16 +82,22 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
   // App.tsx construye algunas columnas inline. Solo cambian las definiciones
   // si cambia su estructura; los renderizadores siempre consultan latest.current.
   const signature = columns.map(c => [c.key, c.title, c.filter ? "1" : "0", c.width ?? ""].join(":")).join("|")
-  const grouperSignature = groupers.map(g => g.key + ":" + g.title).join("|")
+  const extraCols = props.advancedFilterColumns ?? []
+  const grouperSignature = [...groupers, ...extraCols].map(g => g.key + ":" + g.title).join("|")
   const defs = useMemo<ST_ColumnDef<T>[]>(() => {
     const fields: ST_ColumnDef<T>[] = columns.map(col => ({
       id: col.key,
-      accessorFn: (record: T) => latest.current.columns.find(c => c.key === col.key)?.value(record) ?? "",
+      accessorFn: (record: T) => {
+        const current = latest.current.columns.find(c => c.key === col.key)
+        return current ? normalizedGroupValue(current.value(record), col.key, col.title) : ""
+      },
       header: col.title,
       Cell: ({ row }) => {
         const current = latest.current.columns.find(c => c.key === col.key)
         if (!current) return "—"
-        return current.render ? current.render(row.original) : String(current.value(row.original) ?? "—") || "—"
+        const rendered = current.render ? current.render(row.original) : String(current.value(row.original) ?? "—") || "—"
+        const status = current.status?.(row.original)
+        return status ? <span className={"dg-value-status " + (status === "success" ? "dg-value-success" : "dg-value-error")}>{rendered}</span> : rendered
       },
       enableSorting: true,
       enableGrouping: true,
@@ -76,14 +105,18 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       filterFn: "equalsString",
       size: col.width ? Math.max(90, col.width * 8) : Math.max(86, Math.min(155, col.title.length * 7 + 38)),
     }))
-    for (const g of groupers) {
+    for (const g of [...groupers, ...extraCols.filter(extra => !groupers.some(g => g.key === extra.key))]) {
       fields.push({
         id: g.key,
         header: g.title,
-        accessorFn: (r: T) => latest.current.groupers?.find(x => x.key === g.key)?.value(r) || "Sin asignar",
+        accessorFn: (r: T) => {
+          const def = [...(latest.current.groupers ?? []), ...(latest.current.advancedFilterColumns ?? [])].find(x => x.key === g.key)
+          return normalizedGroupValue(def?.value(r), g.key, g.title)
+        },
         enableGrouping: true,
         enableSorting: true,
-        enableColumnFilter: false,
+        enableColumnFilter: extraCols.some(x => x.key === g.key),
+        filterFn: "equalsString",
         enableHiding: true,
       })
     }
@@ -111,6 +144,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     enableSelectAll: false,
     enableSorting: true,
     enableGrouping: groups.length > 0 || groupers.length > 0,
+    groupedColumnMode: "remove",
     enableExpanding: groups.length > 0 || groupers.length > 0 || Boolean(props.detail),
     enableGlobalFilterRankedResults: false,
     enableColumnFilters: true,
@@ -132,7 +166,11 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     enableToolbarInternalActions: false,
     enableEditing: false,
     enableRowActions: false,
-    positionExpandColumn: "last",
+    positionExpandColumn: "first",
+    displayColumnDefOptions: {
+      "st-row-expand": { header: "Detalle", size: groups.length || groupers.length ? 152 : 76 },
+      "st-row-select": { header: "Select", size: 56 },
+    },
     // Shadcn Table agrega por defecto su propio marco, sombra y padding.
     // Lapex conserva una única superficie y un único scroll en .dg-rows.
     stTableLayoutProps: { className: "overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none" },
@@ -141,7 +179,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       density: "compact",
       showGlobalFilter: false,
       showColumnFilters: false,
-      columnVisibility: Object.fromEntries(groupers.map(g => [g.key, false])),
+      columnVisibility: Object.fromEntries([...groupers, ...extraCols].map(g => [g.key, false])),
     },
     state: { rowSelection: currentSelected },
     onRowSelectionChange: updater => {
@@ -163,10 +201,25 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
         : "Detalle de " + String(latest.current.columns[0]?.value(row.original) ?? row.original.id),
       title: row.getIsGrouped() ? (row.getIsExpanded() ? "Contraer grupo" : "Expandir grupo") : (row.getIsExpanded() ? "Ocultar detalle" : "Ver detalle"),
     }),
-    renderDetailPanel: props.detail ? ({ row }) => latest.current.detail?.(row.original) : undefined,
+    renderDetailPanel: props.detail ? ({ row }) => row.getIsGrouped() ? null : latest.current.detail?.(row.original) : undefined,
     stTableBodyRowProps: ({ row, isDetailPanel }) => ({
-      className: isDetailPanel ? "dg-expanded" : "dg-record",
+      className: isDetailPanel ? "dg-expanded" : row.getIsGrouped() ? "dg-record dg-group-record" :
+        selection && row.getCanSelect() ? "dg-record dg-selectable-row" : "dg-record",
       "data-state": currentSelected[row.original?.id] ? "selected" : undefined,
+      tabIndex: selection && !row.getIsGrouped() && row.getCanSelect() ? 0 : undefined,
+      "aria-selected": selection && !row.getIsGrouped() ? Boolean(currentSelected[row.original?.id]) : undefined,
+      onClick: (event) => {
+        if (!selection || row.getIsGrouped() || !row.getCanSelect() || clickedControl(event.target)) return
+        const old = Boolean(selectedState(latest.current.selected)[row.original.id])
+        if (selection === "multiple" || !old) latest.current.onSelect?.(row.original.id, !old)
+      },
+      onKeyDown: (event) => {
+        if (!selection || row.getIsGrouped() || !row.getCanSelect() || event.target !== event.currentTarget) return
+        if (event.key !== " " && event.key !== "Enter") return
+        event.preventDefault()
+        const old = Boolean(selectedState(latest.current.selected)[row.original.id])
+        if (selection === "multiple" || !old) latest.current.onSelect?.(row.original.id, !old)
+      },
     }),
     localization: {
       language: "es",
@@ -174,88 +227,110 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       sortByColumnDesc: "Ordenar por {column}",
       sortedByColumnAsc: "Ordenar por {column}",
       sortedByColumnDesc: "Ordenar por {column}",
-      noRecordsToDisplay: "No hay registros",
+      noRecordsToDisplay: props.emptyMessage ?? "No hay registros",
       toggleSelectRow: "Seleccionar registro",
       expand: "Expandir detalle",
       collapse: "Contraer detalle",
     },
   })
 
+  // Abrir solamente filas de grupo: expanded=true abriría también todos los
+  // detalles individuales, mientras la vista agrupada necesita sólo categorías.
+  useEffect(() => {
+    if (!group) {
+      table.setExpanded({})
+      return
+    }
+    const grouped = table.getGroupedRowModel().flatRows.filter(row => row.getIsGrouped())
+    table.setExpanded(Object.fromEntries(grouped.map(row => [row.id, true])))
+    // El cambio de group provoca un render con el nuevo row model.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group])
+
   const filterCols = columns.filter(col => col.filter)
-  const visibleFilterCols = filterCols.filter(c =>
-    filterCols.length <= 3 || advancedFilters ||
-    ["type", "track", "category", "vehicleType"].includes(c.key),
-  )
+  const priority = ["track", "type", "category", "vehicleType", "date"]
+  const defaultFilterKeys = filterCols.length <= 3
+    ? filterCols.map(col => col.key)
+    : [
+        ...filterCols.filter(col => priority.includes(col.key)).sort((a,b) => priority.indexOf(a.key)-priority.indexOf(b.key)),
+        ...filterCols.filter(col => !priority.includes(col.key)),
+      ].slice(0,3).map(col => col.key)
+  const baseFilterCols = filterCols.filter(col => defaultFilterKeys.includes(col.key))
+  const hiddenFilterCols = filterCols.filter(col => !defaultFilterKeys.includes(col.key))
+  const advancedCols = [
+    ...hiddenFilterCols.map(col => ({key:col.key,title:col.title,value:col.value})),
+    ...extraCols,
+  ]
+  const allFilters = [...baseFilterCols, ...advancedCols]
   const availableGroupings = [
     ...groups.map(key => ({ key, title: columns.find(c => c.key === key)?.title ?? key })),
     ...groupers.map(({ key, title }) => ({ key, title })),
   ]
   const filteredCount = table.getFilteredRowModel().flatRows?.filter(r => !r.getIsGrouped()).length ?? rows.length
+  const filterSelect = (col: {key:string;title:string;value:(r:T)=>string|number}) => (
+    <label key={col.key} className="dg-filter">
+      <span>{col.title}</span>
+      <select
+        aria-label={"Filtrar " + col.title}
+        value={filters[col.key] ?? ""}
+        onChange={event => {
+          const value = event.target.value
+          setFilters(old => ({ ...old, [col.key]: value }))
+          table.getColumn(col.key)?.setFilterValue(value || undefined)
+        }}
+      >
+        <option value="">Todos</option>
+        {[...new Set(rows.map(row => normalizedGroupValue(col.value(row), col.key, col.title)))]
+          .sort((a,b)=>a.localeCompare(b,"es",{numeric:true})).map(value =>
+            <option key={value} value={value}>{value}</option>)}
+      </select>
+    </label>
+  )
 
   return (
-    <section className="dg shadcn-grid" aria-label={label}>
-      {(searchable || filterCols.length > 0 || availableGroupings.length > 0) && (
+    <section className="dg shadcn-grid" aria-label={label}
+      style={props.tableHeight ? { "--dg-table-height": props.tableHeight } as CSSProperties : undefined}>
+      {(searchable || allFilters.length > 0 || availableGroupings.length > 0) && (
         <div className="dg-toolbar">
-          {searchable && (
-            <div className="dg-search-row">
+          <div className="dg-search-row">
+            {searchable && (
               <InputGroup className="dg-search">
-                <InputGroupInput
-                  aria-label={"Buscar en " + label}
-                  placeholder="Buscar"
+                <InputGroupInput aria-label={"Buscar en " + label} placeholder="Buscar"
                   value={query}
-                  onChange={event => { setQuery(event.target.value); table.setGlobalFilter(event.target.value) }}
-                />
+                  onChange={event => { setQuery(event.target.value); table.setGlobalFilter(event.target.value) }}/>
                 <InputGroupAddon align="inline-start"><Search aria-hidden="true" /></InputGroupAddon>
               </InputGroup>
-            </div>
-          )}
-          {(visibleFilterCols.length > 0 || availableGroupings.length > 0) && (
+            )}
+            {advancedCols.length > 0 && (
+              <Button type="button" variant="outline" size="sm" className="dg-advanced"
+                aria-expanded={advancedFilters} onClick={() => setAdvancedFilters(value => !value)}>
+                <SlidersHorizontal data-icon="inline-start" aria-hidden="true" />
+                {advancedFilters ? "Menos filtros" : "Filtros avanzados"}
+              </Button>
+            )}
+          </div>
+          {(baseFilterCols.length > 0 || availableGroupings.length > 0) && (
             <div className="dg-filter-row">
-              {visibleFilterCols.map(col => (
-                <label key={col.key} className="dg-filter">
-                  <span>{col.title}</span>
-                  <select
-                    aria-label={"Filtrar " + col.title}
-                    value={filters[col.key] ?? ""}
-                    onChange={event => {
-                      const value = event.target.value
-                      setFilters(old => ({ ...old, [col.key]: value }))
-                      table.getColumn(col.key)?.setFilterValue(value || undefined)
-                    }}
-                  >
-                    <option value="">Todos</option>
-                    {[...new Set(rows.map(row => String(col.value(row))))].filter(Boolean).sort((a, b) => a.localeCompare(b, "es", { numeric: true })).map(value => (
-                      <option value={value} key={value}>{value}</option>
-                    ))}
-                  </select>
-                </label>
-              ))}
+              {baseFilterCols.map(filterSelect)}
               {availableGroupings.length > 0 && (
                 <label className="dg-filter dg-group-filter">
                   <span>Agrupar por</span>
-                  <select
-                    aria-label={"Agrupar " + label}
-                    value={group}
+                  <select aria-label={"Agrupar " + label} value={group}
                     onChange={event => {
                       const value = event.target.value
                       setGroup(value)
                       table.setGrouping(value ? [value] : [])
-                      table.setExpanded({})
-                    }}
-                  >
+                    }}>
                     <option value="">Sin agrupar</option>
-                    {availableGroupings.map(({ key, title }) => <option key={key} value={key}>{title}</option>)}
+                    {availableGroupings.map(({key,title})=><option key={key} value={key}>{title}</option>)}
                   </select>
                 </label>
               )}
             </div>
           )}
-          {filterCols.length > 3 && (
-            <div className="dg-advanced-row">
-              <Button type="button" variant="outline" size="sm" className="dg-advanced" aria-expanded={advancedFilters} onClick={() => setAdvancedFilters(value => !value)}>
-                <SlidersHorizontal data-icon="inline-start" aria-hidden="true" />
-                {advancedFilters ? "Menos filtros" : "Filtros avanzados"}
-              </Button>
+          {advancedFilters && advancedCols.length > 0 && (
+            <div className="dg-filter-row dg-filter-row-extra">
+              {advancedCols.map(filterSelect)}
             </div>
           )}
         </div>

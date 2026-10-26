@@ -415,3 +415,38 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 }
 .shadcn-grid .dg-rows > div{padding:0;overflow:visible}
 .shadcn-grid .dg-rows > div > div{overflow:visible}
+
+
+/* Pulido UX de filtros: buscador + acción en la misma fila; filtros cercanos a la tabla. */
+.shadcn-grid .dg-toolbar{gap:7px;margin-bottom:6px}
+.shadcn-grid .dg-search-row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.shadcn-grid .dg-search-row .dg-search{flex:0 1 440px;min-width:150px}
+.shadcn-grid .dg-search-row .dg-advanced{margin-left:auto;flex:none}
+.shadcn-grid .dg-filter-row{gap:8px;align-items:end}
+.shadcn-grid .dg-filter-row-extra{padding-top:2px}
+.shadcn-grid .dg-group-filter{margin-left:0}
+.shadcn-grid .dg-selectable-row{cursor:pointer}
+.shadcn-grid .dg-selectable-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.shadcn-grid .dg-selectable-row:has(button:hover){cursor:default}
+.shadcn-grid .dg-group-record td{background:var(--muted)}
+.shadcn-grid .dg-group-record td:has(button[aria-label^="Expandir grupo"]),
+.shadcn-grid .dg-group-record td:has(button[aria-label^="Contraer grupo"]){white-space:nowrap!important;overflow:visible}
+.shadcn-grid .dg-group-record td:has(button[aria-label^="Expandir grupo"])>div,
+.shadcn-grid .dg-group-record td:has(button[aria-label^="Contraer grupo"])>div{display:flex;align-items:center;flex-wrap:nowrap;white-space:nowrap;gap:4px}
+.shadcn-grid .dg-group-record td:has(button[aria-label^="Expandir grupo"]) span,
+.shadcn-grid .dg-group-record td:has(button[aria-label^="Contraer grupo"]) span{white-space:nowrap}
+.shadcn-grid .dg-value-status{display:inline-flex;padding:3px 7px;border-radius:6px;font-weight:700}
+.shadcn-grid .dg-value-success{color:#167348;background:#e3f6ea}
+.shadcn-grid .dg-value-error{color:#b43c42;background:#fdecee}
+.shadcn-grid[style*="--dg-table-height"] .dg-rows,
+.shadcn-grid[style*="--dg-table-height"] .dg-rows>div,
+.shadcn-grid[style*="--dg-table-height"] .dg-rows>div>div{
+  height:var(--dg-table-height);min-height:var(--dg-table-height);max-height:var(--dg-table-height)
+}
+.shadcn-grid[style*="--dg-table-height"] .dg-rows>div,
+.shadcn-grid[style*="--dg-table-height"] .dg-rows>div>div{overflow:visible}
+@media(max-width:640px){
+ .shadcn-grid .dg-search-row .dg-search{flex:1 1 160px}
+ .shadcn-grid .dg-search-row .dg-advanced{margin-left:auto}
+ .shadcn-grid .dg-filter-row .dg-filter{flex:1 1 130px}
+}
