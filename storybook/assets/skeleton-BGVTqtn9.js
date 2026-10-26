@@ -1,0 +1,1 @@
+import{j as t}from"./jsx-runtime-u17CrQMm.js";import{c as s}from"./utils-CHfrMcqn.js";function n({className:e,...o}){return t.jsx("div",{"data-slot":"skeleton",className:s("cn-skeleton animate-pulse",e),...o})}n.__docgenInfo={description:"",methods:[],displayName:"Skeleton"};export{n as S};
