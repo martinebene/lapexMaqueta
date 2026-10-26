@@ -62,3 +62,20 @@ test("Storybook: tabla real con filtros y agrupación interactivos",async({page}
   await page.getByRole("textbox",{name:"Buscar en Registros de prueba"}).fill("Tanda 02")
   await expect(page.locator("tbody").getByText("Rodaje · Tanda 02",{exact:true}).first()).toBeVisible()
 })
+
+
+test("Storybook: ResourceForm real muestra campos y validación",async({page})=>{
+ await page.goto(base+"/iframe.html?id=formularios-recursos--vehiculo-nuevo&viewMode=story")
+ await expect(page.getByRole("textbox",{name:"Nombre",exact:true})).toBeVisible()
+ await expect(page.getByRole("combobox",{name:"Tipo de vehículo"})).toBeVisible()
+ await page.getByRole("textbox",{name:"Nombre",exact:true}).fill("Vehículo prueba")
+ await page.getByRole("button",{name:"Guardar vehículo"}).click()
+ await expect(page.getByRole("alert")).toContainText("Completá el tipo")
+})
+
+test("Storybook: switches reales reflejan estado disponible y bloqueado",async({page})=>{
+ await page.goto(base+"/iframe.html?id=controles-switch--requisitos-incumplidos&viewMode=story")
+ await expect(page.getByRole("switch",{name:"Módulo bloqueado por requisitos"})).toBeDisabled()
+ await page.goto(base+"/iframe.html?id=controles-switch--disponible-activado&viewMode=story")
+ await expect(page.getByRole("switch",{name:"Módulo disponible activado"})).toBeChecked()
+})
