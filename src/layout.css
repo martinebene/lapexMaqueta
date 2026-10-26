@@ -345,3 +345,40 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
  .shadcn-grid .dg-filter-row .dg-filter{flex:1 1 125px;max-width:none}
  .shadcn-grid .dg-rows table{min-width:680px}
 }
+
+
+/* Nueva sesión: tarjetas de ancho completo y dos subtarjetas de vehículo. */
+.new-session{display:flex;flex-direction:column;gap:15px;min-width:0}
+.context-list{display:flex;flex-direction:column;gap:15px;min-width:0}
+.context-list>.cn-card,.session-details-card,.session-context-card{width:100%;min-width:0}
+.session-card-title{display:flex;align-items:center;gap:10px;min-width:0}
+.session-card-title [data-slot="card-title"]{font-size:16px;line-height:1.35}
+.session-status-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.session-status-icon svg{height:20px;width:20px}
+.session-status-icon.complete{color:#16804f}
+.session-status-icon.incomplete{color:#c93742}
+.session-fields{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) minmax(180px,.9fr);gap:18px;align-items:start}
+.session-form-field{display:flex;flex-direction:column;gap:7px;min-width:0;color:var(--color-foreground,#294555);font-size:12px;font-weight:600}
+.session-form-field>span:first-child{color:#526d7c}
+.session-form-field>small{font-size:11px;line-height:1.5;color:#6c8692;font-weight:400}
+.session-form-field textarea{min-height:78px;max-width:100%}
+.session-timestamp{min-height:36px;display:flex;align-items:center;padding:8px 11px;background:#f0f5f8;color:#364f5d;border:1px solid #d6e2e9;border-radius:7px;font-weight:600}
+.vehicle-card-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,.85fr);align-items:stretch;gap:14px}
+.vehicle-inner-card{min-width:0;border-color:#d6e2e9;box-shadow:none}
+.vehicle-inner-card [data-slot="card-content"]{min-width:0}
+.vehicle-inner-card .dg-filter-row{flex-wrap:nowrap;gap:8px}
+.vehicle-inner-card .dg-filter-row .dg-filter{min-width:0;flex:1 1 50%;max-width:none}
+.vehicle-inner-card .dg-filter-row .dg-filter select{min-width:0}
+.vehicle-setups-card .setup-select{width:100%;min-height:36px}
+.setup-empty,.setup-selected{padding:12px;background:#eef4f7;border-radius:7px;color:#526d7c;font-size:12px;line-height:1.5}
+@media(max-width:1100px){
+ .vehicle-card-grid{grid-template-columns:1fr}
+ .session-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .session-fields>.session-form-field:last-child{grid-column:1 / -1}
+}
+@media(max-width:680px){
+ .session-fields{grid-template-columns:1fr}
+ .session-fields>.session-form-field:last-child{grid-column:auto}
+ .session-card-title [data-slot="card-title"]{font-size:15px}
+ .vehicle-inner-card .dg-filter-row{flex-wrap:wrap}
+}

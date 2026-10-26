@@ -10,9 +10,9 @@ export interface Resource {
  enabled?:boolean;requirements?:string[];docsUrl?:string
 }
 export interface Dataset {id:string;name:string;date:string;time:string;observation:string;track:string;type:DatasetType;device?:string;bestLap?:string;duration?:string;season?:string;category?:string;sizeMB?:number;channels?:number}
-export interface Session {id:string;name:string;pilot:string;track:string;vehicle:string;setup:string;targets:string[];references:string[];modules:string[]}
-export interface Draft {name:string;pilot:string;track:string;vehicle:string;setup:string;targets:string[];references:string[];modules:string[]}
-export const emptyDraft=():Draft=>({name:"",pilot:"",track:"",vehicle:"",setup:"",targets:[],references:[],modules:[]})
+export interface Session {id:string;name:string;observations?:string;createdAt?:string;pilot:string;track:string;vehicle:string;setup:string;targets:string[];references:string[];modules:string[]}
+export interface Draft {name:string;observations:string;pilot:string;track:string;vehicle:string;setup:string;targets:string[];references:string[];modules:string[]}
+export const emptyDraft=():Draft=>({name:"",observations:"",pilot:"",track:"",vehicle:"",setup:"",targets:[],references:[],modules:[]})
 export const initialResources:Record<ResourceKind,Resource[]>={
  pilots:[
   {id:"p1",name:"Piloto Demo A",detail:"Ensayos de turismo",number:"21",shortName:"P. Demo A",country:"Argentina",city:"Puerto Madryn",experience:7,speed:8,description:"Piloto de ensayos"},

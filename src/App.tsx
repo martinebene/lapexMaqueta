@@ -1,11 +1,12 @@
 
 import { useState } from "react"
-import type { ChangeEvent, ReactNode } from "react"
+import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Send, X, Database, Layers3, BookOpen, HardDrive, Settings2 } from "lucide-react"
+import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Send, X, Database, Layers3, BookOpen, HardDrive, Settings2, CircleCheck, CircleX } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing } from "./data"
@@ -24,6 +25,15 @@ const ctxToRes:Record<ContextKey,ResourceKind>={pilot:"pilots",track:"tracks",ve
 const names:Record<ContextKey,string>={pilot:"create.pilot",track:"create.track",vehicle:"create.vehicle"}
 function uniq(list:string[]){return [...new Set(list)]}
 function itemName(id:string,items:Resource[]){return items.find(x=>x.id===id)?.name??"—"}
+function formatSessionTimestamp(iso:string){return new Date(iso).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})}
+function SectionStatus({title,complete}:{title:string;complete:boolean}){
+ return <span className={"session-status-icon"+(complete?" complete":" incomplete")} role="img" aria-label={complete?"Requisitos cumplidos: "+title:"Requisitos pendientes: "+title} title={complete?"Requisitos cumplidos":"Requisitos pendientes"}>
+ {complete?<CircleCheck aria-hidden="true"/>:<CircleX aria-hidden="true"/>}
+ </span>
+}
+function SessionCardHeading({title,complete}:{title:string;complete:boolean}){
+ return <div className="session-card-title"><SectionStatus title={title} complete={complete}/><CardTitle>{title}</CardTitle></div>
+}
 
 export default function App(){
 const {t}=useTranslation()
@@ -35,6 +45,7 @@ const [sessions,setSessions]=useState<Session[]>(initialSessions)
 const [activeId,setActiveId]=useState<string|null>(null)
 const [selectedId,setSelectedId]=useState("s1")
 const [draft,setDraft]=useState<Draft>(emptyDraft())
+const [creationPreview,setCreationPreview]=useState(()=>new Date().toISOString())
 const [sourceKind,setSourceKind]=useState<SourceKind>("run")
 const [contextKind,setContextKind]=useState<ContextKey>("pilot")
 const [moduleId,setModuleId]=useState("best")
@@ -67,9 +78,9 @@ const storageTotal=2048
 function show(message:string){setToast(message);window.setTimeout(()=>setToast(""),2800)}
 function navigate(target:View,group?:Mode){setView(target);if(group)setMode(group)}
 function selectMode(m:Mode){setMode(m);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":"settings");if(m==="resources")setKind("pilots")}
-function beginNew(){setDraft(emptyDraft());navigate("new","analysis")}
+function beginNew(){setDraft(emptyDraft());setCreationPreview(new Date().toISOString());navigate("new","analysis")}
 function openSession(id:string){if(!sessions.some(s=>s.id===id))return;setActiveId(id);setSelectedId(id);navigate("session","analysis")}
-function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);navigate("session","analysis");show(t("create.created"))}
+function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim(),observations:draft.observations.trim(),createdAt:new Date().toISOString()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);navigate("session","analysis");show(t("create.created"))}
 function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value,...(key==="vehicle"?{setup:""}:{})}))}
 function toggleMulti(key:"targets"|"references"|"modules",id:string,checked:boolean){
 setDraft(old=>{
@@ -205,15 +216,53 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 
 
 {view==="new"&&<div className="new-session">
-<Card className="session-name-row"><div><CardTitle>{t("create.name")}</CardTitle><CardDescription>{t("create.nameHint")}</CardDescription></div><Input aria-label={t("create.name")} required maxLength={80} autoComplete="off" value={draft.name} onChange={(e:ChangeEvent<HTMLInputElement>)=>setDraft(d=>({...d,name:e.target.value}))} placeholder={t("create.name")}/></Card>
-<div className="context-three">
-<Card><CardHeader><CardTitle>{t("create.pilot")}</CardTitle></CardHeader><CardContent><ShadcnGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]}/></CardContent></Card>
-<Card><CardHeader><CardTitle>{t("create.vehicle")}</CardTitle></CardHeader><CardContent><ShadcnGrid label="Vehículos disponibles" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent></Card>
-<Card><CardHeader><CardTitle>{t("create.track")}</CardTitle></CardHeader><CardContent><ShadcnGrid label="Circuitos disponibles" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"distance",title:"Distancia km",value:r=>r.distanceKm??"—"},{key:"type",title:"Tipo",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]}/></CardContent></Card>
+<Card className="session-details-card">
+ <CardHeader><SessionCardHeading title="Datos de la sesión" complete={Boolean(draft.name.trim())}/><CardDescription>{t("create.nameHint")}</CardDescription></CardHeader>
+ <CardContent><div className="session-fields">
+  <label className="session-form-field"><span>Nombre de la sesión <span aria-hidden="true">*</span></span><Input aria-label={t("create.name")} required maxLength={80} autoComplete="off" value={draft.name} onChange={e=>setDraft(d=>({...d,name:e.target.value}))} placeholder="Escribí el nombre de la sesión"/></label>
+  <label className="session-form-field"><span>Observaciones</span><Textarea aria-label="Observaciones de la sesión" rows={3} maxLength={2000} value={draft.observations} onChange={e=>setDraft(d=>({...d,observations:e.target.value}))} placeholder="Notas y comentarios sobre la sesión (opcional)"/></label>
+  <div className="session-form-field"><span>Fecha y hora de creación</span><output className="session-timestamp" aria-label="Fecha y hora de creación">{formatSessionTimestamp(creationPreview)}</output><small>Se fijará de forma automática al crear la sesión; no es editable.</small></div>
+ </div></CardContent>
+</Card>
+<div className="context-list">
+ <Card className="session-context-card">
+  <CardHeader><SessionCardHeading title={t("create.pilot")} complete={Boolean(draft.pilot)}/></CardHeader>
+  <CardContent><ShadcnGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]}/></CardContent>
+ </Card>
+ <Card className="session-context-card vehicle-parent-card">
+  <CardHeader><SessionCardHeading title={t("create.vehicle")} complete={Boolean(draft.vehicle&&resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.some(s=>s.id===draft.setup))}/><CardDescription>Seleccioná un vehículo y después uno de sus setups.</CardDescription></CardHeader>
+  <CardContent><div className="vehicle-card-grid">
+   <Card className="vehicle-inner-card">
+    <CardHeader><CardTitle>Seleccionar vehículo</CardTitle><CardDescription>Filtrá por categoría y tipo de vehículo.</CardDescription></CardHeader>
+    <CardContent><ShadcnGrid label="Vehículos disponibles" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent>
+   </Card>
+   <Card className="vehicle-inner-card vehicle-setups-card">
+    <CardHeader><CardTitle>Setups del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
+    <CardContent><label className="session-form-field"><span>Setup del vehículo</span><select aria-label="Setup del vehículo" className="setup-select" disabled={!draft.vehicle||!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length} value={draft.setup} onChange={e=>setDraft(d=>({...d,setup:e.target.value}))}><option value="">Seleccionar setup</option>{resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+    {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados.</p>}
+    {draft.setup&&<p className="setup-selected">Setup seleccionado: <strong>{resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.find(s=>s.id===draft.setup)?.name}</strong></p>}
+    </CardContent>
+   </Card>
+  </div></CardContent>
+ </Card>
+ <Card className="session-context-card">
+  <CardHeader><SessionCardHeading title={t("create.track")} complete={Boolean(draft.track)}/></CardHeader>
+  <CardContent><ShadcnGrid label="Circuitos disponibles" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"distance",title:"Distancia km",value:r=>r.distanceKm??"—"},{key:"type",title:"Tipo",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]}/></CardContent>
+ </Card>
 </div>
-<Card><CardHeader><CardTitle>Setup del vehículo</CardTitle><CardDescription>Elegí un setup del vehículo seleccionado (datos ilustrativos).</CardDescription></CardHeader><CardContent><select aria-label="Setup del vehículo" className="setup-select" disabled={!draft.vehicle} value={draft.setup} onChange={e=>setDraft(d=>({...d,setup:e.target.value}))}><option value="">Seleccionar setup</option>{resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></CardContent></Card>
-{(["targets","references"] as const).map(role=><Card key={role}><CardHeader><CardTitle>{t(role==="targets"?"create.targets":"create.references")}</CardTitle><CardDescription>{role==="targets"?"Un rodaje objetivo como máximo; también podés dejarlo sin asignar.":"Podés elegir varias referencias, incluso sin objetivo."}</CardDescription></CardHeader><CardContent><ShadcnGrid label={role==="targets"?"Datos objetivos":"Datos de referencia"} rows={datasets.filter(d=>role==="references"||d.type==="run")} selection={role==="targets"?"single":"multiple"} selected={draft[role]} onSelect={(id,checked)=>toggleMulti(role,id,checked)} disabled={d=>role==="targets"&&draft.references.includes(d.id)||role==="references"&&draft.targets.includes(d.id)} columns={datasetColumns()} groups={["type","track"]} groupers={[{key:"month",title:"Mes",value:d=>d.date.slice(0,7)},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}/></CardContent></Card>)}
-<Card><CardHeader><CardTitle>{t("create.modules")}</CardTitle><CardDescription>Los módulos no elegibles indican requisitos pendientes.</CardDescription></CardHeader><CardContent><ShadcnGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)} selection="multiple" selected={draft.modules} disabled={r=>!moduleAvailable(r)} onSelect={(id,checked)=>toggleMulti("modules",id,checked)} columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos"}]} detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent></Card>
+{(["targets","references"] as const).map(role=>{
+ const title=t(role==="targets"?"create.targets":"create.references")
+ const isObjective=role==="targets"
+ return <Card className="session-context-card" key={role}>
+  <CardHeader>{isObjective?<SessionCardHeading title={title} complete={draft.targets.length<=1&&!draft.targets.some(id=>draft.references.includes(id))}/>:<CardTitle>{title}</CardTitle>}
+  <CardDescription>{isObjective?"Un rodaje objetivo como máximo; la selección es opcional. Si no se selecciona ninguno, esta condición también está cumplida.":"Podés elegir varias referencias, incluso sin objetivo."}</CardDescription></CardHeader>
+  <CardContent><ShadcnGrid label={isObjective?"Datos objetivos":"Datos de referencia"} rows={datasets.filter(d=>!isObjective||d.type==="run")} selection={isObjective?"single":"multiple"} selected={draft[role]} onSelect={(id,checked)=>toggleMulti(role,id,checked)} disabled={d=>isObjective&&draft.references.includes(d.id)||!isObjective&&draft.targets.includes(d.id)} columns={datasetColumns()} groups={["type","track"]} groupers={[{key:"month",title:"Mes",value:d=>d.date.slice(0,7)},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}/></CardContent>
+ </Card>
+})}
+<Card className="session-context-card">
+ <CardHeader><SessionCardHeading title={t("create.modules")} complete={draft.modules.length>0&&draft.modules.every(id=>{const r=resources.modules.find(x=>x.id===id);return Boolean(r&&r.enabled!==false&&moduleAvailable(r))})}/><CardDescription>Los módulos no elegibles indican requisitos pendientes.</CardDescription></CardHeader>
+ <CardContent><ShadcnGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)} selection="multiple" selected={draft.modules} disabled={r=>!moduleAvailable(r)} onSelect={(id,checked)=>toggleMulti("modules",id,checked)} columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos"}]} detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent>
+</Card>
 <Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card>
 </div>}
 
