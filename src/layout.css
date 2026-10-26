@@ -465,3 +465,9 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 /* Igualar el comienzo del cuerpo de las dos tablas del vehículo a pesar de sus filtros diferentes. */
 .vehicle-card-grid .vehicle-inner-card .shadcn-grid{flex:1}
 .vehicle-card-grid .vehicle-inner-card .shadcn-grid .dg-panel{margin-top:auto}
+
+/* Enlace discreto de desarrollo al catálogo de componentes reales. */
+.sidebar07-storybook-link{display:flex;gap:8px;align-items:center;min-height:28px;padding:5px 10px;margin:0 2px 8px;border-radius:7px;color:#91aab8;text-decoration:none;font-size:11px;line-height:1.25}
+.sidebar07-storybook-link:hover,.sidebar07-storybook-link:focus-visible{background:#243b48;color:#fff}
+.sidebar07-storybook-link svg{flex:none}
+[data-collapsible="icon"] .sidebar07-storybook-link span{display:none}

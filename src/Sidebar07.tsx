@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut } from "lucide-react"
+import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut, BookOpen } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -92,6 +92,11 @@ export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,o
       </SidebarGroup>
     </SidebarContent>
     <SidebarFooter className="sidebar07-footer">
+      <a className="sidebar07-storybook-link" href="/lapexMaqueta/storybook/"
+        target="_blank" rel="noopener noreferrer"
+        aria-label="Abrir catálogo de componentes Storybook" title="Catálogo de desarrollo · Storybook">
+        <BookOpen size={14}/><span>Componentes · Storybook</span>
+      </a>
       <SidebarMenu>
         <SidebarMenuItem ref={profileAreaRef} className="sidebar07-user-anchor">
           <SidebarMenuButton size="lg" className="sidebar07-user" onClick={()=>setProfileOpen(p=>!p)} aria-haspopup="menu" aria-expanded={profileOpen} aria-controls="lapex-profile-menu" aria-label={t("nav.profile")}>
