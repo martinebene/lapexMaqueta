@@ -36,6 +36,8 @@ interface Props<T extends { id: string }> {
   groupers?: GridGrouping<T>[]
   detail?: (record: T) => ReactNode
   actions?: (record: T) => ReactNode
+  /** Control principal independiente del selector; aparece junto al detalle. */
+  leadingControl?: (record: T) => ReactNode
   advancedFilterColumns?: GridGrouping<T>[]
   emptyMessage?: string
   /** Permite igualar altura entre tablas vecinas (vehículo/setup). */
@@ -120,6 +122,12 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
         enableHiding: true,
       })
     }
+    if (props.leadingControl) fields.unshift({
+      id: "lapex-leading-control", header: "Activar", enableSorting: false,
+      enableGrouping: false, enableColumnFilter: false,
+      Cell: ({ row }) => <div className="dg-inline-toggle">{latest.current.leadingControl?.(row.original)}</div>,
+      size: 60,
+    })
     if (props.actions) fields.push({
       id: "lapex-actions",
       header: "Acciones",
@@ -132,7 +140,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     return fields
     // Structural signature intentionally captures definition changes, not render functions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature, grouperSignature, Boolean(props.actions)])
+  }, [signature, grouperSignature, Boolean(props.actions), Boolean(props.leadingControl)])
 
   const currentSelected = selectedState(selected)
   const table = useShadcnTable<T>({
@@ -168,8 +176,8 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     enableRowActions: false,
     positionExpandColumn: "first",
     displayColumnDefOptions: {
-      "st-row-expand": { header: "Detalle", size: groups.length || groupers.length ? 152 : 76 },
-      "st-row-select": { header: "Select", size: 56 },
+      "st-row-expand": { header: "Detalle", size: 52 },
+      "st-row-select": { header: "Elegir", size: 46 },
     },
     // Shadcn Table agrega por defecto su propio marco, sombra y padding.
     // Lapex conserva una única superficie y un único scroll en .dg-rows.
