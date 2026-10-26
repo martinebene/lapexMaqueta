@@ -36,7 +36,10 @@ jobs:
           rsync -a --delete dist/ /tmp/lapex-maqueta-pages/maqueta/
           rm -rf /tmp/lapex-maqueta-pages/sidebar-07
           printf '%s\n' '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0; url=./maqueta/"><link rel="canonical" href="https://martinebene.github.io/lapexMaqueta/maqueta/"><title>Lapex · Maqueta</title><script>location.replace(new URL("./maqueta/", location.href))</script></head><body><p>Vista previa vigente: <a href="./maqueta/">Maqueta Lapex</a>.</p></body></html>' > /tmp/lapex-maqueta-pages/index.html
-          git -C /tmp/lapex-maqueta-pages add -A index.html maqueta sidebar-07
+          git -C /tmp/lapex-maqueta-pages add -A index.html maqueta
+          if git -C /tmp/lapex-maqueta-pages ls-files -- sidebar-07 | grep -q .; then
+            git -C /tmp/lapex-maqueta-pages add -A -- sidebar-07
+          fi
           if ! git -C /tmp/lapex-maqueta-pages diff --cached --quiet; then
             git -C /tmp/lapex-maqueta-pages config user.name "github-actions[bot]"
             git -C /tmp/lapex-maqueta-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
