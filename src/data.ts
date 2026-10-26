@@ -3,16 +3,17 @@ export type ResourceKind="pilots"|"tracks"|"vehicles"|"modules"
 export type SourceKind="weather"|"run"|"reference"|"timing"
 export type DatasetType="weather"|"run"|"timing"
 export type Setup={id:string;name:string;date?:string;detail?:string}
+export type SegmentSet={id:string;name:string;type:"analysis"|"nomenclature";detail?:string}
 export interface Resource {
- id:string;name:string;detail:string;number?:string;shortName?:string;nickname?:string;country?:string;province?:string;city?:string;email?:string;phone?:string;experience?:number;speed?:number;description?:string
- category?:string;vehicleType?:string;manufacturer?:string;model?:string;referenceWeight?:number;drivenWheels?:string;enginePower?:string;setups?:Setup[]
- trackType?:string;lengthKm?:number;distanceKm?:number;segments?:number;geometry?:[number,number][]
+ id:string;name:string;detail:string;number?:string;shortName?:string;nickname?:string;nationality?:string;birthDate?:string;photo?:string;drivingStyle?:string;tags?:string[];customAttributes?:Record<string,string>;country?:string;province?:string;city?:string;email?:string;phone?:string;experience?:number;speed?:number;description?:string
+ category?:string;vehicleType?:string;manufacturer?:string;model?:string;referenceWeight?:number;drivenWheels?:string;enginePower?:string;dragCoefficient?:number;handicapBallastWeight?:number;setups?:Setup[]
+ trackType?:string;lengthKm?:number;distanceKm?:number;segments?:number;segmentSets?:SegmentSet[];geometry?:[number,number][];location?:string;direction?:string;visibility?:"public"|"private"
  enabled?:boolean;requirements?:string[];docsUrl?:string
 }
 export interface Dataset {id:string;name:string;date:string;time:string;observation:string;track:string;type:DatasetType;device?:string;bestLap?:string;duration?:string;season?:string;category?:string;sizeMB?:number;channels?:number}
-export interface Session {id:string;name:string;observations?:string;createdAt?:string;pilot:string;track:string;vehicle:string;setup:string;targets:string[];references:string[];modules:string[]}
-export interface Draft {name:string;observations:string;pilot:string;track:string;vehicle:string;setup:string;targets:string[];references:string[];modules:string[]}
-export const emptyDraft=():Draft=>({name:"",observations:"",pilot:"",track:"",vehicle:"",setup:"",targets:[],references:[],modules:[]})
+export interface Session {id:string;name:string;observations?:string;createdAt?:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds?:string[];targets:string[];references:string[];modules:string[]}
+export interface Draft {name:string;observations:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds:string[];targets:string[];references:string[];modules:string[]}
+export const emptyDraft=():Draft=>({name:"",observations:"",pilot:"",track:"",vehicle:"",setup:"",segmentSetIds:[],targets:[],references:[],modules:[]})
 export const initialResources:Record<ResourceKind,Resource[]>={
  pilots:[
   {id:"p1",name:"Piloto Demo A",detail:"Ensayos de turismo",number:"21",shortName:"P. Demo A",country:"Argentina",city:"Puerto Madryn",experience:7,speed:8,description:"Piloto de ensayos"},
@@ -20,9 +21,9 @@ export const initialResources:Record<ResourceKind,Resource[]>={
   {id:"p3",name:"Piloto Demo C",detail:"Karting",number:"07",country:"Argentina",city:"Rawson",experience:4,speed:6}
  ],
  tracks:[
-  {id:"t1",name:"Circuito Delta",detail:"3,75 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:3.75,distanceKm:60,segments:2,geometry:[[-65.31,-43.25],[-65.30,-43.245],[-65.295,-43.253],[-65.31,-43.25]]},
-  {id:"t2",name:"Circuito Costero",detail:"4,20 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:4.2,distanceKm:120,segments:1},
-  {id:"t3",name:"Circuito Sierra",detail:"5,10 km",country:"Argentina",province:"Córdoba",trackType:"Cerrado",lengthKm:5.1,segments:0}
+  {id:"t1",name:"Circuito Delta",detail:"3,75 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:3.75,distanceKm:60,segments:2,segmentSets:[{id:"seg-t1-a",name:"Parciales carrera",type:"analysis"},{id:"seg-t1-n",name:"Nombres de curvas",type:"nomenclature"}],geometry:[[-65.31,-43.25],[-65.30,-43.245],[-65.295,-43.253],[-65.31,-43.25]]},
+  {id:"t2",name:"Circuito Costero",detail:"4,20 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:4.2,distanceKm:120,segments:1,segmentSets:[{id:"seg-t2-a",name:"Sectores de pista",type:"analysis"}]},
+  {id:"t3",name:"Circuito Sierra",detail:"5,10 km",country:"Argentina",province:"Córdoba",trackType:"Cerrado",lengthKm:5.1,segments:0,segmentSets:[]}
  ],
  vehicles:[
   {id:"v1",name:"GT-04",detail:"Tracción delantera",category:"Turismo Pista",vehicleType:"Auto de Turismo",manufacturer:"Volkswagen",model:"Gol",referenceWeight:900,drivenWheels:"Delantera",enginePower:"125 CV",setups:[{id:"su1",date:"2026-10-11",name:"Base pista"},{id:"su2",date:"2026-10-17",name:"Clasificación"}]},
@@ -56,6 +57,7 @@ export function moduleMissing(module:Resource,d:Draft,datasets:Dataset[]){
  const used=datasets.filter(x=>[...d.targets,...d.references].includes(x.id))
  if(!used.some(x=>x.type==="run"))return module.requirements??["Se requiere un rodaje"]
  if(module.id==="sectors"&&!d.track)return ["Seleccionar un circuito"]
+ if(module.id==="sectors"&&!d.segmentSetIds?.some(id=>id && true))return ["Seleccionar un conjunto de segmentación de parciales"]
  return []
 }
 export function validDraft(d:Draft,resources:Record<ResourceKind,Resource[]>,datasets:Dataset[]){
