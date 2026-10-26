@@ -243,13 +243,18 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   <CardContent><div className="vehicle-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar vehículo</CardTitle><CardDescription>Filtrá por categoría y tipo de vehículo.</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Vehículos disponibles" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent>
+    <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card vehicle-setups-card">
-    <CardHeader><CardTitle>Setups del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
-    <CardContent><label className="session-form-field"><span>Setup del vehículo</span><select aria-label="Setup del vehículo" className="setup-select" disabled={!draft.vehicle||!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length} value={draft.setup} onChange={e=>setDraft(d=>({...d,setup:e.target.value}))}><option value="">Seleccionar setup</option>{resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-    {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados.</p>}
-    {draft.setup&&<p className="setup-selected">Setup seleccionado: <strong>{resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.find(s=>s.id===draft.setup)?.name}</strong></p>}
+    <CardHeader><CardTitle>Seleccionar setup del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
+    <CardContent>
+      <ShadcnGrid label="Setups del vehículo" tableHeight="264px"
+        rows={resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[]}
+        selection="single" selected={draft.setup}
+        onSelect={id=>setDraft(d=>({...d,setup:id}))}
+        emptyMessage={draft.vehicle?"Este vehículo no tiene setups cargados.":"Elegí primero un vehículo."}
+        columns={[{key:"name",title:"Nombre",value:s=>s.name},{key:"date",title:"Fecha",value:s=>s.date??"—"}]}/>
+      {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados.</p>}
     </CardContent>
    </Card>
   </div></CardContent>
@@ -265,12 +270,12 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
  return <Card className="session-context-card" key={role}>
   <CardHeader>{isObjective?<SessionCardHeading title={title} complete={draft.targets.length<=1&&!draft.targets.some(id=>draft.references.includes(id))}/>:<CardTitle>{title}</CardTitle>}
   <CardDescription>{isObjective?"Un rodaje objetivo como máximo; la selección es opcional. Si no se selecciona ninguno, esta condición también está cumplida.":"Podés elegir varias referencias, incluso sin objetivo."}</CardDescription></CardHeader>
-  <CardContent><ShadcnGrid label={isObjective?"Datos objetivos":"Datos de referencia"} rows={datasets.filter(d=>!isObjective||d.type==="run")} selection={isObjective?"single":"multiple"} selected={draft[role]} onSelect={(id,checked)=>toggleMulti(role,id,checked)} disabled={d=>isObjective&&draft.references.includes(d.id)||!isObjective&&draft.targets.includes(d.id)} columns={datasetColumns()} groups={["type","track"]} groupers={[{key:"month",title:"Mes",value:d=>d.date.slice(0,7)},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}/></CardContent>
+  <CardContent><ShadcnGrid label={isObjective?"Datos objetivos":"Datos de referencia"} rows={datasets.filter(d=>!isObjective||d.type==="run")} selection={isObjective?"single":"multiple"} selected={draft[role]} onSelect={(id,checked)=>toggleMulti(role,id,checked)} disabled={d=>isObjective&&draft.references.includes(d.id)||!isObjective&&draft.targets.includes(d.id)} columns={datasetColumns()} groups={["type","track"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}/></CardContent>
  </Card>
 })}
 <Card className="session-context-card">
  <CardHeader><SessionCardHeading title={t("create.modules")} complete={draft.modules.length>0&&draft.modules.every(id=>{const r=resources.modules.find(x=>x.id===id);return Boolean(r&&r.enabled!==false&&moduleAvailable(r))})}/><CardDescription>Los módulos no elegibles indican requisitos pendientes.</CardDescription></CardHeader>
- <CardContent><ShadcnGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)} selection="multiple" selected={draft.modules} disabled={r=>!moduleAvailable(r)} onSelect={(id,checked)=>toggleMulti("modules",id,checked)} columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos"}]} detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent>
+ <CardContent><ShadcnGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)} selection="multiple" selected={draft.modules} disabled={r=>!moduleAvailable(r)} onSelect={(id,checked)=>toggleMulti("modules",id,checked)} columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos",status:r=>moduleAvailable(r)?"success":"error"}]} detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent>
 </Card>
 <Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card>
 </div>}
@@ -354,7 +359,7 @@ actions={r=>kind==="modules"?<>
  {key:"track",title:"Circuito",value:d=>itemName(d.track,resources.tracks),filter:true},
  {key:"type",title:"Tipo de origen",value:d=>t("source."+d.type),filter:true},
  {key:"observation",title:"Observaciones",value:d=>d.observation,filter:true,render:d=><Input aria-label={"Observaciones de "+d.name} defaultValue={d.observation} onBlur={e=>updateObservation(d.id,e.target.value)}/>}
- ]} groups={["track","type"]} groupers={[{key:"month",title:"Mes",value:d=>d.date.slice(0,7)},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}
+ ]} groups={["track","type"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}
  actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/></Button><Button size="sm" variant="ghost" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={14}/></Button></>}/>
 </CardContent></Card></div>}
 

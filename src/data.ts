@@ -2,7 +2,7 @@
 export type ResourceKind="pilots"|"tracks"|"vehicles"|"modules"
 export type SourceKind="weather"|"run"|"reference"|"timing"
 export type DatasetType="weather"|"run"|"timing"
-export type Setup={id:string;name:string;detail?:string}
+export type Setup={id:string;name:string;date?:string;detail?:string}
 export interface Resource {
  id:string;name:string;detail:string;number?:string;shortName?:string;nickname?:string;country?:string;province?:string;city?:string;email?:string;phone?:string;experience?:number;speed?:number;description?:string
  category?:string;vehicleType?:string;manufacturer?:string;model?:string;referenceWeight?:number;drivenWheels?:string;enginePower?:string;setups?:Setup[]
@@ -25,9 +25,9 @@ export const initialResources:Record<ResourceKind,Resource[]>={
   {id:"t3",name:"Circuito Sierra",detail:"5,10 km",country:"Argentina",province:"Córdoba",trackType:"Cerrado",lengthKm:5.1,segments:0}
  ],
  vehicles:[
-  {id:"v1",name:"GT-04",detail:"Tracción delantera",category:"Turismo Pista",vehicleType:"Auto de Turismo",manufacturer:"Volkswagen",model:"Gol",referenceWeight:900,drivenWheels:"Delantera",enginePower:"125 CV",setups:[{id:"su1",name:"Base pista"},{id:"su2",name:"Clasificación"}]},
-  {id:"v2",name:"TP-02",detail:"Configuración alternativa",category:"Turismo Nacional",vehicleType:"Auto de Turismo",manufacturer:"Toyota",model:"Etios",referenceWeight:930,drivenWheels:"Delantera",setups:[{id:"su3",name:"Ensayo"},{id:"su4",name:"Carrera"}]},
-  {id:"v3",name:"K-11",detail:"Karting",category:"Sudam",vehicleType:"Karting",manufacturer:"Tony Kart",model:"Racer",referenceWeight:170,drivenWheels:"Trasera",setups:[{id:"su5",name:"Base"}]},
+  {id:"v1",name:"GT-04",detail:"Tracción delantera",category:"Turismo Pista",vehicleType:"Auto de Turismo",manufacturer:"Volkswagen",model:"Gol",referenceWeight:900,drivenWheels:"Delantera",enginePower:"125 CV",setups:[{id:"su1",date:"2026-10-11",name:"Base pista"},{id:"su2",date:"2026-10-17",name:"Clasificación"}]},
+  {id:"v2",name:"TP-02",detail:"Configuración alternativa",category:"Turismo Nacional",vehicleType:"Auto de Turismo",manufacturer:"Toyota",model:"Etios",referenceWeight:930,drivenWheels:"Delantera",setups:[{id:"su3",date:"2026-10-13",name:"Ensayo"},{id:"su4",date:"2026-10-18",name:"Carrera"}]},
+  {id:"v3",name:"K-11",detail:"Karting",category:"Sudam",vehicleType:"Karting",manufacturer:"Tony Kart",model:"Racer",referenceWeight:170,drivenWheels:"Trasera",setups:[{id:"su5",date:"2026-10-09",name:"Base"}]},
   {id:"v4",name:"M-08",detail:"Moto de ensayo sin configuraciones",category:"Superbike",vehicleType:"Moto de velocidad",manufacturer:"Yamaha",model:"R6",setups:[]}
  ],
  modules:[
