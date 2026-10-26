@@ -37,6 +37,18 @@ Utilizar los componentes establecidos del frontend definitivo para que la maquet
 - Bloques y ejemplos: https://ui.shadcn.com/blocks
 - Configurador de estilo: https://ui.shadcn.com/create
 
+## Decisión de tablas avanzadas — 2026-10-26
+
+**Shadcn Table (edición Base UI) se adopta como biblioteca preferente** para tablas que requieran selección, filtros, agrupación, edición y panel de detalle, subordinada al criterio de preferir componentes oficiales cuando éstos resuelvan todo el caso sin complejidad adicional.
+
+La [prueba aislada en GitHub Actions](https://github.com/martinebene/lapexMaqueta/actions/runs/40359545445) aprobó instalación, TypeScript/Vite, búsqueda, filtro exacto, agrupación y radio único mediante Playwright. No validó exhaustivamente edición, panel de detalle, todos los filtros combinados ni los flujos completos de Lapex.
+
+**Decisión de integración:** `DataGrid.tsx` sigue vigente hasta una migración controlada que preserve selección única/múltiple, filas no elegibles, filtros simultáneos, búsqueda, agrupaciones, ordenamiento, edición, detalles, acciones, accesibilidad, localización y aspecto Nova. Hacer pruebas Playwright y revisión visual humana antes de sustituirlo. No mantener dos grillas funcionales estables ni publicar una segunda maqueta.
+
+**Riesgo concreto:** el registro del tercero incorporó más de 100 archivos e intentó sobrescribir componentes shadcn existentes en el entorno temporal. Para integrarlo en la rama real, inspeccionar cambios con `--dry-run`/`--diff`, no usar `--overwrite` global sobre componentes existentes sin revisión/autorización específica, y preferir integración selectiva. La decisión de usar la biblioteca no concede por sí misma GO para ejecutar la migración.
+
+**Skills de asistencia:** [shadcn/ui](../.agents/skills/shadcn/SKILL.md) y [Shadcn Table](../.agents/skills/shadcn-table/SKILL.md), copias oficiales versionadas en el repositorio para uso por agentes compatibles o lectura desde ChatGPT Web.
+
 ## Estado operativo y mantenimiento
 
 La versión **Maqueta Lapex** es la única maqueta activa. La rama técnica original `prototipo/sidebar-07` se conserva por continuidad histórica; no constituye una variante separada. La publicación está en `/maqueta/` y la URL raíz redirige allí. No generar variantes paralelas sin autorización expresa.

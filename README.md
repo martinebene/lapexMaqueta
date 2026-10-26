@@ -20,9 +20,13 @@ Seguir [CRITERIOS-DISENO-FRONTEND.md](docs/CRITERIOS-DISENO-FRONTEND.md): prefer
 - https://www.shadcn-table.com/docs/examples/customized-grouping
 - https://www.shadcn-table.com/docs/examples/detail-panel
 
-Shadcn Table es una implementación de terceros: evaluar adopción y compatibilidad antes de reconstruir manualmente ejemplos. Las tablas actuales usan `src/DataGrid.tsx` (implementación compositiva propia); eso no autoriza ampliar código propio sin analizar alternativas.
+**Decisión 2026-10-26:** Shadcn Table edición Base UI es la biblioteca preferente para futuras tablas avanzadas. La migración de `src/DataGrid.tsx` queda condicionada a pruebas de paridad y aprobación visual, sin migración automática. Ver los [criterios](docs/CRITERIOS-DISENO-FRONTEND.md#decisión-de-tablas-avanzadas--2026-10-26).
 
 **Documentación normativa del producto:** https://github.com/martinebene/Lapex2, comenzando por `AGENTS.md`, especificaciones y decisiones vigentes. La maqueta emplea datos sintéticos; no sustituye requisitos aprobados ni constituye autorización de implementación. Las definiciones aún abiertas para H2 figuran en P-09 y D-066.
+
+## Skills de diseño para agentes
+
+Instaladas en el repositorio: [shadcn/ui](.agents/skills/shadcn/SKILL.md) y [Shadcn Table](.agents/skills/shadcn-table/SKILL.md), ambas como copias versionadas de las skills oficiales. Leer [AGENTS.md](AGENTS.md) para saber cuándo aplicarlas. ChatGPT Web puede leerlas desde GitHub, pero **no son skills nativas instaladas en el entorno del chat**. Los agentes de código compatibles pueden descubrirlas en su checkout.
 
 ## Conservación de una única variante
 
