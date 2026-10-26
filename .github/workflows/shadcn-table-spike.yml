@@ -73,8 +73,8 @@ jobs:
                 <option value="">Sin agrupar</option><option value="category">Categoría</option>
               </select>
               <output data-testid="count">{table.getFilteredRowModel().rows.length}</output>
-              <output data-testid="selected">{Object.values(table.getState().rowSelection??{}).filter(Boolean).length}</output>
-              <output data-testid="grouped">{table.getState().grouping?.length??0}</output>
+              <output data-testid="selected">{Object.values(table.state.rowSelection??{}).filter(Boolean).length}</output>
+              <output data-testid="grouped">{table.state.grouping?.length??0}</output>
               <ShadcnTable table={table}/>
             </main>
           }
