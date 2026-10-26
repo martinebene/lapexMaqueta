@@ -37,6 +37,10 @@ Utilizar los componentes establecidos del frontend definitivo para que la maquet
 - Bloques y ejemplos: https://ui.shadcn.com/blocks
 - Configurador de estilo: https://ui.shadcn.com/create
 
-## Estado operativo
+## Estado operativo y mantenimiento
 
-El director está reuniendo nuevas especificaciones para la siguiente iteración. **No modificar pantallas, componentes, estilos ni flujos hasta que indique expresamente que terminó.** Esta entrega se limita a registrar los criterios de diseño. La integración de estas reglas en la documentación normativa de Lapex2 se evaluará posteriormente.
+La versión **Sidebar 07** es la única maqueta activa. Su fuente se mantiene en `prototipo/sidebar-07` y su única publicación funcional en `/sidebar-07/`, con redirección desde la URL raíz. No generar variantes paralelas sin autorización expresa.
+
+La implementación actual de `src/DataGrid.tsx` es una **composición propia sobre `Table`**, no el paquete de terceros Shadcn Table ni el patrón oficial completo de TanStack Table. Al iterar, evaluar primero reutilizar la implementación documentada más próxima antes de ampliar ese código o sumar CSS particular. No alterar reglas del producto para adecuarlas al prototipo.
+
+La integración de estas pautas en la documentación normativa de Lapex2 sigue pendiente de reconciliación, sin aprobación ni GO automáticos.
