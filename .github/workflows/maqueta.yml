@@ -9,7 +9,7 @@ permissions:
   pages: write
 jobs:
   publish-maqueta:
-    name: Compilar y publicar Maqueta Lapex
+    name: Compilar y publicar Maqueta Lapex y Storybook
     runs-on: ubuntu-latest
     concurrency:
       group: lapex-maqueta-preview
