@@ -17,4 +17,4 @@ export const PilotoNuevo:Story={render:()=> <Demo kind="pilots" initial={{id:"",
 export const VehiculoEditar:Story={render:()=> <Demo kind="vehicles" initial={vehicle} editing/>}
 export const VehiculoNuevo:Story={render:()=> <Demo kind="vehicles" initial={{id:"",name:"",detail:"",vehicleType:"",setups:[]}} editing={false}/>}
 export const CircuitoEditar:Story={render:()=> <Demo kind="tracks" initial={track} editing/>}
-export const CircuitoNuevo:Story={render:()=> <Demo kind="tracks" initial={{id:"",name:"",detail:"",trackType:"Cerrado",segmentSets:[]}} editing={false}/>}
+export const CircuitoNuevo:Story={render:()=> <Demo kind="tracks" initial={{id:"",name:"",detail:"",trackType:"",segmentSets:[]}} editing={false}/>}

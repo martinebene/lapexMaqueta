@@ -92,7 +92,7 @@ function openLibrary(k:ResourceKind){setKind(k);setModuleSettings(null);navigate
 function beginResource(id:string|null=null){
  const original=id?resources[kind].find(r=>r.id===id):null
  setItemId(id)
- setResourceDraft(original?{...original}:{id:"",name:"",detail:"",...(kind==="tracks"?{trackType:"Cerrado",segmentSets:[]}:kind==="vehicles"?{setups:[],vehicleType:""}:{})})
+ setResourceDraft(original?{...original}:{id:"",name:"",detail:"",...(kind==="tracks"?{trackType:"",segmentSets:[]}:kind==="vehicles"?{setups:[],vehicleType:""}:{})})
  navigate("resourceEdit","resources")
 }
 function saveResource(resource:Resource){
