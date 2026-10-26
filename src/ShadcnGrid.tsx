@@ -38,7 +38,7 @@ interface Props<T extends { id: string }> {
 
 function selectedState(selected?: string | string[]) {
   const ids = Array.isArray(selected) ? selected : selected ? [selected] : []
-  return Object.fromEntries(ids.map(id => [id, true])) as Record<string, boolean>
+  return Object.fromEntries(ids.map(id => [id, true])) as Record<string, true>
 }
 
 /**
