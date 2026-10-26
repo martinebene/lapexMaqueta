@@ -60,5 +60,5 @@ test("Storybook: tabla real con filtros y agrupación interactivos",async({page}
   await group.selectOption("track")
   await expect(page.getByRole("button",{name:"Contraer grupo Sin circuito"})).toBeVisible()
   await page.getByRole("textbox",{name:"Buscar en Registros de prueba"}).fill("Tanda 02")
-  await expect(page.getByText("Rodaje · Tanda 02",{exact:true}).first()).toBeVisible()
+  await expect(page.locator("tbody").getByText("Rodaje · Tanda 02",{exact:true}).first()).toBeVisible()
 })
