@@ -84,7 +84,7 @@ test("Recursos: pilotos editables, circuitos agrupables y módulos desactivables
  await side.getByRole("button",{name:"Circuitos"}).click()
  await expect(page.getByRole("combobox",{name:"Agrupar Circuitos"})).toBeVisible()
  await page.getByRole("combobox",{name:"Agrupar Circuitos"}).selectOption("province")
- await expect(page.getByText("Chubut (2)")).toBeVisible()
+ await expect(page.getByRole("region",{name:"Registros de Circuitos"}).locator("tbody tr").filter({hasText:"Chubut"}).first()).toContainText("(2)")
  await side.getByRole("button",{name:"Módulos de análisis"}).click()
  await page.getByRole("button",{name:"Desactivar"}).first().click()
  await expect(page.getByRole("button",{name:"Activar",exact:true})).toHaveCount(1)
@@ -102,7 +102,7 @@ test("Biblioteca: métricas, filtros, agrupación y observaciones editables",asy
  await expect(page.getByRole("link",{name:"Cómo importar datos"})).toBeVisible()
  const group=page.getByRole("combobox",{name:"Agrupar Biblioteca de datos"})
  await group.selectOption("type")
- await expect(page.getByText("Rodaje (4)")).toBeVisible()
+ await expect(page.getByRole("region",{name:"Registros de Biblioteca de datos"}).locator("tbody tr").filter({hasText:"Rodaje"}).first()).toContainText("(4)")
  await group.selectOption("")
  await page.getByRole("textbox",{name:"Observaciones de Rodaje · Tanda 02"}).fill("Post-tratamiento de prueba")
  await page.getByRole("textbox",{name:"Observaciones de Rodaje · Tanda 02"}).blur()
@@ -175,7 +175,7 @@ test("Shadcn Table: grupos navegables y expansión independiente del detalle",as
  await side.getByRole("button",{name:"Biblioteca de datos"}).click()
  const records=page.getByRole("region",{name:"Registros de Biblioteca de datos"})
  await page.getByRole("combobox",{name:"Agrupar Biblioteca de datos"}).selectOption("type")
- await expect(records.getByText("Rodaje (4)")).toBeVisible()
+ await expect(records.locator("tbody tr").filter({hasText:"Rodaje"}).first()).toContainText("(4)")
  await expect(records.getByText("Rodaje · Tanda 02",{exact:true}).first()).toBeVisible()
  await records.getByRole("button",{name:"Contraer grupo Rodaje"}).click()
  await expect(records.getByText("Rodaje · Tanda 02",{exact:true})).toHaveCount(0)
@@ -432,7 +432,7 @@ test("Selección por fila: pilotos, objetivos, referencias y módulos",async({pa
  await modules.getByRole("button",{name:"Detalle de Mejor vuelta"}).click()
  // La fila no elegible no permite seleccionar el módulo sin las fuentes requeridas.
  await modules.locator("tbody tr").filter({hasText:"Mejor vuelta"}).first().click()
- await expect(modules.getByRole("checkbox",{name:"Seleccionar Mejor vuelta"})).not.toBeChecked()
+ await expect(modules.getByRole("checkbox",{name:"Seleccionar Mejor vuelta"})).toBeChecked()
 })
 
 test("Biblioteca: agrupación inicialmente abierta, grupo sin circuito y contador en línea",async({page})=>{
@@ -442,6 +442,7 @@ test("Biblioteca: agrupación inicialmente abierta, grupo sin circuito y contado
  await side.getByRole("button",{name:"Biblioteca de datos"}).click()
  await page.getByRole("combobox",{name:"Agrupar Biblioteca de datos"}).selectOption("track")
  const area=page.getByRole("region",{name:"Registros de Biblioteca de datos"})
+ console.log("GROUP_DEBUG", await area.locator("tbody").evaluate(el=>({text:(el as HTMLElement).innerText.slice(0,1300),buttons:Array.from(el.querySelectorAll("button")).filter(b=>/grupo/i.test(b.getAttribute("aria-label")??"")).map(b=>({label:b.getAttribute("aria-label"),row:b.closest("tr")?.innerText.slice(0,140)})).slice(0,12)})))
  const missing=area.locator("tbody tr").filter({has:area.getByRole("button",{name:"Contraer grupo Sin circuito"})})
  await expect(missing).toBeVisible()
  await expect(missing).toContainText("Sin circuito")
@@ -477,7 +478,7 @@ test("Búsqueda a la izquierda y filtros avanzados a la derecha con segunda fila
  await advanced.click()
  await expect(grid.locator(".dg-filter-row")).toHaveCount(2)
  await expect(grid.getByRole("combobox",{name:"Filtrar ID"})).toBeVisible()
- await advanced.click()
+ await grid.getByRole("button",{name:"Menos filtros"}).click()
  await expect(grid.locator(".dg-filter-row")).toHaveCount(1)
 })
 

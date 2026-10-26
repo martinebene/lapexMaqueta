@@ -252,7 +252,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
         rows={resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[]}
         selection="single" selected={draft.setup}
         onSelect={id=>setDraft(d=>({...d,setup:id}))}
-        emptyMessage={draft.vehicle?"Este vehículo no tiene setups cargados.":"Elegí primero un vehículo."}
+        emptyMessage={draft.vehicle?"No hay registros":"Elegí primero un vehículo."}
         columns={[{key:"name",title:"Nombre",value:s=>s.name},{key:"date",title:"Fecha",value:s=>s.date??"—"}]}/>
       {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados.</p>}
     </CardContent>

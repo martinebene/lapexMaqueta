@@ -461,3 +461,7 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .vehicle-card-grid .vehicle-inner-card .dg-rows{min-height:264px;max-height:264px;height:264px}
 .vehicle-card-grid .vehicle-inner-card .dg-rows>div,
 .vehicle-card-grid .vehicle-inner-card .dg-rows>div>div{height:264px;min-height:264px}
+
+/* Igualar el comienzo del cuerpo de las dos tablas del vehículo a pesar de sus filtros diferentes. */
+.vehicle-card-grid .vehicle-inner-card .shadcn-grid{flex:1}
+.vehicle-card-grid .vehicle-inner-card .shadcn-grid .dg-panel{margin-top:auto}
