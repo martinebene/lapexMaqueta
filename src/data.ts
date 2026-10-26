@@ -27,7 +27,8 @@ export const initialResources:Record<ResourceKind,Resource[]>={
  vehicles:[
   {id:"v1",name:"GT-04",detail:"Tracción delantera",category:"Turismo Pista",vehicleType:"Auto de Turismo",manufacturer:"Volkswagen",model:"Gol",referenceWeight:900,drivenWheels:"Delantera",enginePower:"125 CV",setups:[{id:"su1",name:"Base pista"},{id:"su2",name:"Clasificación"}]},
   {id:"v2",name:"TP-02",detail:"Configuración alternativa",category:"Turismo Nacional",vehicleType:"Auto de Turismo",manufacturer:"Toyota",model:"Etios",referenceWeight:930,drivenWheels:"Delantera",setups:[{id:"su3",name:"Ensayo"},{id:"su4",name:"Carrera"}]},
-  {id:"v3",name:"K-11",detail:"Karting",category:"Sudam",vehicleType:"Karting",manufacturer:"Tony Kart",model:"Racer",referenceWeight:170,drivenWheels:"Trasera",setups:[{id:"su5",name:"Base"}]}
+  {id:"v3",name:"K-11",detail:"Karting",category:"Sudam",vehicleType:"Karting",manufacturer:"Tony Kart",model:"Racer",referenceWeight:170,drivenWheels:"Trasera",setups:[{id:"su5",name:"Base"}]},
+  {id:"v4",name:"M-08",detail:"Moto de ensayo sin configuraciones",category:"Superbike",vehicleType:"Moto de velocidad",manufacturer:"Yamaha",model:"R6",setups:[]}
  ],
  modules:[
   {id:"best",name:"Mejor vuelta",detail:"Identifica y compara los mejores registros de vuelta",requirements:["Rodaje con vueltas y medición temporal"],enabled:true},
