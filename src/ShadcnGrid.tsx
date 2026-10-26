@@ -196,7 +196,6 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
             <div className="dg-search-row">
               <InputGroup className="dg-search">
                 <InputGroupInput
-                  type="search"
                   aria-label={"Buscar en " + label}
                   placeholder="Buscar"
                   value={query}
