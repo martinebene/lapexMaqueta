@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { Switch } from "@/components/ui/switch"
+import { ResourceForm } from "./ResourceForm"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
 import type { GridColumn } from "./ShadcnGrid"
@@ -17,7 +18,7 @@ import { AppSidebar07 } from "./Sidebar07"
 import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind } from "./data"
 
 type Mode="analysis"|"resources"|"data"|"config"
-type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
+type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"moduleEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
 const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
@@ -50,13 +51,10 @@ const [sourceKind,setSourceKind]=useState<SourceKind>("run")
 const [contextKind,setContextKind]=useState<ContextKey>("pilot")
 const [moduleId,setModuleId]=useState("best")
 const [kind,setKind]=useState<ResourceKind>("pilots")
-const [itemId]=useState<string|null>(null)
-const [editName,setEditName]=useState("")
-const [editDetail,setEditDetail]=useState("")
+const [itemId,setItemId]=useState<string|null>(null)
+const [resourceDraft,setResourceDraft]=useState<Resource>({id:"",name:"",detail:""})
 const [datasetId,setDatasetId]=useState("")
 const [dataDraft,setDataDraft]=useState<Dataset|null>(null)
-const [inlineId,setInlineId]=useState<string|null>(null)
-const [inlineDraft,setInlineDraft]=useState<Resource>({id:"",name:"",detail:""})
 const [moduleSettings,setModuleSettings]=useState<string|null>(null)
 const [plan,setPlan]=useState<"Free"|"Pro">("Free")
 const [toast,setToast]=useState("")
@@ -81,7 +79,7 @@ function selectMode(m:Mode){setMode(m);setView(m==="analysis"?(active?"session":
 function beginNew(){setDraft(emptyDraft());setCreationPreview(new Date().toISOString());navigate("new","analysis")}
 function openSession(id:string){if(!sessions.some(s=>s.id===id))return;setActiveId(id);setSelectedId(id);navigate("session","analysis")}
 function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim(),observations:draft.observations.trim(),createdAt:new Date().toISOString()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);navigate("session","analysis");show(t("create.created"))}
-function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value,...(key==="vehicle"?{setup:""}:{})}))}
+function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value,...(key==="vehicle"?{setup:""}:key==="track"?{segmentSetIds:[]}:{})}))}
 function toggleMulti(key:"targets"|"references"|"modules",id:string,checked:boolean){
 setDraft(old=>{
 const next={...old,[key]:checked?(key==="targets"?[id]:uniq([...old[key],id])):old[key].filter(x=>x!==id)};
@@ -90,8 +88,17 @@ if(checked&&key==="references")next.targets=old.targets.filter(x=>x!==id);
 return next;
 })
 }
-function openLibrary(k:ResourceKind){setKind(k);setInlineId(null);setModuleSettings(null);navigate("library","resources")}
-function saveResource(){if(!editName.trim())return;setResources(old=>({...old,[kind]:itemId?old[kind].map(x=>x.id===itemId?{...x,name:editName.trim(),detail:editDetail}:x):[...old[kind],{id:"r"+Date.now(),name:editName.trim(),detail:editDetail}]}));navigate("library","resources");show(t("form.saved"))}
+function openLibrary(k:ResourceKind){setKind(k);setModuleSettings(null);navigate("library","resources")}
+function beginResource(id:string|null=null){
+ const original=id?resources[kind].find(r=>r.id===id):null
+ setItemId(id)
+ setResourceDraft(original?{...original}:{id:"",name:"",detail:"",...(kind==="tracks"?{trackType:"Cerrado",segmentSets:[]}:kind==="vehicles"?{setups:[],vehicleType:""}:{})})
+ navigate("resourceEdit","resources")
+}
+function saveResource(resource:Resource){
+ setResources(old=>({...old,[kind]:itemId?old[kind].map(x=>x.id===itemId?{...resource,id:x.id,vehicleType:kind==="vehicles"?x.vehicleType:resource.vehicleType}:x):[...old[kind],{...resource,id:"r"+Date.now()}]}))
+ setItemId(null);navigate("library","resources");show(t("form.saved"))
+}
 function deleteResource(id:string){if(!window.confirm(t("data.deleteConfirm")))return;setResources(old=>({...old,[kind]:old[kind].filter(x=>x.id!==id)}));show(t("data.deleted"))}
 function editDataset(id:string){const d=datasets.find(x=>x.id===id);if(!d)return;setDatasetId(id);setDataDraft({...d});navigate("dataEdit","data")}
 function saveDataset(){if(!dataDraft?.name.trim())return;setDatasets(old=>old.map(x=>x.id===dataDraft.id?{...dataDraft,name:dataDraft.name.trim()}:x));navigate("dataDetail","data");show(t("form.saved"))}
@@ -105,15 +112,6 @@ return {...s,[key]:checked?(ref?uniq([...s[key],id]):[id]):s[key].filter(x=>x!==
 }
 function sendChat(){if(!chatDraft.trim()||!active)return;const key=active.id+"/"+moduleId;const prompt=chatDraft.trim();setChats(old=>({...old,[key]:[...(old[key]??[]),{who:"user",text:prompt},{who:"bot",text:t("module.botReply",{name:t("module."+moduleId)})}]}));setChatDraft("")}
 function profileAction(action:"usage"|"membership"|"switch"|"signout"){setModal(action)}
-function beginInline(){setInlineId("__new__");setInlineDraft({id:"__new__",name:"",detail:""})}
-function saveInline(){
- if(!inlineDraft.name.trim())return
- const next={...inlineDraft,name:inlineDraft.name.trim()}
- setResources(old=>({...old,[kind]:inlineId==="__new__"?[...old[kind],{...next,id:"r"+Date.now()}]:old[kind].map(x=>x.id===inlineId?{...x,...next,id:x.id,vehicleType:x.vehicleType}:x)}))
- setInlineId(null)
- show(t("form.saved"))
-}
-function updateObservation(id:string,value:string){setDatasets(old=>old.map(d=>d.id===id?{...d,observation:value}:d))}
 function detailDataset(d:Dataset){
  return <div className="dg-detail"><strong>{d.name}</strong><span>Registro: {d.id}</span><span>Tipo: {t("source."+d.type)}</span><span>Inicio: {d.date} {d.time}</span><span>Dispositivo: {d.device??"—"}</span><span>Mejor vuelta: {d.bestLap??"No aplica"}</span><span>Duración: {d.duration??"—"}</span><span>Canales: {d.channels??"No aplica"}</span><span>{d.observation}</span></div>
 }
@@ -132,10 +130,6 @@ function resourceInfo(r:Resource){
  if(kind==="vehicles")return <div className="dg-detail"><strong>{r.name}</strong><span>Tipo: {r.vehicleType??"—"}</span><span>Peso referencia: {r.referenceWeight??"—"} kg</span><span>Tracción: {r.drivenWheels??"—"}</span><span>Potencia: {r.enginePower??"—"}</span><span>Setups: {(r.setups??[]).map(s=>s.name).join(", ")||"Sin setups"}</span></div>
  if(kind==="tracks")return <div className="dg-detail"><strong>{r.name}</strong><span>País: {r.country??"—"} · Provincia: {r.province??"—"}</span><span>Longitud: {r.lengthKm??"—"} km</span><span>Conjuntos de segmentación: {r.segments??0}</span>{r.geometry?<svg viewBox="0 0 180 78" role="img" aria-label={"Geometría esquemática de "+r.name} className="track-geometry"><polyline points="12,54 45,12 148,23 12,54" fill="none" stroke="currentColor" strokeWidth="3"/></svg>:<span>Geometría no disponible</span>}</div>
  return <div className="dg-detail"><strong>{r.name}</strong><span>{r.detail}</span><span>Requisitos: {(r.requirements??[]).join("; ")||"Sin requisitos declarados"}</span></div>
-}
-function editable(r:Resource,k:keyof Resource){
- if(inlineId!==r.id)return String(r[k]??"—")||"—"
- return <Input aria-label={"Editar "+String(k)+" de "+r.name} value={String(inlineDraft[k]??"")} onChange={e=>setInlineDraft(d=>({...d,[k]:e.target.value}))}/>
 }
 function moduleAvailable(r:Resource){return r.enabled!==false&&moduleMissing(r,draft,datasets).length===0}
 
@@ -160,6 +154,9 @@ if(view==="context")a.push({label:t("nav.context")},{label:t(names[contextKind])
 if(view==="module")a.push({label:t("nav.modules")},{label:t("module."+moduleId)});
 return a;
 }
+if(["moduleEdit","moduleConfig","moduleDoc"].includes(view)){
+ return [first,{label:t("nav.modules"),onClick:()=>openLibrary("modules")},{label:itemName(moduleSettings??"",resources.modules),onClick:()=>navigate("moduleEdit","resources")},{label:view==="moduleDoc"?"Documentación":view==="moduleConfig"?"Configuración":"Editar"}]
+}
 if(["library","resourceEdit"].includes(view)){
 return [first,{label:t("nav."+kind),onClick:()=>openLibrary(kind)},...(view==="resourceEdit"?[{label:t(itemId?"common.edit":"common.new")}]:[])]
 }
@@ -176,7 +173,10 @@ if(view==="source")return t("source."+sourceKind)
 if(view==="context")return t(names[contextKind])
 if(view==="module")return t("module."+moduleId)
 if(view==="library")return t("nav."+kind)
-if(view==="resourceEdit")return t(itemId?"common.edit":"form.newResource")
+if(view==="resourceEdit")return (itemId?"Editar ":"Nuevo ")+(kind==="pilots"?"piloto":kind==="vehicles"?"vehículo":"circuito")
+ if(view==="moduleEdit")return "Editar módulo · "+itemName(moduleSettings??"",resources.modules)
+ if(view==="moduleConfig")return "Configuración · "+itemName(moduleSettings??"",resources.modules)
+ if(view==="moduleDoc")return "Documentación · "+itemName(moduleSettings??"",resources.modules)
 if(view==="datasets")return t("nav.library")
 if(view==="dataDetail"||view==="dataEdit")return targetDataset?.name??t("meta.notFound")
 return t(view==="import"?"nav.import":view==="account"?"nav.account":view==="help"?"nav.help":"nav.preferences")
@@ -206,14 +206,23 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 <SidebarInset className="workspace">
 <div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/><nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
 <header className="screen-header"><div><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
-<div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={beginInline}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
+<div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={()=>beginResource()}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
 
 {view==="home"&&<Card className="open-sessions-card">
 <CardHeader><CardTitle>{t("nav.saved")}</CardTitle><CardDescription>{t("common.records",{count:sessions.length})} · Seleccioná una sesión y abrila.</CardDescription></CardHeader>
-<CardContent><div className="open-session-scroll" role="region" aria-label={t("nav.saved")} tabIndex={0}><Table><TableHeader><TableRow><TableHead>Elegir</TableHead><TableHead>{t("common.name")}</TableHead><TableHead>{t("nav.pilots")}</TableHead><TableHead>{t("nav.tracks")}</TableHead></TableRow></TableHeader><TableBody>{sessions.map(session=><TableRow key={session.id} data-state={selectedId===session.id?"selected":undefined} className="open-session-row" onClick={()=>setSelectedId(session.id)}><TableCell><input aria-label={"Seleccionar "+session.name} type="radio" checked={selectedId===session.id} onChange={()=>setSelectedId(session.id)}/></TableCell><TableCell className="font-semibold">{session.name}</TableCell><TableCell>{itemName(session.pilot,resources.pilots)}</TableCell><TableCell>{itemName(session.track,resources.tracks)}</TableCell></TableRow>)}</TableBody></Table></div>
+<CardContent><ShadcnGrid label="Sesiones guardadas" rows={sessions}
+ selection="single" selected={selectedId} onSelect={id=>setSelectedId(id)}
+ columns={[
+ {key:"name",title:"Nombre",value:s=>s.name,filter:true},
+ {key:"pilot",title:"Piloto",value:s=>itemName(s.pilot,resources.pilots),filter:true},
+ {key:"vehicle",title:"Vehículo",value:s=>itemName(s.vehicle,resources.vehicles),filter:true},
+ {key:"track",title:"Circuito",value:s=>itemName(s.track,resources.tracks),filter:true},
+ {key:"createdAt",title:"Fecha de creación",value:s=>s.createdAt?formatSessionTimestamp(s.createdAt):"Sin fecha"}
+ ]}
+ groups={["pilot","vehicle","track"]}
+ advancedFilterColumns={[{key:"objective",title:"Datos objetivos",value:s=>s.targets.length?"Con objetivo":"Sin objetivo"},{key:"moduleCount",title:"Cantidad de módulos",value:s=>String(s.modules.length)}]}/>
 <div className="open-session-actions"><Button variant="outline" onClick={beginNew}><Plus size={16}/>{t("nav.new")}</Button><Button onClick={()=>openSession(selectedId)} disabled={!sessions.some(s=>s.id===selectedId)}><FolderOpen size={16}/>{t("nav.open")}</Button></div>
 </CardContent></Card>}
-
 
 {view==="new"&&<div className="new-session">
 <Card className="session-details-card">
