@@ -219,9 +219,18 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 <Card className="session-details-card">
  <CardHeader><SessionCardHeading title="Datos de la sesión" complete={Boolean(draft.name.trim())}/><CardDescription>{t("create.nameHint")}</CardDescription></CardHeader>
  <CardContent><div className="session-fields">
-  <label className="session-form-field"><span>Nombre de la sesión <span aria-hidden="true">*</span></span><Input aria-label={t("create.name")} required maxLength={80} autoComplete="off" value={draft.name} onChange={e=>setDraft(d=>({...d,name:e.target.value}))} placeholder="Escribí el nombre de la sesión"/></label>
-  <label className="session-form-field"><span>Observaciones</span><Textarea aria-label="Observaciones de la sesión" rows={3} maxLength={2000} value={draft.observations} onChange={e=>setDraft(d=>({...d,observations:e.target.value}))} placeholder="Notas y comentarios sobre la sesión (opcional)"/></label>
-  <div className="session-form-field"><span>Fecha y hora de creación</span><output className="session-timestamp" aria-label="Fecha y hora de creación">{formatSessionTimestamp(creationPreview)}</output><small>Se fijará de forma automática al crear la sesión; no es editable.</small></div>
+  <div className="session-form-row">
+   <label htmlFor="session-name" className="session-field-label">Nombre de la sesión <span aria-hidden="true">*</span></label>
+   <div className="session-field-control"><Input id="session-name" aria-label={t("create.name")} required maxLength={80} autoComplete="off" value={draft.name} onChange={e=>setDraft(d=>({...d,name:e.target.value}))} placeholder="Escribí el nombre de la sesión"/></div>
+  </div>
+  <div className="session-form-row">
+   <label htmlFor="session-observations" className="session-field-label">Observaciones</label>
+   <div className="session-field-control"><Textarea id="session-observations" aria-label="Observaciones de la sesión" rows={3} maxLength={2000} value={draft.observations} onChange={e=>setDraft(d=>({...d,observations:e.target.value}))} placeholder="Notas y comentarios sobre la sesión (opcional)"/></div>
+  </div>
+  <div className="session-form-row">
+   <span className="session-field-label" id="session-created-label">Fecha y hora de creación</span>
+   <div className="session-field-control"><output className="session-timestamp" aria-label="Fecha y hora de creación" aria-labelledby="session-created-label">{formatSessionTimestamp(creationPreview)}</output><small>Se fijará de forma automática al crear la sesión; no es editable.</small></div>
+  </div>
  </div></CardContent>
 </Card>
 <div className="context-list">

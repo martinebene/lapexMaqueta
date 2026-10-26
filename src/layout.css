@@ -271,10 +271,14 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 
 /* Tablas avanzadas: Shadcn Table Base UI, dentro del contenedor Lapex. */
 .shadcn-grid .dg-rows {
-  height: 270px;
-  overflow-y: scroll;
+  --dg-min-height: 156px;
+  min-height: var(--dg-min-height);
+  max-height: 308px;
+  height: auto;
+  overflow-y: auto;
   overflow-x: auto;
   position: relative;
+  background: var(--color-background, #fff);
 }
 .shadcn-grid .dg-rows table {
   width: 100%;
@@ -310,7 +314,6 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .shadcn-grid .dg-actions { min-width: 130px; }
 .shadcn-grid .dg-expanded { background: #f4f8fa; }
 @media (max-width: 700px) {
-  .shadcn-grid .dg-rows { height: 268px; }
   .shadcn-grid .dg-rows table { min-width: 580px; }
 }
 
@@ -353,7 +356,13 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .session-status-icon svg{height:20px;width:20px}
 .session-status-icon.complete{color:#16804f}
 .session-status-icon.incomplete{color:#c93742}
-.session-fields{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) minmax(180px,.9fr);gap:18px;align-items:start}
+.session-fields{display:flex;flex-direction:column;gap:14px;min-width:0}
+.session-fields .session-form-row{display:grid;grid-template-columns:minmax(165px,190px) minmax(0,1fr);align-items:start;gap:18px;min-width:0}
+.session-fields .session-field-label{padding-top:10px;color:#526d7c;font-size:12px;font-weight:650;line-height:1.45}
+.session-fields .session-field-control{display:flex;flex-direction:column;gap:7px;min-width:0}
+.session-fields .session-field-control input,.session-fields .session-field-control textarea{width:100%;max-width:100%;min-width:0}
+.session-fields .session-field-control textarea{min-height:86px;resize:vertical}
+.session-fields .session-field-control small{font-size:11px;line-height:1.5;color:#6c8692}
 .session-form-field{display:flex;flex-direction:column;gap:7px;min-width:0;color:var(--color-foreground,#294555);font-size:12px;font-weight:600}
 .session-form-field>span:first-child{color:#526d7c}
 .session-form-field>small{font-size:11px;line-height:1.5;color:#6c8692;font-weight:400}
@@ -369,12 +378,11 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .setup-empty,.setup-selected{padding:12px;background:#eef4f7;border-radius:7px;color:#526d7c;font-size:12px;line-height:1.5}
 @media(max-width:1100px){
  .vehicle-card-grid{grid-template-columns:1fr}
- .session-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
- .session-fields>.session-form-field:last-child{grid-column:1 / -1}
+
 }
 @media(max-width:680px){
- .session-fields{grid-template-columns:1fr}
- .session-fields>.session-form-field:last-child{grid-column:auto}
+ .session-fields .session-form-row{grid-template-columns:1fr;gap:6px}
+ .session-fields .session-field-label{padding-top:0}
  .session-card-title [data-slot="card-title"]{font-size:15px}
  .vehicle-inner-card .dg-filter-row{flex-wrap:wrap}
 }
@@ -389,3 +397,21 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 }
 .shadcn-grid .dg-rows thead th button[aria-label^="Ordenar por"]:focus-visible,
 .shadcn-grid .dg-rows thead th button[aria-label^="Ordenar por"]:hover{opacity:1!important}
+
+
+/* Un único marco y un único scroll: eliminar el marco anidado del layout
+   Shadcn Table sin modificar el componente instalado. La altura mínima
+   coincide en los tres contenedores incluso con cero o un registro. */
+.shadcn-grid .dg-panel{background:var(--color-background,#fff);border-color:var(--color-border,#dce5ea)}
+.shadcn-grid .dg-rows{background:var(--color-background,#fff)}
+.shadcn-grid .dg-rows > div,
+.shadcn-grid .dg-rows > div > div{
+  min-height:var(--dg-min-height);
+  width:100%;
+  box-shadow:none;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.shadcn-grid .dg-rows > div{padding:0;overflow:visible}
+.shadcn-grid .dg-rows > div > div{overflow:visible}

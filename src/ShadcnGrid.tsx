@@ -133,6 +133,10 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     enableEditing: false,
     enableRowActions: false,
     positionExpandColumn: "last",
+    // Shadcn Table agrega por defecto su propio marco, sombra y padding.
+    // Lapex conserva una única superficie y un único scroll en .dg-rows.
+    stTableLayoutProps: { className: "overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none" },
+    stTableContainerProps: { className: "overflow-visible" },
     initialState: {
       density: "compact",
       showGlobalFilter: false,

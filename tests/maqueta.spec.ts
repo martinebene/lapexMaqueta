@@ -109,7 +109,7 @@ test("Biblioteca: métricas, filtros, agrupación y observaciones editables",asy
  await expect(page.getByRole("textbox",{name:"Observaciones de Rodaje · Tanda 02"})).toHaveValue("Post-tratamiento de prueba")
  await expect(page.getByRole("button",{name:"Importar datos"}).last()).toBeVisible()
  const scroller=page.getByRole("region",{name:"Registros de Biblioteca de datos"})
- expect(await scroller.evaluate(el=>getComputedStyle(el).overflowY)).toBe("scroll")
+ expect(await scroller.evaluate(el=>getComputedStyle(el).overflowY)).toBe("auto")
 })
 
 
@@ -294,4 +294,113 @@ test("Buscador estándar conserva icono y borde único en teléfono",async({page
  }))
  expect(parseFloat(styles.innerBorder)).toBeLessThan(0.5)
  expect(parseFloat(styles.outerBorder)).toBeGreaterThan(0.5)
+})
+
+
+test("Datos de la sesión: etiquetas alineadas a la izquierda y controles apilados",async({page})=>{
+ await page.setViewportSize({width:1280,height:900})
+ await page.goto("/")
+ await page.locator("[data-sidebar='sidebar']").first().getByRole("button",{name:"Nueva sesión"}).click()
+ const area=page.locator(".session-details-card .session-fields")
+ const rows=area.locator(".session-form-row")
+ await expect(rows).toHaveCount(3)
+ const labels=["Nombre de la sesión","Observaciones","Fecha y hora de creación"]
+ const measurements=[] as {labelX:number,labelY:number,controlX:number,controlY:number}[]
+ for(let i=0;i<3;i++){
+   const row=rows.nth(i)
+   const label=row.locator(".session-field-label")
+   const control=row.locator(".session-field-control")
+   const lb=await label.boundingBox()
+   const cb=await control.boundingBox()
+   expect(lb&&cb).toBeTruthy()
+   measurements.push({labelX:lb!.x,labelY:lb!.y,controlX:cb!.x,controlY:cb!.y})
+   await expect(label).toHaveText(new RegExp(labels[i]))
+ }
+ expect(measurements[0].controlX-measurements[0].labelX).toBeGreaterThan(150)
+ expect(measurements[1].controlX-measurements[0].controlX).toBeLessThan(2)
+ expect(measurements[2].controlX-measurements[0].controlX).toBeLessThan(2)
+ expect(measurements[0].labelY).toBeLessThan(measurements[1].labelY)
+ expect(measurements[1].labelY).toBeLessThan(measurements[2].labelY)
+ await page.getByRole("textbox",{name:"Nombre de la sesión"}).fill("Sesión con campos apilados")
+ await page.getByRole("textbox",{name:"Observaciones de la sesión"}).fill("Observación libre")
+ await expect(page.getByLabel("Fecha y hora de creación")).not.toBeEmpty()
+ await page.setViewportSize({width:390,height:844})
+ const firstLabel=await rows.first().locator(".session-field-label").boundingBox()
+ const firstInput=await rows.first().locator("input").boundingBox()
+ expect(firstLabel&&firstInput).toBeTruthy()
+ expect(firstInput!.y).toBeGreaterThan(firstLabel!.y)
+})
+
+test("Tablas con pocos registros: una superficie y alturas mínimas coincidentes",async({page})=>{
+ await page.goto("/")
+ await page.locator("[data-sidebar='sidebar']").first().getByRole("button",{name:"Nueva sesión"}).click()
+ const tableRegion=page.getByRole("region",{name:"Registros de Pilotos disponibles"})
+ const panel=page.locator("section.shadcn-grid").filter({has:tableRegion}).locator(".dg-panel")
+ const check=async()=>{
+  const dims=await tableRegion.evaluate(el=>{
+   const row=el as HTMLElement
+   const layout=row.firstElementChild as HTMLElement
+   const tableContainer=layout?.firstElementChild as HTMLElement
+   const table=tableContainer?.querySelector("table")
+   const outer=getComputedStyle(row)
+   const inner=getComputedStyle(layout)
+   const nested=getComputedStyle(tableContainer)
+   return {
+    regionHeight:row.getBoundingClientRect().height,
+    layoutHeight:layout.getBoundingClientRect().height,
+    innerHeight:tableContainer.getBoundingClientRect().height,
+    tableHeight:table?.getBoundingClientRect().height ?? 0,
+    overflowY:outer.overflowY,
+    overflowInner:nested.overflowY,
+    borderLayout:inner.borderTopWidth,
+    shadowLayout:inner.boxShadow,
+    minHeight:parseFloat(outer.minHeight),
+    containerWidth:row.clientWidth,
+    nestedWidth:tableContainer.getBoundingClientRect().width,
+   }
+  })
+  expect(dims.minHeight).toBeGreaterThanOrEqual(145)
+  expect(dims.regionHeight).toBeGreaterThanOrEqual(dims.minHeight)
+  expect(Math.abs(dims.layoutHeight-dims.regionHeight)).toBeLessThanOrEqual(2)
+  expect(Math.abs(dims.innerHeight-dims.regionHeight)).toBeLessThanOrEqual(2)
+  expect(dims.overflowY).toBe("auto")
+  expect(dims.overflowInner).toBe("visible")
+  expect(dims.borderLayout).toBe("0px")
+  expect(dims.shadowLayout).toBe("none")
+  expect(Math.abs(dims.nestedWidth-dims.containerWidth)).toBeLessThanOrEqual(3)
+ }
+ await check()
+ const initialHeight=(await tableRegion.boundingBox())!.height
+ const search=page.getByRole("textbox",{name:"Buscar en Pilotos disponibles"})
+ await search.fill("Piloto Demo B")
+ await expect(tableRegion.getByRole("radio")).toHaveCount(1)
+ await check()
+ const oneHeight=(await tableRegion.boundingBox())!.height
+ expect(Math.abs(initialHeight-oneHeight)).toBeLessThan(35)
+ expect(await panel.evaluate(el=>getComputedStyle(el).borderTopWidth)).not.toBe("0px")
+})
+
+test("Tabla larga: un único scroll visible dentro del marco",async({page})=>{
+ await page.goto("/")
+ await page.locator("[data-sidebar='sidebar']").first().getByRole("button",{name:"Nueva sesión"}).click()
+ const region=page.getByRole("region",{name:"Registros de Pilotos disponibles"})
+ await region.evaluate(el=>{
+  const tbody=el.querySelector("tbody")!
+  const template=tbody.querySelector("tr")!
+  for(let i=0;i<15;i++){
+   const duplicate=template.cloneNode(true) as HTMLElement
+   duplicate.dataset.testClone=String(i)
+   tbody.appendChild(duplicate)
+  }
+ })
+ const metrics=await region.evaluate(el=>{
+  const inner=el.firstElementChild?.firstElementChild as HTMLElement
+  const scroller=el as HTMLElement
+  scroller.scrollTop=100
+  return {client:scroller.clientHeight,scroll:scroller.scrollHeight,top:scroller.scrollTop,innerOverflow:getComputedStyle(inner).overflowY}
+ })
+ expect(metrics.client).toBeLessThanOrEqual(310)
+ expect(metrics.scroll).toBeGreaterThan(metrics.client)
+ expect(metrics.top).toBeGreaterThan(0)
+ expect(metrics.innerOverflow).toBe("visible")
 })
