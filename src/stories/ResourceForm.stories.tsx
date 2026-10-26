@@ -9,7 +9,7 @@ function Demo({kind,initial,editing}:{kind:Exclude<ResourceKind,"modules">;initi
  const [saved,setSaved]=useState<Resource|null>(null)
  return <div style={{maxWidth:900,margin:"auto"}}><ResourceForm key={kind+(editing?"edit":"new")} kind={kind} initial={initial} editing={editing} onSave={setSaved} onCancel={()=>setSaved(null)}/>{saved&&<p role="status">Registro de demostración guardado: {saved.name}</p>}</div>
 }
-const meta={title:"Formularios/Recursos",component:ResourceForm,parameters:{layout:"fullscreen"}} satisfies Meta<typeof ResourceForm>
+const meta={title:"Formularios/Recursos",component:ResourceForm,args:{kind:"pilots",initial:pilot,editing:true,onSave:()=>{},onCancel:()=>{}},parameters:{layout:"fullscreen"}} satisfies Meta<typeof ResourceForm>
 export default meta
 type Story=StoryObj<typeof meta>
 export const PilotoEditar:Story={render:()=> <Demo kind="pilots" initial={pilot} editing/>}
