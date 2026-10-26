@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { Meta, StoryObj } from "@storybook/react-vite"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { ShadcnGrid } from "@/ShadcnGrid"
 
 type DemoRecord = { id: string; name: string; track: string; category: string; status: string; available: boolean }
@@ -48,4 +49,19 @@ export const ConDetalleYAcciones: Story = {
 }
 export const Deshabilitada: Story = {
   args: { selection:"single",disabled:(r:DemoRecord)=>!r.available,selected:"d1" },
+}
+
+export const ConSwitchDeActivacion: Story = {
+  render: () => <ShadcnGrid label="Módulos y estados" rows={records}
+    columns={columns}
+    leadingControl={r=><Switch aria-label={"Activar "+r.name} disabled={!r.available} defaultChecked={r.id==="d1"}/>}
+    detail={r=><p>{r.name} · Estado de ejemplo</p>}/>
+}
+export const DetalleCompacto: Story = {
+  args: {
+    selection:"multiple",
+    selected:["d1"],
+    detail:(r:DemoRecord)=><p className="p-2">Detalle de {r.name}</p>,
+    groups:["track"]
+  }
 }
