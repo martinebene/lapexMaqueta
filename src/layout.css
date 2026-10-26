@@ -223,8 +223,6 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .dg{min-width:0;width:100%}
 .dg-toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin:0 0 11px}
 .dg-search{display:flex;align-items:center;position:relative;min-width:140px;flex:1}
-.dg-search svg{position:absolute;left:10px;z-index:1;color:#7991a0}
-.dg-search input{padding-left:32px}
 .dg-filter{display:flex;flex-direction:column;gap:4px;max-width:230px;min-width:112px;flex:1;color:#617d8c;font-size:10px;font-weight:650}
 .dg-filter select{width:100%;height:35px;border:1px solid #ccdbe4;border-radius:7px;background:white;color:#294555;padding:0 8px;font-size:11px}
 .dg-panel{overflow:hidden;border:1px solid #bbccd6;border-radius:9px;background:#f7fafc}
@@ -321,8 +319,6 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .shadcn-grid .dg-toolbar{display:flex;flex-direction:column;align-items:stretch;gap:9px}
 .shadcn-grid .dg-search-row{width:100%;display:flex;align-items:center}
 .shadcn-grid .dg-search{min-width:0;width:100%;max-width:440px;flex:0 1 440px}
-.shadcn-grid .dg-search [data-slot="input-group-control"]{padding-left:7px!important;min-width:0}
-.shadcn-grid .dg-search svg{position:static;inset:auto;flex-shrink:0;pointer-events:none}
 .shadcn-grid .dg-filter-row{width:100%;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
 .shadcn-grid .dg-filter-row .dg-filter{min-width:110px;flex:1 1 134px;max-width:240px}
 .shadcn-grid .dg-filter-row .dg-group-filter{margin-left:0}

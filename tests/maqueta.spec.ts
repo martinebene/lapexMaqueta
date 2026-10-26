@@ -228,3 +228,69 @@ test("Nueva sesión: estado de tarjetas y setup ausente",async({page})=>{
  const objectives=page.getByRole("region",{name:"Registros de Datos objetivos"})
  await expect(objectives.locator("tbody tr").first().locator("td").first().getByRole("radio")).toBeVisible()
 })
+
+
+test("Buscadores InputGroup estándar: sin doble borde en todas las tablas",async({page})=>{
+ await page.setViewportSize({width:1280,height:800})
+ await page.goto("/")
+ const side=page.locator("[data-sidebar='sidebar']").first()
+ const inspect=async(label:string)=>{
+  const grid=page.getByRole("region",{name:label}).locator(".dg-search-row").first()
+  const wrapper=grid.locator('[data-slot="input-group"]')
+  const input=wrapper.locator('[data-slot="input-group-control"]')
+  const addon=wrapper.locator('[data-slot="input-group-addon"]')
+  await expect(wrapper).toHaveCount(1)
+  await expect(input).toBeVisible()
+  await expect(addon).toBeVisible()
+  expect(await input.getAttribute("class")).not.toContain("cn-input")
+  const styles=await input.evaluate(el=>{
+   const outer=el.closest('[data-slot="input-group"]')!
+   const inner=getComputedStyle(el)
+   const box=getComputedStyle(outer)
+   const rect=el.getBoundingClientRect()
+   const icon=outer.querySelector('[data-slot="input-group-addon"] svg')!.getBoundingClientRect()
+   return {
+    innerBorders:[inner.borderTopWidth,inner.borderRightWidth,inner.borderBottomWidth,inner.borderLeftWidth].map(parseFloat),
+    outerBorders:[box.borderTopWidth,box.borderRightWidth,box.borderBottomWidth,box.borderLeftWidth].map(parseFloat),
+    innerRadius:inner.borderTopLeftRadius,
+    outerHeight:outer.getBoundingClientRect().height,
+    inputHeight:rect.height,
+    iconRight:icon.right,
+    inputLeft:rect.left,
+   }
+  })
+  expect(styles.innerBorders.every(n=>n<0.5)).toBe(true)
+  expect(styles.outerBorders.every(n=>n>=0.5)).toBe(true)
+  expect(styles.iconRight).toBeLessThanOrEqual(styles.inputLeft+2)
+  expect(styles.inputHeight).toBeLessThanOrEqual(styles.outerHeight+1)
+  await input.fill("abc")
+  await expect(input).toHaveValue("abc")
+  await input.fill("")
+ }
+ await side.getByRole("button",{name:"Nueva sesión"}).click()
+ for(const label of ["Pilotos disponibles","Vehículos disponibles","Circuitos disponibles","Datos objetivos","Datos de referencia","Módulos de análisis"]){
+  await inspect("Registros de "+label)
+ }
+ await side.getByRole("button",{name:"Recursos"}).click()
+ for(const resource of ["Pilotos","Vehículos","Circuitos","Módulos de análisis"]){
+  await side.getByRole("button",{name:resource}).click()
+  await inspect("Registros de "+resource)
+ }
+ await side.getByRole("button",{name:"Datos"}).click()
+ await side.getByRole("button",{name:"Biblioteca de datos"}).click()
+ await inspect("Registros de Biblioteca de datos")
+})
+
+test("Buscador estándar conserva icono y borde único en teléfono",async({page})=>{
+ await page.setViewportSize({width:390,height:844})
+ await page.goto("/")
+ const input=page.getByRole("textbox",{name:"Buscar en Pilotos disponibles"})
+ await page.locator("[data-sidebar='sidebar']").first().getByRole("button",{name:"Nueva sesión"}).click()
+ await expect(input).toBeVisible()
+ const styles=await input.evaluate(el=>({
+  innerBorder:getComputedStyle(el).borderTopWidth,
+  outerBorder:getComputedStyle(el.closest('[data-slot="input-group"]')!).borderTopWidth,
+ }))
+ expect(parseFloat(styles.innerBorder)).toBeLessThan(0.5)
+ expect(parseFloat(styles.outerBorder)).toBeGreaterThan(0.5)
+})

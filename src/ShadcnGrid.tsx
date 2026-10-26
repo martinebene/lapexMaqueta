@@ -195,13 +195,14 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
           {searchable && (
             <div className="dg-search-row">
               <InputGroup className="dg-search">
-                <InputGroupAddon align="inline-start"><Search aria-hidden="true" /></InputGroupAddon>
                 <InputGroupInput
+                  type="search"
                   aria-label={"Buscar en " + label}
                   placeholder="Buscar"
                   value={query}
                   onChange={event => { setQuery(event.target.value); table.setGlobalFilter(event.target.value) }}
                 />
+                <InputGroupAddon align="inline-start"><Search aria-hidden="true" /></InputGroupAddon>
               </InputGroup>
             </div>
           )}
