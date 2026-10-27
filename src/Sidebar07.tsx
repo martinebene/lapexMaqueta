@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut, CircleHelp } from "lucide-react"
+import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut, CircleHelp, House } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -9,13 +9,14 @@ import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarGroup, Si
 import logo from "../assets/lapex-logo.png"
 import profilePhoto from "../assets/profile-mebene.jpg"
 
-export type NavSection="analysis"|"resources"|"data"|"config"|"help"
+export type NavSection="start"|"analysis"|"resources"|"data"|"config"|"help"
 type ActionKey="usage"|"membership"|"switch"|"signout"
 type NavTarget={key:string;label:string;action:()=>void}
 type NavEntry={id:NavSection;title:string;icon:LucideIcon;items:NavTarget[]}
 interface Props {
   mode:NavSection
   plan:"Free"|"Pro"
+  onHome:()=>void
   onNewSession:()=>void
   onOpenSessions:()=>void
   onResource:(key:"pilots"|"tracks"|"vehicles"|"modules")=>void
@@ -25,7 +26,7 @@ interface Props {
   buildTime:string
   onProfile:(key:ActionKey)=>void
 }
-export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,onData,onConfig,onHelp,buildTime,onProfile}:Props){
+export function AppSidebar07({mode,plan,onHome,onNewSession,onOpenSessions,onResource,onData,onConfig,onHelp,buildTime,onProfile}:Props){
   const {t}=useTranslation()
   const [openGroup,setOpenGroup]=useState<NavSection|null>("analysis")
   const [profileOpen,setProfileOpen]=useState(false)
@@ -77,6 +78,7 @@ export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,o
     <SidebarContent>
       <SidebarGroup>
           <SidebarMenu>
+          <SidebarMenuItem><SidebarMenuButton tooltip="Inicio" isActive={mode==="start"} className="sidebar07-main-item" onClick={()=>{setOpenGroup(null);onHome();closeOnMobile()}}><House size={18}/><span>Inicio</span></SidebarMenuButton></SidebarMenuItem>
           {entries.map(entry=><SidebarMenuItem key={entry.id}>
             <Collapsible open={openGroup===entry.id} onOpenChange={opened=>setOpenGroup(opened?entry.id:null)}>
               <CollapsibleTrigger render={<SidebarMenuButton tooltip={entry.title} isActive={mode===entry.id} className="sidebar07-main-item"/>}>
