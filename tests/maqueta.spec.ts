@@ -846,3 +846,22 @@ test("Volver conserva el origen al abrir documentación desde Biblioteca",async(
  await page.getByRole("button",{name:"Volver",exact:true}).click()
  await expect(page.getByRole("region",{name:"Registros de Biblioteca de datos"})).toBeVisible()
 })
+
+test("Tablas: selección simple y controles de detalle centrados en su columna",async({page})=>{
+ await page.goto("/")
+ const side=page.locator("[data-sidebar='sidebar']").first()
+ await side.getByRole("button",{name:"Nueva sesión"}).click()
+ const table=page.getByRole("region",{name:"Registros de Pilotos disponibles"})
+ const radio=table.getByRole("radio").first()
+ const center=async(locator:typeof radio)=>{
+   const own=await locator.boundingBox()
+   const parent=await locator.locator("xpath=ancestor::td[1]").boundingBox()
+   expect(own&&parent).toBeTruthy()
+   expect(Math.abs((own!.x+own!.width/2)-(parent!.x+parent!.width/2))).toBeLessThan(5)
+ }
+ await center(radio)
+ await side.getByRole("button",{name:"Datos",exact:true}).click()
+ await side.getByRole("button",{name:"Biblioteca de datos"}).click()
+ const detail=page.getByRole("region",{name:"Registros de Biblioteca de datos"}).getByRole("button",{name:"Detalle de Rodaje · Tanda 02"})
+ await center(detail)
+})
