@@ -28,7 +28,6 @@ type Mode="start"|"analysis"|"resources"|"data"|"config"|"help"
 type View="start"|"home"|"snapshot"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"setupEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"series"|"import"|"settings"|"account"|"documentation"|"faq"|"version"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
-const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
 const ctxToRes:Record<ContextKey,ResourceKind>={pilot:"pilots",track:"tracks",vehicle:"vehicles"}
 const names:Record<ContextKey,string>={pilot:"create.pilot",track:"create.track",vehicle:"create.vehicle"}
 const toDraft=(s:Session):Draft=>({name:s.name,observations:s.observations??"",pilot:s.pilot,track:s.track,vehicle:s.vehicle,setup:s.setup??"",segmentSetIds:s.segmentSetIds??[],targets:s.targets,references:s.references,modules:s.modules})
@@ -239,7 +238,9 @@ return <Card className="picker">
 }
 function crumbs():{label:string;onClick?:()=>void}[]{
 const first={label:t("nav."+mode),onClick:()=>selectMode(mode)}
-if(view==="new")return [first,{label:t("nav.new")}]
+if(view==="new")return [first,{label:editingSessionId?"Editar sesión":t("nav.new")}]
+ if(view==="start")return [{label:"Inicio"}]
+ if(view==="snapshot")return [first,{label:active?.name??"Análisis",onClick:()=>navigate("session","analysis")},{label:"Instantánea del contexto"}]
 if(view==="home")return [{label:t("nav.analysis")}]
 if(["session","source","context","module"].includes(view)&&active){
 const a:{label:string;onClick?:()=>void}[]=[first,{label:active.name,onClick:()=>navigate("session")}];
@@ -262,7 +263,9 @@ return [first,{label:t("nav.library"),onClick:()=>navigate("datasets","data")},.
 return view==="documentation"||view==="faq"||view==="version"?[first,{label:view==="documentation"?"Documentación":view==="faq"?"FAQ":"Versión"}]:[first,{label:t(view==="import"?"nav.import":view==="account"?"nav.account":"nav.preferences")}]
 }
 function pageTitle(){
-if(view==="new")return t("create.title")
+if(view==="new")return editingSessionId?"Editar sesión de análisis":t("create.title")
+ if(view==="start")return "Inicio · Lapex"
+ if(view==="snapshot")return "Contexto histórico de la sesión"
 if(view==="home")return t("home.title")
 if(view==="session")return active?.name??t("home.title")
 if(view==="source")return t("source."+sourceKind)
@@ -283,6 +286,8 @@ return t(view==="import"?"nav.import":view==="account"?"nav.account":"nav.prefer
 }
 function pageSubtitle(){
 if(view==="home")return t("home.subtitle")
+ if(view==="start")return "Rendimiento, telemetría y novedades de la plataforma"
+ if(view==="snapshot")return "Los datos corresponden al estado que tenía el recurso al realizar el análisis."
 if(view==="new")return t("create.subtitle")
 if(view==="session")return t("session.subtitle")
 if(view==="module")return ""
@@ -297,6 +302,7 @@ const chatKey=active?.id+"/"+moduleId;
 const history=chats[chatKey]??[];
 return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaultOpen>
 <AppSidebar07 mode={mode} plan={plan} buildTime={buildLabel}
+  onHome={()=>navigate("start","start")}
   onNewSession={beginNew}
   onOpenSessions={()=>{setActiveId(null);navigate("home","analysis")}}
   onResource={openLibrary}
@@ -306,9 +312,11 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   onProfile={profileAction}
 />
 <SidebarInset className="workspace">
-<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(["new","source","context","module","resourceEdit","setupEdit","moduleConfig","moduleDoc","dataDetail","dataEdit","series"].includes(view))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
+<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(historyRef.current.length>0||!["start","home","session","library","datasets"].includes(view))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
 <header className="screen-header"><div><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
-<div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={()=>beginResource()}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
+<div className="page-tools">{view==="new"&&<Button variant="outline" onClick={goBack}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={()=>beginResource()}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
+
+{view==="start"&&<HomeLanding onSessions={()=>navigate("home","analysis")} onLibrary={()=>navigate("datasets","data")} onHelp={()=>openDocumentation()}/>}
 
 {view==="home"&&<Card className="open-sessions-card">
 <CardHeader><CardTitle>{t("nav.saved")}</CardTitle><CardDescription>{t("common.records",{count:sessions.length})} · Seleccioná una sesión y abrila.</CardDescription></CardHeader>
@@ -357,7 +365,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
     <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card vehicle-setups-card">
-    <CardHeader><CardTitle>Seleccionar setup del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
+    <CardHeader><CardTitle>Seleccionar setup del vehículo (opcional)</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
     <CardContent>
       <ShadcnGrid label="Setups del vehículo" tableHeight="264px"
         rows={resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[]}
@@ -365,7 +373,8 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
         onSelect={id=>setDraft(d=>({...d,setup:d.setup===id?"":id}))}
         emptyMessage={draft.vehicle?"No hay registros":"Elegí primero un vehículo."}
         columns={[{key:"name",title:"Nombre",value:s=>s.name},{key:"date",title:"Fecha",value:s=>s.date??"—"}]}/>
-      {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados.</p>}
+      {draft.setup&&<Button type="button" size="sm" variant="outline" onClick={()=>setDraft(d=>({...d,setup:""}))}>Sin setup · Quitar selección</Button>}
+      {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados. Se puede continuar sin uno.</p>}
     </CardContent>
    </Card>
   </div></CardContent>
@@ -400,19 +409,14 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
  columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos",status:r=>moduleAvailable(r)?"success":"error"}]}
  detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent>
 </Card>
-<Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{t("create.action")}</Button></CardContent></Card>
+<Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{editingSessionId?"Guardar cambios":t("create.action")}</Button></CardContent></Card>
 </div>}
 
-{view==="session"&&active&&<div className="session-shortcuts">
-<div className="session-shortcuts-group"><span>{t("nav.sources")}</span>{(["weather","run","reference","timing"] as SourceKind[]).map(key=><Button key={key} size="sm" variant="outline" onClick={()=>{setSourceKind(key);navigate("source")}}>{t("source."+key)}</Button>)}</div>
-<div className="session-shortcuts-group"><span>{t("nav.context")}</span>{(["pilot","track","vehicle"] as ContextKey[]).map(key=><Button key={key} size="sm" variant="outline" onClick={()=>{setContextKind(key);navigate("context")}}>{t(names[key])}</Button>)}</div>
-<div className="session-shortcuts-group"><span>{t("nav.modules")}</span>{active.modules.map(key=><Button key={key} size="sm" variant="outline" onClick={()=>{setModuleId(key);navigate("module")}}>{t("module."+key)}</Button>)}</div>
-</div>}
-{view==="session"&&active&&<div className="session-overview">
-<Card><CardHeader><CardTitle>{t("nav.context")}</CardTitle></CardHeader><CardContent><div className="summary-grid">{ctxKinds.map(k=><button className="summary-item" key={k} onClick={()=>{setContextKind(k);navigate("context")}}><small>{t(names[k])}</small><strong>{itemName(active[k],resources[ctxToRes[k]])}</strong></button>)}</div></CardContent></Card>
-<Card><CardHeader><CardTitle>{t("nav.sources")}</CardTitle></CardHeader><CardContent><div className="summary-grid"><div className="summary-item"><small>{t("session.targets")}</small><strong>{active.targets.length}</strong></div><div className="summary-item"><small>{t("session.references")}</small><strong>{active.references.length}</strong></div></div></CardContent></Card>
-<Card><CardHeader><CardTitle>{t("session.modules")}</CardTitle></CardHeader><CardContent><div className="pill-row">{active.modules.map(id=><Button key={id} variant="outline" size="sm" onClick={()=>{setModuleId(id);navigate("module")}}>{t("module."+id)}<ArrowRight size={14}/></Button>)}</div></CardContent></Card>
-</div>}
+{view==="session"&&active&&activeSnapshot&&<SessionDashboard key={active.id} session={active} snapshot={activeSnapshot} modules={resources.modules}
+ onSnapshot={(kind,id)=>{setSnapshotSelection({kind,id});navigate("snapshot","analysis")}}
+ onDataset={id=>{setDatasetId(id);navigate("dataDetail","data")}}
+ onEdit={beginSessionEdit}/>}
+{view==="snapshot"&&activeSnapshot&&snapshotSelection&&<SnapshotDetail kind={snapshotSelection.kind} id={snapshotSelection.id} snapshot={activeSnapshot} onBack={goBack}/>}
 
 {view==="source"&&active&&<Card><CardHeader><CardTitle>{t("source."+sourceKind)}</CardTitle><CardDescription>{t("session.subtitle")}</CardDescription></CardHeader><CardContent>{picker("sources",t("source."+sourceKind),t("create.many"),datasets.filter(d=>sourceKind==="reference"?d.type==="run":d.type===sourceKind).map(d=>({id:d.id,name:d.name,detail:d.date+" · "+d.observation})),sourceKind==="reference"?active.references:active.targets,true,(id,v)=>toggleSource(id,v))}</CardContent></Card>}
 
