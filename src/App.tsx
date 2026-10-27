@@ -132,7 +132,7 @@ function createSession(){
  }
  const saved:Session={...draft,id,name:draft.name.trim(),observations:draft.observations.trim(),createdAt:current?.createdAt??new Date().toISOString(),snapshot}
  setSessions(old=>current?old.map(s=>s.id===id?saved:s):[saved,...old])
- setEditingSessionId(null);historyRef.current=historyRef.current.filter(x=>x.view!=="new")
+ setEditingSessionId(null);if(current&&historyRef.current.at(-1)?.view==="session")historyRef.current.pop();historyRef.current=historyRef.current.filter(x=>x.view!=="new")
  setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);setView("session");setMode("analysis");show(current?"Sesión actualizada (maqueta).":t("create.created"))
 }
 function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value,...(key==="vehicle"?{setup:""}:key==="track"?{segmentSetIds:[]}:{})}))}
@@ -365,7 +365,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
     <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card vehicle-setups-card">
-    <CardHeader><CardTitle>Seleccionar setup del vehículo (opcional)</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
+    <CardHeader><CardTitle>Seleccionar setup del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
     <CardContent>
       <ShadcnGrid label="Setups del vehículo" tableHeight="264px"
         rows={resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[]}
