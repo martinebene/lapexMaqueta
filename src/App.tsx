@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { ResourceForm } from "./ResourceForm"
 import { SetupForm } from "./SetupForm"
 import { SeriesView } from "./SeriesView"
+import { Documentation, FAQ, VersionInfo } from "./HelpContent"
 import { seriesOf, DURATION } from "./seriesMock"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
@@ -466,7 +467,27 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/></Button><Button size="sm" variant="ghost" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={14}/></Button></>}/>
 </CardContent></Card></div>}
 
-{view==="dataDetail"&&targetDataset&&<Card><CardHeader><CardTitle>{targetDataset.name}</CardTitle><div className="action-buttons"><Button onClick={()=>editDataset(targetDataset.id)}><Pencil size={15}/>{t("common.edit")}</Button><Button variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={15}/>{t("common.share")}</Button></div></CardHeader><CardContent><div className="summary-grid">{([["common.name",targetDataset.name],["common.date",targetDataset.date],["common.time",targetDataset.time],["common.observations",targetDataset.observation],["data.type",t("source."+targetDataset.type)],["data.device",targetDataset.device??"—"],["nav.tracks",itemName(targetDataset.track,resources.tracks)]] as [string,string][]).map(([key,val])=><div key={key} className="summary-item"><small>{t(key)}</small><strong>{val}</strong></div>)}</div></CardContent></Card>}
+{view==="dataDetail"&&targetDataset&&<div className="data-detail-stack">
+ <Card><CardHeader><CardTitle>Datos generales del registro</CardTitle><div className="action-buttons"><Button onClick={()=>editDataset(targetDataset.id)}><Pencil size={15}/>Editar</Button><Button variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={15}/>Compartir</Button></div></CardHeader>
+  <CardContent><div className="data-general-fields">
+  {([["Nombre",targetDataset.name],["Fecha",targetDataset.date],["Hora",targetDataset.time],["Tipo de fuente",t("source."+targetDataset.type)],["Dispositivo",targetDataset.device??"—"]] as [string,string][]).map(([label,value])=><div className="data-general-row" key={label}><strong>{label}</strong><span>{value}</span></div>)}
+  <div className="data-general-row"><strong>Circuito</strong><span>{targetDataset.track&&resources.tracks.some(tr=>tr.id===targetDataset.track)?<button type="button" className="inline-resource-link" onClick={()=>beginResource(targetDataset.track,"tracks")}>{itemName(targetDataset.track,resources.tracks)}</button>:"Sin circuito asociado"}</span></div>
+  <div className="data-general-row"><strong>Observaciones</strong><span>{targetDataset.observation||"—"}</span></div>
+  </div></CardContent>
+ </Card>
+ {targetDataset.type==="run"&&<Card><CardHeader><CardTitle>Series de datos del rodaje</CardTitle><CardDescription>Canales y muestras ficticios para explorar esta interfaz.</CardDescription></CardHeader><CardContent>
+   <ShadcnGrid label="Series de datos del rodaje" rows={seriesOf(targetDataset).filter(row=>!(removedSeries[targetDataset.id]??[]).includes(row.id))}
+    columns={[{key:"name",title:"Canal",value:row=>row.name},{key:"count",title:"Registros",value:row=>row.hz*DURATION},{key:"frequency",title:"Frecuencia",value:row=>row.hz+" Hz"}]}
+    actions={series=><>
+      <Button size="sm" variant="outline" onClick={()=>openSeries(series.id)}>Abrir</Button>
+      <Button size="sm" variant="ghost" aria-label={"Eliminar serie "+series.name} onClick={()=>removeSeries(series.id)}><Trash2 size={14}/></Button>
+      <Button size="sm" variant="outline" aria-label={"Compartir serie "+series.name} onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/></Button>
+    </>}
+    emptyMessage="Este rodaje no tiene series disponibles."/>
+ </CardContent></Card>}
+ </div>}
+ {view==="series"&&targetDataset&&<SeriesView key={targetDataset.id+":"+seriesId} dataset={targetDataset} seriesId={seriesId} onBack={()=>navigate("dataDetail","data")}/>}
+
 
 {view==="dataEdit"&&dataDraft&&<Card className="edit-card"><CardHeader><CardTitle>{t("common.observations")}</CardTitle><CardDescription>Las mediciones y metadatos importados no se modifican aquí.</CardDescription></CardHeader><CardContent><label className="field-label">{t("common.observations")}<Input aria-label={t("common.observations")} value={dataDraft.observation} onChange={e=>setDataDraft(old=>old?{...old,observation:e.target.value}:old)}/></label><div className="pill-row"><Button variant="outline" onClick={()=>navigate("dataDetail")}>{t("common.cancel")}</Button><Button onClick={saveDataset}>{t("common.save")}</Button></div></CardContent></Card>}
 
@@ -474,7 +495,9 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 
 {view==="settings"&&<Card className="edit-card"><CardHeader><CardTitle>{t("settings.title")}</CardTitle></CardHeader><CardContent><label className="stack-fields">{t("settings.speed")}<select><option>km/h</option><option>mph</option></select></label></CardContent></Card>}
 {view==="account"&&<Card className="edit-card"><CardHeader><CardTitle>{t("nav.account")}</CardTitle></CardHeader><CardContent><p>{t("profile.user")} · {t("profile.plan",{plan})}</p><div className="pill-row"><Button onClick={()=>profileAction("membership")}>{t("profile.membership")}</Button><Button variant="outline" onClick={()=>profileAction("usage")}>{t("profile.usage")}</Button></div></CardContent></Card>}
-{view==="help"&&<Card><CardHeader><CardTitle>{t("help.title")}</CardTitle><CardDescription>{t("help.subtitle")}</CardDescription></CardHeader></Card>}
+{view==="documentation"&&<Documentation section={docSection} setSection={setDocSection} onImport={()=>{setImportStep(1);navigate("import","data")}} onLibrary={()=>navigate("datasets","data")}/>}
+ {view==="faq"&&<FAQ/>}
+ {view==="version"&&<VersionInfo label={buildLabel} published={Boolean(compiledAt)}/>}
 </SidebarInset>
 {modal&&<div className="modal-shade" onClick={()=>setModal(null)}><div role="dialog" aria-modal="true" aria-label={t("profile."+modal)} className="modal-body" onClick={e=>e.stopPropagation()}><div className="modal-header"><h2>{t("profile."+modal)}</h2><button onClick={()=>setModal(null)} aria-label={t("common.close")}><X size={19}/></button></div>{modal==="usage"&&<p>{t("data.records")}: {datasets.length} · {t("nav.saved")}: {sessions.length}</p>}{modal==="membership"&&<div className="pill-row"><Button onClick={()=>{setPlan(p=>p==="Free"?"Pro":"Free");setModal(null)}}>{t("profile.plan",{plan})} <Check size={15}/></Button></div>}<Button variant="outline" onClick={()=>setModal(null)}>{t("common.close")}</Button></div></div>}
 {toast&&<div className="toast" role="status">{toast}</div>}
