@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { ResourceForm } from "./ResourceForm"
 import { SetupForm } from "./SetupForm"
+import { SeriesView } from "./SeriesView"
+import { seriesOf, DURATION } from "./seriesMock"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
 import type { GridColumn } from "./ShadcnGrid"
@@ -18,8 +20,8 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar07 } from "./Sidebar07"
 import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind, Setup } from "./data"
 
-type Mode="analysis"|"resources"|"data"|"config"
-type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"setupEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
+type Mode="analysis"|"resources"|"data"|"config"|"help"
+type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"setupEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"series"|"import"|"settings"|"account"|"documentation"|"faq"|"version"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
 const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
@@ -28,6 +30,8 @@ const names:Record<ContextKey,string>={pilot:"create.pilot",track:"create.track"
 function uniq(list:string[]){return [...new Set(list)]}
 function itemName(id:string,items:Resource[]){return items.find(x=>x.id===id)?.name??"—"}
 function formatSessionTimestamp(iso:string){return new Date(iso).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})}
+const compiledAt=import.meta.env.VITE_DEPLOYED_AT??""
+const buildLabel=compiledAt?"Versión: "+new Date(compiledAt).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})+" ART":"Versión de desarrollo"
 function SectionStatus({title,complete}:{title:string;complete:boolean}){
  return <span className={"session-status-icon"+(complete?" complete":" incomplete")} role="img" aria-label={complete?"Requisitos cumplidos: "+title:"Requisitos pendientes: "+title} title={complete?"Requisitos cumplidos":"Requisitos pendientes"}>
  {complete?<CircleCheck aria-hidden="true"/>:<CircleX aria-hidden="true"/>}
@@ -60,6 +64,9 @@ const [setupDraft,setSetupDraft]=useState<Setup>({id:"",name:"",parameters:{}})
 const [setupOriginal,setSetupOriginal]=useState<Setup>({id:"",name:"",parameters:{}})
 const [setupId,setSetupId]=useState<string|null>(null)
 const [datasetId,setDatasetId]=useState("")
+ const [seriesId,setSeriesId]=useState("")
+ const [removedSeries,setRemovedSeries]=useState<Record<string,string[]>>({})
+ const [docSection,setDocSection]=useState<"import"|"records">("import")
 const [dataDraft,setDataDraft]=useState<Dataset|null>(null)
 const [moduleSettings,setModuleSettings]=useState<string|null>(null)
 const [plan,setPlan]=useState<"Free"|"Pro">("Free")
@@ -94,7 +101,7 @@ function navigate(target:View,group?:Mode,skipGuard=false){
 }
 function selectMode(m:Mode){
  if(!canLeave())return
- setMode(m);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":"settings")
+ setMode(m);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":m==="help"?"documentation":"settings")
  if(m==="resources")setKind("pilots")
 }
 function beginNew(){setDraft(emptyDraft());setCreationPreview(new Date().toISOString());navigate("new","analysis")}
@@ -110,10 +117,11 @@ return next;
 })
 }
 function openLibrary(k:ResourceKind){if(!canLeave())return;setKind(k);setModuleSettings(null);navigate("library","resources",true)}
-function beginResource(id:string|null=null){
- const original=id?resources[kind].find(r=>r.id===id):null
- const base=original?{...original}:{id:"",name:"",detail:"",...(kind==="tracks"?{trackType:"",segmentSets:[]}:kind==="vehicles"?{setups:[],vehicleType:""}:{})}
- setItemId(id);setResourceOriginal(base);setResourceDraft(base);setResourceDirty(false)
+function beginResource(id:string|null=null,forcedKind?:ResourceKind){
+  const currentKind=forcedKind??kind
+ const original=id?resources[currentKind].find(r=>r.id===id):null
+ const base=original?{...original}:{id:"",name:"",detail:"",...(currentKind==="tracks"?{trackType:"",segmentSets:[]}:currentKind==="vehicles"?{setups:[],vehicleType:""}:{})}
+ setKind(currentKind);setItemId(id);setResourceOriginal(base);setResourceDraft(base);setResourceDirty(false)
  navigate("resourceEdit","resources")
 }
 function saveResource(resource:Resource){
@@ -141,12 +149,16 @@ function goBack(){
  if(view==="resourceEdit")return openLibrary(kind)
  if(view==="dataEdit")return navigate("dataDetail","data")
  if(view==="dataDetail")return navigate("datasets","data")
+  if(view==="series")return navigate("dataDetail","data")
  if(view==="new")return navigate("home","analysis")
  if(["source","context","module"].includes(view))return navigate("session","analysis")
  if(["moduleConfig","moduleDoc"].includes(view))return openLibrary("modules")
 }
 function deleteResource(id:string){if(!window.confirm(t("data.deleteConfirm")))return;setResources(old=>({...old,[kind]:old[kind].filter(x=>x.id!==id)}));show(t("data.deleted"))}
-function editDataset(id:string){const d=datasets.find(x=>x.id===id);if(!d)return;setDatasetId(id);setDataDraft({...d});navigate("dataEdit","data")}
+function openDocumentation(section:"import"|"records"="import"){setDocSection(section);navigate("documentation","help")}
+ function openSeries(id:string){setSeriesId(id);navigate("series","data")}
+ function removeSeries(id:string){if(!targetDataset||!window.confirm("¿Eliminar esta serie de prueba?"))return;setRemovedSeries(old=>({...old,[targetDataset.id]:[...(old[targetDataset.id]??[]),id]}));show("Serie eliminada (simulación).")}
+ function editDataset(id:string){const d=datasets.find(x=>x.id===id);if(!d)return;setDatasetId(id);setDataDraft({...d});navigate("dataEdit","data")}
 function saveDataset(){if(!dataDraft?.name.trim())return;setDatasets(old=>old.map(x=>x.id===dataDraft.id?{...dataDraft,name:dataDraft.name.trim()}:x));setView("dataDetail");setMode("data");show(t("form.saved"))}
 function removeDataset(id:string){if(sessions.some(s=>s.targets.includes(id)||s.references.includes(id))){show(t("data.linkedDelete"));return}if(!window.confirm(t("data.deleteConfirm")))return;setDatasets(old=>old.filter(x=>x.id!==id));setSessions(old=>old.map(s=>({...s,targets:s.targets.filter(x=>x!==id),references:s.references.filter(x=>x!==id)})));navigate("datasets","data");show(t("data.deleted"))}
 function toggleSource(id:string,checked:boolean){
@@ -208,10 +220,10 @@ return [first,{label:t("nav."+kind),onClick:()=>openLibrary(kind)},
  ...(view!=="library"?[{label:itemId?itemName(itemId,resources[kind]):t("common.new"),onClick:view==="setupEdit"?()=>navigate("resourceEdit","resources"):undefined}]:[]),
  ...(view==="setupEdit"?[{label:"Setups"},{label:setupId?"Editar":"Nuevo"}]:[])]
 }
-if(["datasets","dataDetail","dataEdit"].includes(view)){
-return [first,{label:t("nav.library"),onClick:()=>navigate("datasets","data")},...(view!=="datasets"?[{label:targetDataset?.name??t("meta.notFound")}]:[]),...(view==="dataEdit"?[{label:t("common.edit")}]:[])]
+if(["datasets","dataDetail","dataEdit","series"].includes(view)){
+return [first,{label:t("nav.library"),onClick:()=>navigate("datasets","data")},...(view!=="datasets"?[{label:targetDataset?.name??t("meta.notFound")}]:[]),...(view==="dataEdit"?[{label:t("common.edit")}]:[]),...(view==="series"?[{label:targetDataset?seriesOf(targetDataset).find(s=>s.id===seriesId)?.name??"Serie":"Serie"}]:[])]
 }
-return [first,{label:t(view==="import"?"nav.import":view==="account"?"nav.account":view==="help"?"nav.help":"nav.preferences")}]
+return view==="documentation"||view==="faq"||view==="version"?[first,{label:view==="documentation"?"Documentación":view==="faq"?"FAQ":"Versión"}]:[first,{label:t(view==="import"?"nav.import":view==="account"?"nav.account":"nav.preferences")}]
 }
 function pageTitle(){
 if(view==="new")return t("create.title")
@@ -227,7 +239,11 @@ if(view==="setupEdit")return (setupId?"Editar ":"Nuevo ")+"setup · "+resourceDr
  if(view==="moduleDoc")return "Documentación · "+itemName(moduleSettings??"",resources.modules)
 if(view==="datasets")return t("nav.library")
 if(view==="dataDetail"||view==="dataEdit")return targetDataset?.name??t("meta.notFound")
-return t(view==="import"?"nav.import":view==="account"?"nav.account":view==="help"?"nav.help":"nav.preferences")
+ if(view==="series")return "Serie · "+(targetDataset?seriesOf(targetDataset).find(s=>s.id===seriesId)?.name??"—":"—")
+ if(view==="documentation")return "Documentación"
+ if(view==="faq")return "Preguntas frecuentes"
+ if(view==="version")return "Versión de Lapex"
+return t(view==="import"?"nav.import":view==="account"?"nav.account":"nav.preferences")
 }
 function pageSubtitle(){
 if(view==="home")return t("home.subtitle")
@@ -237,22 +253,24 @@ if(view==="module")return ""
 if(view==="library")return t("library.subtitle")
 if(view==="datasets")return t("data.subtitle")
 if(view==="import")return t("import.subtitle")
-if(view==="help")return t("help.subtitle")
+if(view==="documentation")return "Guía de uso de la aplicación · contenido preliminar"
+ if(view==="faq")return "Preguntas frecuentes · contenido preliminar"
 return ""
 }
 const chatKey=active?.id+"/"+moduleId;
 const history=chats[chatKey]??[];
 return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaultOpen>
-<AppSidebar07 mode={mode} plan={plan}
+<AppSidebar07 mode={mode} plan={plan} buildTime={buildLabel}
   onNewSession={beginNew}
   onOpenSessions={()=>{setActiveId(null);navigate("home","analysis")}}
   onResource={openLibrary}
   onData={key=>{if(key==="import")setImportStep(1);navigate(key,"data")}}
   onConfig={key=>navigate(key,"config")}
+   onHelp={key=>key==="documentation"?openDocumentation():navigate(key,"help")}
   onProfile={profileAction}
 />
 <SidebarInset className="workspace">
-<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(["new","source","context","module","resourceEdit","setupEdit","moduleConfig","moduleDoc","dataDetail","dataEdit"].includes(view))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
+<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(["new","source","context","module","resourceEdit","setupEdit","moduleConfig","moduleDoc","dataDetail","dataEdit","series"].includes(view))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
 <header className="screen-header"><div><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
 <div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={()=>beginResource()}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
 
@@ -408,11 +426,11 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  </>}/>
 </CardContent></Card></div>}
 
-{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} dirtyBaseline={resourceOriginal??resourceDraft} onDirtyChange={setResourceDirty} onEditSetup={beginSetup} onSave={saveResource} onCancel={()=>navigate("library","resources")}/>}
+{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} dirtyBaseline={resourceOriginal??resourceDraft} onDirtyChange={setResourceDirty} onEditSetup={beginSetup} onShare={what=>show("Compartir "+what+": disponible próximamente (maqueta).")} onSave={saveResource} onCancel={()=>navigate("library","resources")}/>}
 {view==="setupEdit"&&itemId&&<SetupForm vehicleName={resourceDraft.name} vehicleType={resourceDraft.vehicleType??""}
   setup={setupDraft} onChange={setSetupDraft} onSave={saveSetup} onCancel={()=>navigate("resourceEdit","resources")}/>}
 
-{["moduleConfig","moduleDoc"].includes(view)&&moduleSettings&&(()=>{const module=resources.modules.find(x=>x.id===moduleSettings);if(!module)return null;return <Card className="edit-card">
+{["moduleConfig","moduleDoc"].includes(view)&&moduleSettings&&(()=>{const module=resources.modules.find(x=>x.id===moduleSettings);if(!module)return null;return <Card className="edit-card module-full-width">
  <CardHeader><CardTitle>{view==="moduleDoc"?"Documentación":"Configurar módulo"} · {module.name}</CardTitle><CardDescription>{module.detail}</CardDescription></CardHeader>
  <CardContent><div className="stack-fields">
   {view==="moduleDoc"?<>
@@ -433,7 +451,7 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 <Card><CardContent className="metric"><div><small>Circuitos</small><strong>{distinctTracks}</strong></div><Layers3 size={20}/></CardContent></Card>
 <Card><CardContent className="source-stat"><strong>Fuentes de datos</strong><div>{(["run","weather","timing"] as const).map(tp=><span key={tp}>{t("source."+tp)}: <b>{datasets.filter(d=>d.type===tp).length}</b></span>)}</div></CardContent></Card>
 <Card className="storage-stat"><CardContent><HardDrive size={19}/><strong>Almacenamiento</strong><span>{storageUsed} MB usados / {storageTotal} MB totales (simulado)</span><progress aria-label="Almacenamiento usado" value={storageUsed} max={storageTotal}/></CardContent></Card>
-<Card className="docs-stat"><CardContent><BookOpen size={19}/><strong>Documentación</strong><a target="_blank" rel="noopener noreferrer" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/IMPORTACION-DATOS.md">Cómo importar datos</a><a target="_blank" rel="noopener noreferrer" href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/MODELO-DATOS.md">Cómo funcionan los registros</a></CardContent></Card>
+<Card className="docs-stat"><CardContent><BookOpen size={19}/><strong>Documentación</strong><button type="button" className="docs-link" onClick={()=>openDocumentation("import")}>Cómo importar datos</button><button type="button" className="docs-link" onClick={()=>openDocumentation("records")}>Cómo funcionan los registros</button></CardContent></Card>
 </div>
 <Card><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>Filtros avanzados y agrupaciones; las observaciones se editan dentro de cada registro.</CardDescription></CardHeader><CardContent>
 <ShadcnGrid label="Biblioteca de datos" rows={datasets} columns={[
