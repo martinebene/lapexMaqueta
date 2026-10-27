@@ -368,12 +368,11 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
     <CardHeader><CardTitle>Seleccionar setup del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
     <CardContent>
       <ShadcnGrid label="Setups del vehículo" tableHeight="264px"
-        rows={resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[]}
-        selection="single" selected={draft.setup}
-        onSelect={id=>setDraft(d=>({...d,setup:d.setup===id?"":id}))}
+        rows={draft.vehicle&&(resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[]).length?[{id:"__none__",name:"Sin setup",date:"—"},...(resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[])]:[]}
+        selection="single" selected={draft.setup||"__none__"}
+        onSelect={id=>setDraft(d=>({...d,setup:id==="__none__"?"":id}))}
         emptyMessage={draft.vehicle?"No hay registros":"Elegí primero un vehículo."}
         columns={[{key:"name",title:"Nombre",value:s=>s.name},{key:"date",title:"Fecha",value:s=>s.date??"—"}]}/>
-      {draft.setup&&<Button type="button" size="sm" variant="outline" onClick={()=>setDraft(d=>({...d,setup:""}))}>Sin setup · Quitar selección</Button>}
       {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados. Se puede continuar sin uno.</p>}
     </CardContent>
    </Card>
