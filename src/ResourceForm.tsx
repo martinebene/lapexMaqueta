@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Share2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import type { Resource, ResourceKind, SegmentSet } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
 
 const vehicleTypes=["Moto de velocidad","Karting","Auto de Fórmula","Auto de Turismo","Vehículo de Rally"]
-type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void;onEditSetup?:(id:string|null,current:Resource)=>void;dirtyBaseline?:Resource;onDirtyChange?:(dirty:boolean)=>void}
+type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void;onEditSetup?:(id:string|null,current:Resource)=>void;onShare?:(item:string)=>void;dirtyBaseline?:Resource;onDirtyChange?:(dirty:boolean)=>void}
 type StrKey="name"|"detail"|"number"|"shortName"|"nickname"|"nationality"|"city"|"province"|"country"|"birthDate"|"photo"|"email"|"phone"|"description"|"drivingStyle"|"manufacturer"|"model"|"enginePower"|"category"|"vehicleType"|"drivenWheels"|"location"|"direction"|"trackType"
 type NumericKey="experience"|"speed"|"referenceWeight"|"handicapBallastWeight"|"dragCoefficient"|"lengthKm"|"distanceKm"
 type FormField={key:StrKey|NumericKey;label:string;required?:boolean;type?:"date"|"email"|"number"|"url"|"text"|"textarea"|"select";options?:string[];note?:string}
@@ -36,17 +36,18 @@ const trackFields:FormField[]=[
  {key:"lengthKm",label:"Longitud declarada (km)",type:"number"},
  {key:"description",label:"Descripción",type:"textarea"}
 ]
-export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,dirtyBaseline,onDirtyChange}:Props){
+export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,onShare,dirtyBaseline,onDirtyChange}:Props){
  const [value,setValue]=useState<Resource>(initial)
  const [tagsText,setTagsText]=useState((initial.tags??[]).join(", "))
  const [attributesText,setAttributesText]=useState(Object.entries(initial.customAttributes??{}).map(([k,v])=>k+": "+v).join("\n"))
  const [validation,setValidation]=useState("")
+ const [selectedSegmentId,setSelectedSegmentId]=useState<string|null>(null)
  const fields=kind==="pilots"?pilotFields:kind==="vehicles"?vehicleFields:trackFields
  const update=(key:string,raw:string,numeric:boolean)=>{
   setValue(old=>({...old,[key]:numeric?(raw===""?undefined:Number(raw)):raw}))
   setValidation("")
  }
- const addSegment=()=>setValue(old=>({...old,segmentSets:[...(old.segmentSets??[]),{id:"seg"+Date.now(),name:"",type:"analysis" as const}]}))
+ const addSegment=()=>{const id="seg"+Date.now();setValue(old=>({...old,segmentSets:[...(old.segmentSets??[]),{id,name:"Nueva segmentación",type:"analysis" as const,date:new Date().toISOString().slice(0,10),segmentNames:[]}]}));setSelectedSegmentId(id)}
  const editSegment=(id:string,key:keyof SegmentSet,text:string)=>setValue(old=>({...old,segmentSets:old.segmentSets?.map(s=>s.id===id?{...s,[key]:text}:s)}))
  const normalize=()=>({...value,tags:tagsText.split(",").map(x=>x.trim()).filter(Boolean),customAttributes:Object.fromEntries(attributesText.split("\n").map(x=>x.split(":").map(y=>y.trim())).filter(([k,v])=>k&&v))})
  useEffect(()=>{
@@ -90,12 +91,6 @@ export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,d
      {kind==="vehicles"&&<div className="resource-form-field"><span>Peso total calculado</span><output className="session-timestamp">{value.referenceWeight==null?"—":Number(value.referenceWeight)+Number(value.handicapBallastWeight??0)} kg</output></div>}
     </div>
     {kind==="pilots"&&<div className="resource-form-section"><h3>Etiquetas</h3><Input aria-label="Etiquetas del piloto" placeholder="Separadas por coma" value={tagsText} onChange={e=>setTagsText(e.target.value)}/></div>}
-    {kind==="tracks"&&<div className="resource-form-section">
-     <h3>Conjuntos de segmentación</h3><p>Son opcionales. Análisis de parciales y nomenclatura de curvas tienen identidad propia. La edición de geometría y cortes corresponde al creador GPS de un futuro hito.</p>
-     {(value.segmentSets??[]).map(s=><div className="resource-form-collection" key={s.id}><Input aria-label={"Nombre del conjunto "+s.id} placeholder="Nombre opcional" value={s.name} onChange={e=>editSegment(s.id,"name",e.target.value)}/><select aria-label={"Tipo del conjunto "+s.id} value={s.type} onChange={e=>editSegment(s.id,"type",e.target.value)}><option value="analysis">Parciales</option><option value="nomenclature">Nomenclatura de curvas</option></select><Button type="button" variant="ghost" aria-label={"Quitar conjunto "+s.id} onClick={()=>setValue(old=>({...old,segmentSets:old.segmentSets?.filter(x=>x.id!==s.id)}))}><Trash2 size={14}/></Button></div>)}
-     <Button type="button" variant="outline" onClick={addSegment}><Plus size={14}/> Agregar conjunto</Button>
-     <p>Geometría GPS: {value.geometry?.length?"Registrada (edición geográfica no disponible en maqueta)":"Sin geometría registrada"}</p>
-    </div>}
     <div className="resource-form-section"><h3>Atributos personalizados opcionales</h3><Textarea aria-label="Atributos personalizados" rows={3} placeholder="Clave: valor (uno por línea)" value={attributesText} onChange={e=>setAttributesText(e.target.value)}/><small>Los valores físicos deben indicar su unidad.</small></div>
     {validation&&<p className="resource-form-error" role="alert">{validation}</p>}
     <div className="pill-row"><Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button><Button type="submit">Guardar {kind==="pilots"?"piloto":kind==="vehicles"?"vehículo":"circuito"}</Button></div>
@@ -113,10 +108,44 @@ export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,d
       {key:"detail",title:"Descripción",value:s=>s.detail??"—"}
     ]}
     groupers={[{key:"month",title:"Mes",value:s=>s.date?.slice(0,7)??""}]}
-    actions={setup=><Button type="button" size="sm" variant="outline" onClick={()=>onEditSetup?.(setup.id,normalize())}>Editar</Button>}
+    actions={setup=><>
+      <Button type="button" size="sm" variant="outline" onClick={()=>onEditSetup?.(setup.id,normalize())}><Pencil size={14}/>Editar</Button>
+      <Button type="button" size="sm" variant="ghost" aria-label={"Eliminar setup "+setup.name} onClick={()=>{if(window.confirm("¿Eliminar el setup "+setup.name+"?"))setValue(old=>({...old,setups:old.setups?.filter(s=>s.id!==setup.id)}))}}><Trash2 size={14}/></Button>
+      <Button type="button" size="sm" variant="outline" aria-label={"Compartir setup "+setup.name} onClick={()=>onShare?.("setup "+setup.name)}><Share2 size={14}/></Button>
+    </>}
     emptyMessage="El vehículo no tiene setups. Podés crear el primero."/>
    <div className="pill-row"><Button type="button" onClick={()=>onEditSetup?.(null,normalize())}><Plus size={15}/>Nuevo setup</Button></div>
    </>}
+  </CardContent>
+ </Card>}
+ {kind==="tracks"&&<Card className="resource-setups-card track-segmentations-card">
+  <CardHeader><CardTitle>Segmentaciones del circuito</CardTitle><CardDescription>Conjuntos de parciales o nomenclatura. La geometría y el detalle de segmentos se muestran como prototipo.</CardDescription></CardHeader>
+  <CardContent>
+   <ShadcnGrid label="Segmentaciones del circuito" rows={value.segmentSets??[]}
+    columns={[
+      {key:"name",title:"Nombre",value:s=>s.name},
+      {key:"type",title:"Tipo",value:s=>s.type==="analysis"?"Parciales":"Nomenclatura de curvas",filter:true},
+      {key:"date",title:"Fecha",value:s=>s.date??"—",filter:true}
+    ]}
+    groupers={[{key:"tipo",title:"Tipo",value:s=>s.type==="analysis"?"Parciales":"Nomenclatura de curvas"},{key:"month",title:"Fecha (mes)",value:s=>s.date?.slice(0,7)??""}]}
+    detail={segment=><div className="track-segment-detail">
+      <div><strong>{segment.name}</strong><p>Segmentos: {segment.segmentNames?.length??0}</p><p>Nombres: {segment.segmentNames?.join(", ")||"Sin nombres asignados"}</p><small>Representación de geometría provisional</small></div>
+      <svg viewBox="0 0 220 125" role="img" aria-label={"Geometría ilustrativa de "+segment.name}><polyline points="24,87 38,36 95,20 184,51 202,94 139,109 67,100 24,87" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round"/><circle cx="24" cy="87" r="5" fill="currentColor"/><circle cx="139" cy="109" r="5" fill="currentColor"/></svg>
+    </div>}
+    actions={segment=><>
+     <Button type="button" size="sm" variant="outline" onClick={()=>setSelectedSegmentId(segment.id)}><Pencil size={14}/>Editar</Button>
+     <Button type="button" size="sm" variant="ghost" aria-label={"Eliminar segmentación "+segment.name} onClick={()=>{if(window.confirm("¿Eliminar la segmentación "+segment.name+"?")){setValue(old=>({...old,segmentSets:old.segmentSets?.filter(x=>x.id!==segment.id)}));if(selectedSegmentId===segment.id)setSelectedSegmentId(null)}}}><Trash2 size={14}/></Button>
+     <Button type="button" size="sm" variant="outline" aria-label={"Compartir segmentación "+segment.name} onClick={()=>onShare?.("segmentación "+segment.name)}><Share2 size={14}/></Button>
+    </>}
+    emptyMessage="No hay segmentaciones asociadas a este circuito."/>
+   {selectedSegmentId&&value.segmentSets?.some(s=>s.id===selectedSegmentId)&&(()=>{const segment=value.segmentSets?.find(s=>s.id===selectedSegmentId);if(!segment)return null;return <div className="segment-edit-panel"><h3>Editar segmentación</h3>
+     <label>Nombre <Input aria-label="Nombre de la segmentación" value={segment.name} onChange={e=>editSegment(segment.id,"name",e.target.value)}/></label>
+     <label>Tipo <select aria-label="Tipo de segmentación" value={segment.type} onChange={e=>editSegment(segment.id,"type",e.target.value)}><option value="analysis">Parciales</option><option value="nomenclature">Nomenclatura de curvas</option></select></label>
+     <label>Fecha <Input type="date" aria-label="Fecha de segmentación" value={segment.date??""} onChange={e=>editSegment(segment.id,"date",e.target.value)}/></label>
+     <label>Nombres de segmentos (separados por coma) <Input aria-label="Nombres de segmentos" value={(segment.segmentNames??[]).join(", ")} onChange={e=>setValue(old=>({...old,segmentSets:old.segmentSets?.map(s=>s.id===segment.id?{...s,segmentNames:e.target.value.split(",").map(n=>n.trim()).filter(Boolean)}:s)}))}/></label>
+     <Button type="button" variant="outline" onClick={()=>setSelectedSegmentId(null)}>Cerrar edición</Button>
+   </div>})()}
+   <div className="pill-row"><Button type="button" onClick={addSegment}><Plus size={15}/>Nueva segmentación</Button></div>
   </CardContent>
  </Card>}
  </div>

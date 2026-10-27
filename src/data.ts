@@ -3,7 +3,7 @@ export type ResourceKind="pilots"|"tracks"|"vehicles"|"modules"
 export type SourceKind="weather"|"run"|"reference"|"timing"
 export type DatasetType="weather"|"run"|"timing"
 export type Setup={id:string;name:string;date?:string;detail?:string;parameters?:Record<string,string>}
-export type SegmentSet={id:string;name:string;type:"analysis"|"nomenclature";detail?:string}
+export type SegmentSet={id:string;name:string;type:"analysis"|"nomenclature";detail?:string;date?:string;segmentNames?:string[]}
 export interface Resource {
  id:string;name:string;detail:string;number?:string;shortName?:string;nickname?:string;nationality?:string;birthDate?:string;photo?:string;drivingStyle?:string;tags?:string[];customAttributes?:Record<string,string>;country?:string;province?:string;city?:string;email?:string;phone?:string;experience?:number;speed?:number;description?:string
  category?:string;vehicleType?:string;manufacturer?:string;model?:string;referenceWeight?:number;drivenWheels?:string;enginePower?:string;dragCoefficient?:number;handicapBallastWeight?:number;setups?:Setup[]
@@ -21,8 +21,8 @@ export const initialResources:Record<ResourceKind,Resource[]>={
   {id:"p3",name:"Piloto Demo C",detail:"Karting",number:"07",country:"Argentina",city:"Rawson",experience:4,speed:6}
  ],
  tracks:[
-  {id:"t1",name:"Circuito Delta",detail:"3,75 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:3.75,distanceKm:60,segments:2,segmentSets:[{id:"seg-t1-a",name:"Parciales carrera",type:"analysis"},{id:"seg-t1-n",name:"Nombres de curvas",type:"nomenclature"}],geometry:[[-65.31,-43.25],[-65.30,-43.245],[-65.295,-43.253],[-65.31,-43.25]]},
-  {id:"t2",name:"Circuito Costero",detail:"4,20 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:4.2,distanceKm:120,segments:1,segmentSets:[{id:"seg-t2-a",name:"Sectores de pista",type:"analysis"}]},
+  {id:"t1",name:"Circuito Delta",detail:"3,75 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:3.75,distanceKm:60,segments:2,segmentSets:[{id:"seg-t1-a",name:"Parciales carrera",type:"analysis",date:"2026-10-19",segmentNames:["Sector 1","Sector 2","Sector 3"]},{id:"seg-t1-n",name:"Nombres de curvas",type:"nomenclature",date:"2026-10-17",segmentNames:["Curva 1","Curva 2","Horquilla"]}],geometry:[[-65.31,-43.25],[-65.30,-43.245],[-65.295,-43.253],[-65.31,-43.25]]},
+  {id:"t2",name:"Circuito Costero",detail:"4,20 km",country:"Argentina",province:"Chubut",trackType:"Cerrado",lengthKm:4.2,distanceKm:120,segments:1,segmentSets:[{id:"seg-t2-a",name:"Sectores de pista",type:"analysis",date:"2026-10-18",segmentNames:["Sector A","Sector B"]}]},
   {id:"t3",name:"Circuito Sierra",detail:"5,10 km",country:"Argentina",province:"Córdoba",trackType:"Cerrado",lengthKm:5.1,segments:0,segmentSets:[]}
  ],
  vehicles:[

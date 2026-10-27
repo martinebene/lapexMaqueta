@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut } from "lucide-react"
+import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut, CircleHelp } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -9,7 +9,7 @@ import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarGroup, Si
 import logo from "../assets/lapex-logo.png"
 import profilePhoto from "../assets/profile-mebene.jpg"
 
-export type NavSection="analysis"|"resources"|"data"|"config"
+export type NavSection="analysis"|"resources"|"data"|"config"|"help"
 type ActionKey="usage"|"membership"|"switch"|"signout"
 type NavTarget={key:string;label:string;action:()=>void}
 type NavEntry={id:NavSection;title:string;icon:LucideIcon;items:NavTarget[]}
@@ -20,10 +20,12 @@ interface Props {
   onOpenSessions:()=>void
   onResource:(key:"pilots"|"tracks"|"vehicles"|"modules")=>void
   onData:(key:"datasets"|"import")=>void
-  onConfig:(key:"settings"|"account"|"help")=>void
+  onConfig:(key:"settings"|"account")=>void
+  onHelp:(key:"documentation"|"faq"|"version")=>void
+  buildTime:string
   onProfile:(key:ActionKey)=>void
 }
-export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,onData,onConfig,onProfile}:Props){
+export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,onData,onConfig,onHelp,buildTime,onProfile}:Props){
   const {t}=useTranslation()
   const [openGroup,setOpenGroup]=useState<NavSection|null>("analysis")
   const [profileOpen,setProfileOpen]=useState(false)
@@ -56,8 +58,12 @@ export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,o
     ]},
     {id:"config",title:t("nav.config"),icon:Settings2,items:[
       {key:"settings",label:t("nav.preferences"),action:()=>onConfig("settings")},
-      {key:"account",label:t("nav.account"),action:()=>onConfig("account")},
-      {key:"help",label:t("nav.help"),action:()=>onConfig("help")}
+      {key:"account",label:t("nav.account"),action:()=>onConfig("account")}
+    ]},
+    {id:"help",title:t("nav.help"),icon:CircleHelp,items:[
+      {key:"documentation",label:"Documentación",action:()=>onHelp("documentation")},
+      {key:"faq",label:"FAQ",action:()=>onHelp("faq")},
+      {key:"version",label:"Versión",action:()=>onHelp("version")}
     ]}
   ]
   const closeOnMobile=()=>{if(isMobile)setOpenMobile(false)}
@@ -92,6 +98,7 @@ export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,o
       </SidebarGroup>
     </SidebarContent>
     <SidebarFooter className="sidebar07-footer">
+      <div className="sidebar07-build-time" title="Fecha y hora de la compilación publicada">{buildTime}</div>
       <SidebarMenu>
         <SidebarMenuItem ref={profileAreaRef} className="sidebar07-user-anchor">
           <SidebarMenuButton size="lg" className="sidebar07-user" onClick={()=>setProfileOpen(p=>!p)} aria-haspopup="menu" aria-expanded={profileOpen} aria-controls="lapex-profile-menu" aria-label={t("nav.profile")}>

@@ -26,8 +26,10 @@ jobs:
           cache: pnpm
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
-      - name: Validar TypeScript y compilar
-        run: pnpm run build
+      - name: Validar TypeScript y compilar versión publicable
+        run: |
+          echo "VITE_DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+          pnpm run build
       - name: Compilar Storybook React/Vite
         run: pnpm build:storybook
       - name: Comprobar salida de ambos sitios
