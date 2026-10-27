@@ -88,6 +88,7 @@ test("Recursos: pilotos editables, circuitos agrupables y módulos desactivables
  await side.getByRole("button",{name:"Módulos de análisis"}).click()
  await page.getByRole("switch",{name:"Habilitar módulo Mejor vuelta"}).uncheck()
  await expect(page.getByRole("switch",{name:"Habilitar módulo Mejor vuelta"})).not.toBeChecked()
+ await side.getByRole("button",{name:"Análisis",exact:true}).click()
  await side.getByRole("button",{name:"Nueva sesión"}).click()
  await expect(page.getByRole("switch",{name:"Activar módulo Mejor vuelta"})).toHaveCount(0)
 })
@@ -279,10 +280,12 @@ test("Buscadores InputGroup estándar: sin doble borde en todas las tablas",asyn
   await inspect("Registros de "+label)
  }
  await side.getByRole("button",{name:"Recursos"}).click()
- for(const resource of ["Pilotos","Vehículos","Circuitos","Módulos de análisis"]){
+ for(const resource of ["Pilotos","Vehículos","Circuitos"]){
   await side.getByRole("button",{name:resource}).click()
   await inspect("Registros de "+resource)
  }
+ await side.getByRole("button",{name:"Módulos de análisis"}).click()
+ await expect(page.getByRole("textbox",{name:"Buscar en Módulos de análisis"})).toHaveCount(0)
  await side.getByRole("button",{name:"Datos"}).click()
  await side.getByRole("button",{name:"Biblioteca de datos"}).click()
  await inspect("Registros de Biblioteca de datos")
