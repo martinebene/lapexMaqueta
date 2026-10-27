@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Send, X, Database, Layers3, BookOpen, HardDrive, Settings2, CircleCheck, CircleX, ArrowLeft } from "lucide-react"
@@ -12,22 +12,26 @@ import { Switch } from "@/components/ui/switch"
 import { ResourceForm } from "./ResourceForm"
 import { SetupForm } from "./SetupForm"
 import { SeriesView } from "./SeriesView"
+import { HomeLanding } from "./HomeLanding"
+import { SessionDashboard, SnapshotDetail } from "./SessionDashboard"
+import type { SnapshotKind } from "./SessionDashboard"
 import { Documentation, FAQ, VersionInfo } from "./HelpContent"
 import { seriesOf, DURATION } from "./seriesMock"
-import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing } from "./data"
+import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing, captureSnapshot } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
 import type { GridColumn } from "./ShadcnGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar07 } from "./Sidebar07"
 import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind, Setup } from "./data"
 
-type Mode="analysis"|"resources"|"data"|"config"|"help"
-type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"setupEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"series"|"import"|"settings"|"account"|"documentation"|"faq"|"version"
+type Mode="start"|"analysis"|"resources"|"data"|"config"|"help"
+type View="start"|"home"|"snapshot"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"setupEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"series"|"import"|"settings"|"account"|"documentation"|"faq"|"version"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
 const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
 const ctxToRes:Record<ContextKey,ResourceKind>={pilot:"pilots",track:"tracks",vehicle:"vehicles"}
 const names:Record<ContextKey,string>={pilot:"create.pilot",track:"create.track",vehicle:"create.vehicle"}
+const toDraft=(s:Session):Draft=>({name:s.name,observations:s.observations??"",pilot:s.pilot,track:s.track,vehicle:s.vehicle,setup:s.setup??"",segmentSetIds:s.segmentSetIds??[],targets:s.targets,references:s.references,modules:s.modules})
 function uniq(list:string[]){return [...new Set(list)]}
 function itemName(id:string,items:Resource[]){return items.find(x=>x.id===id)?.name??"—"}
 function formatSessionTimestamp(iso:string){return new Date(iso).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})}
@@ -79,8 +83,12 @@ const [fileType,setFileType]=useState("")
 const [chatDraft,setChatDraft]=useState("")
 const [chats,setChats]=useState<Record<string,{who:"bot"|"user";text:string}[]>>({})
 const [lap,setLap]=useState("best")
+ const [editingSessionId,setEditingSessionId]=useState<string|null>(null)
+ const [snapshotSelection,setSnapshotSelection]=useState<{kind:SnapshotKind;id:string}|null>(null)
+ const historyRef=useRef<{view:View;mode:Mode;kind:ResourceKind;itemId:string|null;datasetId:string;moduleSettings:string|null;docSection:"import"|"records"}[]>([])
 
 const active=sessions.find(x=>x.id===activeId)??null
+ const activeSnapshot=active?(active.snapshot??captureSnapshot(active,initialResources,initialDatasets)):null
 const targetDataset=datasets.find(x=>x.id===datasetId)??null
 const draftReady=validDraft(draft,resources,datasets)
 const distinctTracks=new Set(datasets.map(d=>d.track).filter(Boolean)).size
@@ -90,7 +98,7 @@ const storageTotal=2048
 function show(message:string){setToast(message);window.setTimeout(()=>setToast(""),2800)}
 function hasChanges(){
  if(view==="resourceEdit")return resourceDirty
- if(view==="new")return JSON.stringify(draft)!==JSON.stringify(emptyDraft())
+ if(view==="new"){const source=editingSessionId?sessions.find(x=>x.id===editingSessionId):null;return JSON.stringify(draft)!==JSON.stringify(source?toDraft(source):emptyDraft())}
  if(view==="setupEdit")return JSON.stringify(setupDraft)!==JSON.stringify(setupOriginal)
  if(view==="dataEdit")return dataDraft!==null&&JSON.stringify(dataDraft)!==JSON.stringify(targetDataset)
  return false
@@ -98,16 +106,36 @@ function hasChanges(){
 function canLeave(){return !hasChanges()||window.confirm("Hay cambios sin guardar. ¿Querés descartarlos y salir?")}
 function navigate(target:View,group?:Mode,skipGuard=false){
  if(target!==view&&!skipGuard&&!canLeave())return
+ if(target!==view)historyRef.current.push({view,mode,kind,itemId,datasetId,moduleSettings,docSection})
  setView(target);if(group)setMode(group)
 }
 function selectMode(m:Mode){
  if(!canLeave())return
- setMode(m);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":m==="help"?"documentation":"settings")
  if(m==="resources")setKind("pilots")
+ navigate(m==="start"?"start":m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":m==="help"?"documentation":"settings",m,true)
 }
-function beginNew(){setDraft(emptyDraft());setCreationPreview(new Date().toISOString());navigate("new","analysis")}
+function beginNew(){if(!canLeave())return;setEditingSessionId(null);setDraft(emptyDraft());setCreationPreview(new Date().toISOString());navigate("new","analysis",true)}
+function beginSessionEdit(){if(!active)return;setEditingSessionId(active.id);setDraft(toDraft(active));setCreationPreview(active.createdAt??new Date().toISOString());navigate("new","analysis")}
 function openSession(id:string){if(!sessions.some(s=>s.id===id))return;setActiveId(id);setSelectedId(id);navigate("session","analysis")}
-function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim(),observations:draft.observations.trim(),createdAt:new Date().toISOString()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);setView("session");setMode("analysis");show(t("create.created"))}
+function createSession(){
+ if(!validDraft(draft,resources,datasets))return
+ const current=editingSessionId?sessions.find(s=>s.id===editingSessionId):null
+ const id=current?.id??"s"+Date.now()
+ const snapshot=captureSnapshot(draft,resources,datasets)
+ if(current){
+  const old=current.snapshot??captureSnapshot(current,initialResources,initialDatasets)
+  if(current.pilot===draft.pilot)snapshot.pilot=old.pilot
+  if(current.track===draft.track)snapshot.track=old.track
+  if(current.vehicle===draft.vehicle)snapshot.vehicle=old.vehicle
+  if(current.setup===draft.setup&&current.vehicle===draft.vehicle)snapshot.setup=old.setup
+  if(current.track===draft.track&&JSON.stringify(current.segmentSetIds??[])===JSON.stringify(draft.segmentSetIds))snapshot.segmentations=old.segmentations
+  snapshot.sources=snapshot.sources.map(d=>old.sources.find(x=>x.id===d.id)??d)
+ }
+ const saved:Session={...draft,id,name:draft.name.trim(),observations:draft.observations.trim(),createdAt:current?.createdAt??new Date().toISOString(),snapshot}
+ setSessions(old=>current?old.map(s=>s.id===id?saved:s):[saved,...old])
+ setEditingSessionId(null);historyRef.current=historyRef.current.filter(x=>x.view!=="new")
+ setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);setView("session");setMode("analysis");show(current?"Sesión actualizada (maqueta).":t("create.created"))
+}
 function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value,...(key==="vehicle"?{setup:""}:key==="track"?{segmentSetIds:[]}:{})}))}
 function toggleMulti(key:"targets"|"references"|"modules",id:string,checked:boolean){
 setDraft(old=>{
@@ -146,14 +174,21 @@ function saveSetup(next:Setup){
  setSetupOriginal(saved);setView("resourceEdit");show("Setup guardado en la maqueta")
 }
 function goBack(){
- if(view==="setupEdit")return navigate("resourceEdit","resources")
- if(view==="resourceEdit")return openLibrary(kind)
- if(view==="dataEdit")return navigate("dataDetail","data")
- if(view==="dataDetail")return navigate("datasets","data")
-  if(view==="series")return navigate("dataDetail","data")
- if(view==="new")return navigate("home","analysis")
- if(["source","context","module"].includes(view))return navigate("session","analysis")
- if(["moduleConfig","moduleDoc"].includes(view))return openLibrary("modules")
+ if(!canLeave())return
+ const previous=historyRef.current.pop()
+ if(previous){
+  setView(previous.view);setMode(previous.mode);setKind(previous.kind);setItemId(previous.itemId);setDatasetId(previous.datasetId);setModuleSettings(previous.moduleSettings);setDocSection(previous.docSection)
+  return
+ }
+ const parent:Partial<Record<View,[View,Mode]>>={
+  snapshot:["session","analysis"],series:["dataDetail","data"],dataEdit:["dataDetail","data"],dataDetail:["datasets","data"],
+  setupEdit:["resourceEdit","resources"],resourceEdit:["library","resources"],moduleConfig:["library","resources"],moduleDoc:["library","resources"],
+  new:["home","analysis"],source:["session","analysis"],context:["session","analysis"],module:["session","analysis"],
+  import:["datasets","data"],documentation:["start","start"],faq:["start","start"],version:["start","start"],
+  account:["start","start"],settings:["start","start"]
+ }
+ const destination=parent[view]
+ if(destination)navigate(destination[0],destination[1],true)
 }
 function deleteResource(id:string){if(!window.confirm(t("data.deleteConfirm")))return;setResources(old=>({...old,[kind]:old[kind].filter(x=>x.id!==id)}));show(t("data.deleted"))}
 function openDocumentation(section:"import"|"records"="import"){setDocSection(section);navigate("documentation","help")}
