@@ -154,7 +154,7 @@ function beginResource(id:string|null=null,forcedKind?:ResourceKind){
 }
 function saveResource(resource:Resource){
  setResources(old=>({...old,[kind]:itemId?old[kind].map(x=>x.id===itemId?{...resource,id:x.id,vehicleType:kind==="vehicles"?x.vehicleType:resource.vehicleType}:x):[...old[kind],{...resource,id:"r"+Date.now()}]}))
- setItemId(null);setResourceOriginal(null);setResourceDirty(false);setView("library");setMode("resources");show(t("form.saved"))
+ if(historyRef.current.at(-1)?.view==="library")historyRef.current.pop();setItemId(null);setResourceOriginal(null);setResourceDirty(false);setView("library");setMode("resources");show(t("form.saved"))
 }
 function beginSetup(id:string|null,current:Resource){
  if(!itemId)return
@@ -194,7 +194,7 @@ function openDocumentation(section:"import"|"records"="import"){setDocSection(se
  function openSeries(id:string){setSeriesId(id);navigate("series","data")}
  function removeSeries(id:string){if(!targetDataset||!window.confirm("¿Eliminar esta serie de prueba?"))return;setRemovedSeries(old=>({...old,[targetDataset.id]:[...(old[targetDataset.id]??[]),id]}));show("Serie eliminada (simulación).")}
  function editDataset(id:string){const d=datasets.find(x=>x.id===id);if(!d)return;setDatasetId(id);setDataDraft({...d});navigate("dataEdit","data")}
-function saveDataset(){if(!dataDraft?.name.trim())return;setDatasets(old=>old.map(x=>x.id===dataDraft.id?{...dataDraft,name:dataDraft.name.trim()}:x));setView("dataDetail");setMode("data");show(t("form.saved"))}
+function saveDataset(){if(!dataDraft?.name.trim())return;setDatasets(old=>old.map(x=>x.id===dataDraft.id?{...dataDraft,name:dataDraft.name.trim()}:x));if(historyRef.current.at(-1)?.view==="dataDetail")historyRef.current.pop();setView("dataDetail");setMode("data");show(t("form.saved"))}
 function removeDataset(id:string){if(sessions.some(s=>s.targets.includes(id)||s.references.includes(id))){show(t("data.linkedDelete"));return}if(!window.confirm(t("data.deleteConfirm")))return;setDatasets(old=>old.filter(x=>x.id!==id));setSessions(old=>old.map(s=>({...s,targets:s.targets.filter(x=>x!==id),references:s.references.filter(x=>x!==id)})));navigate("datasets","data");show(t("data.deleted"))}
 function toggleSource(id:string,checked:boolean){
 if(!active)return;
@@ -465,9 +465,9 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  </>}/>
 </CardContent></Card></div>}
 
-{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} dirtyBaseline={resourceOriginal??resourceDraft} onDirtyChange={setResourceDirty} onEditSetup={beginSetup} onShare={what=>show("Compartir "+what+": disponible próximamente (maqueta).")} onSave={saveResource} onCancel={()=>navigate("library","resources")}/>}
+{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} dirtyBaseline={resourceOriginal??resourceDraft} onDirtyChange={setResourceDirty} onEditSetup={beginSetup} onShare={what=>show("Compartir "+what+": disponible próximamente (maqueta).")} onSave={saveResource} onCancel={goBack}/>}
 {view==="setupEdit"&&itemId&&<SetupForm vehicleName={resourceDraft.name} vehicleType={resourceDraft.vehicleType??""}
-  setup={setupDraft} onChange={setSetupDraft} onSave={saveSetup} onCancel={()=>navigate("resourceEdit","resources")}/>}
+  setup={setupDraft} onChange={setSetupDraft} onSave={saveSetup} onCancel={()=>{if(canLeave())setView("resourceEdit")}}/>}
 
 {["moduleConfig","moduleDoc"].includes(view)&&moduleSettings&&(()=>{const module=resources.modules.find(x=>x.id===moduleSettings);if(!module)return null;return <Card className="edit-card module-full-width">
  <CardHeader><CardTitle>{view==="moduleDoc"?"Documentación":"Configurar módulo"} · {module.name}</CardTitle><CardDescription>{module.detail}</CardDescription></CardHeader>
@@ -527,7 +527,7 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  {view==="series"&&targetDataset&&<SeriesView key={targetDataset.id+":"+seriesId} dataset={targetDataset} seriesId={seriesId} onBack={()=>navigate("dataDetail","data")}/>}
 
 
-{view==="dataEdit"&&dataDraft&&<Card className="edit-card"><CardHeader><CardTitle>{t("common.observations")}</CardTitle><CardDescription>Las mediciones y metadatos importados no se modifican aquí.</CardDescription></CardHeader><CardContent><label className="field-label">{t("common.observations")}<Input aria-label={t("common.observations")} value={dataDraft.observation} onChange={e=>setDataDraft(old=>old?{...old,observation:e.target.value}:old)}/></label><div className="pill-row"><Button variant="outline" onClick={()=>navigate("dataDetail")}>{t("common.cancel")}</Button><Button onClick={saveDataset}>{t("common.save")}</Button></div></CardContent></Card>}
+{view==="dataEdit"&&dataDraft&&<Card className="edit-card"><CardHeader><CardTitle>{t("common.observations")}</CardTitle><CardDescription>Las mediciones y metadatos importados no se modifican aquí.</CardDescription></CardHeader><CardContent><label className="field-label">{t("common.observations")}<Input aria-label={t("common.observations")} value={dataDraft.observation} onChange={e=>setDataDraft(old=>old?{...old,observation:e.target.value}:old)}/></label><div className="pill-row"><Button variant="outline" onClick={goBack}>{t("common.cancel")}</Button><Button onClick={saveDataset}>{t("common.save")}</Button></div></CardContent></Card>}
 
 {view==="import"&&<Card className="edit-card"><CardHeader><CardTitle>{importStep===1?t("nav.import"):t("import.prep")}</CardTitle><CardDescription>{t(importStep===1?"import.noRead":"import.prepHint")}</CardDescription></CardHeader><CardContent>{importStep===1?<div className="stack-fields"><label>{t("import.file")}<Input type="file" accept=".csv,.txt,.xlsx,.xls,.json,.xrk,.xrz" onChange={e=>setFilename(e.target.files?.[0]?.name??"")}/></label><label>{t("import.type")}<select value={fileType} onChange={e=>setFileType(e.target.value)}><option value="">{t("import.select")}</option>{["CSV","TXT","XLSX","XRK","XRZ","Otro"].map(x=><option key={x}>{x}</option>)}</select></label><Button disabled={!filename||!fileType} onClick={()=>setImportStep(2)}>{t("import.continue")}<ArrowRight size={16}/></Button></div>:<div className="stack-fields"><p>{filename} · {fileType}</p><p>{t("import.prepHint")}</p><Button variant="outline" onClick={()=>setImportStep(1)}>{t("common.back")}</Button></div>}</CardContent></Card>}
 
