@@ -56,8 +56,8 @@ const [activeId,setActiveId]=useState<string|null>(null)
 const [selectedId,setSelectedId]=useState("s1")
 const [draft,setDraft]=useState<Draft>(emptyDraft())
 const [creationPreview,setCreationPreview]=useState(()=>new Date().toISOString())
-const [sourceKind,setSourceKind]=useState<SourceKind>("run")
-const [contextKind,setContextKind]=useState<ContextKey>("pilot")
+const sourceKind:SourceKind="run"
+const contextKind:ContextKey="pilot"
 const [moduleId,setModuleId]=useState("best")
 const [kind,setKind]=useState<ResourceKind>("pilots")
 const [itemId,setItemId]=useState<string|null>(null)
