@@ -1,6 +1,7 @@
 {
   "app.title": "Lapex.ai",
   "app.caption": "Motorsport intelligence",
+  "nav.start": "Inicio",
   "nav.analysis": "Análisis",
   "nav.resources": "Recursos",
   "nav.data": "Datos",
