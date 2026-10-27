@@ -315,7 +315,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   <CardContent><ShadcnGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]}/></CardContent>
  </Card>
  <Card className="session-context-card vehicle-parent-card">
-  <CardHeader><SessionCardHeading title={t("create.vehicle")} complete={Boolean(draft.vehicle&&resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.some(s=>s.id===draft.setup))}/><CardDescription>Seleccioná un vehículo y después uno de sus setups.</CardDescription></CardHeader>
+  <CardHeader><SessionCardHeading title={t("create.vehicle")} complete={Boolean(draft.vehicle)}/><CardDescription>Seleccioná un vehículo. El setup es opcional, incluso si existen configuraciones.</CardDescription></CardHeader>
   <CardContent><div className="vehicle-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar vehículo</CardTitle><CardDescription>Filtrá por categoría y tipo de vehículo.</CardDescription></CardHeader>
@@ -327,7 +327,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
       <ShadcnGrid label="Setups del vehículo" tableHeight="264px"
         rows={resources.vehicles.find(r=>r.id===draft.vehicle)?.setups??[]}
         selection="single" selected={draft.setup}
-        onSelect={id=>setDraft(d=>({...d,setup:id}))}
+        onSelect={id=>setDraft(d=>({...d,setup:d.setup===id?"":id}))}
         emptyMessage={draft.vehicle?"No hay registros":"Elegí primero un vehículo."}
         columns={[{key:"name",title:"Nombre",value:s=>s.name},{key:"date",title:"Fecha",value:s=>s.date??"—"}]}/>
       {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados.</p>}

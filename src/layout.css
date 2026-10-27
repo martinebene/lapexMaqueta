@@ -581,3 +581,17 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 /* La versión se ubica encima del divisor del bloque de usuario. */
 .sidebar07-footer{border-top:0}
 .sidebar07-footer [data-slot="sidebar-menu"]{border-top:1px solid #334b59;padding-top:7px}
+
+/* Iteración #6: ancho flexible en campos y centrado de controles de grillas. */
+.session-details-card .session-field-control,
+.session-details-card .session-field-control [data-slot="input"],
+.session-details-card .session-field-control input,
+.session-details-card .session-field-control textarea,
+.session-details-card .session-field-control output {box-sizing:border-box;width:100%;max-width:none;min-width:0}
+.shadcn-grid .dg-rows [data-column-id="st-row-select"],
+.shadcn-grid .dg-rows [data-column-id="st-row-expand"],
+.shadcn-grid .dg-rows [data-column-id="lapex-leading-control"] {text-align:center}
+.shadcn-grid .dg-rows td[data-column-id="st-row-select"] > *,
+.shadcn-grid .dg-rows td[data-column-id="st-row-expand"] > * {margin-inline:auto}
+.shadcn-grid .dg-rows td[data-column-id="st-row-expand"] button,
+.shadcn-grid .dg-rows td[data-column-id="st-row-select"] button {margin-inline:auto}

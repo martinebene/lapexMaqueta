@@ -28,8 +28,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Validar TypeScript y compilar versión publicable
         run: |
-          echo "VITE_DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-          pnpm run build
+          DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "VITE_DEPLOYED_AT=$DEPLOYED_AT" >> "$GITHUB_ENV"
+          VITE_DEPLOYED_AT="$DEPLOYED_AT" pnpm run build
+          test -n "$DEPLOYED_AT"
       - name: Compilar Storybook React/Vite
         run: pnpm build:storybook
       - name: Comprobar salida de ambos sitios

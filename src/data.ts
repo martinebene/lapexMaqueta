@@ -64,7 +64,7 @@ export function validDraft(d:Draft,resources:Record<ResourceKind,Resource[]>,dat
  const found=(kind:ResourceKind,id:string)=>resources[kind].some(r=>r.id===id)
  const vehicle=resources.vehicles.find(r=>r.id===d.vehicle)
  return Boolean(d.name.trim()&&found("pilots",d.pilot)&&found("tracks",d.track)&&vehicle
- &&vehicle.setups?.some(s=>s.id===d.setup)&&d.targets.length<=1&&d.modules.length>0
+ &&(!d.setup||vehicle.setups?.some(s=>s.id===d.setup))&&d.targets.length<=1&&d.modules.length>0
  &&d.targets.every(id=>datasets.some(x=>x.id===id&&x.type==="run")&&!d.references.includes(id))
  &&d.references.every(id=>datasets.some(x=>x.id===id))
  &&d.modules.every(id=>{const m=resources.modules.find(x=>x.id===id);return m&&m.enabled!==false&&moduleMissing(m,d,datasets).length===0}))
