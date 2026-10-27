@@ -577,3 +577,7 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .series-filter-status{font-size:12px;color:var(--muted-foreground);margin-top:14px}.series-plot-container{overflow-x:auto}.series-plot{display:block;width:100%;min-width:450px;height:auto;color:var(--foreground)}
 .series-sample-scroll{max-height:445px;overflow:auto;border:1px solid var(--border);border-radius:8px}.series-pagination{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:9px;margin-top:13px;font-size:12px}
 @media(max-width:700px){.data-general-row{grid-template-columns:120px minmax(0,1fr);gap:8px}.series-filter-columns,.docs-layout{grid-template-columns:1fr}.docs-index{border-right:0;border-bottom:1px solid var(--border);padding:0 0 12px}.series-plot{min-width:460px}}
+
+/* La versión se ubica encima del divisor del bloque de usuario. */
+.sidebar07-footer{border-top:0}
+.sidebar07-footer [data-slot="sidebar-menu"]{border-top:1px solid #334b59;padding-top:7px}
