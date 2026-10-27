@@ -11,7 +11,18 @@ export interface Resource {
  enabled?:boolean;requirements?:string[];docsUrl?:string
 }
 export interface Dataset {id:string;name:string;date:string;time:string;observation:string;track:string;type:DatasetType;device?:string;bestLap?:string;duration?:string;season?:string;category?:string;sizeMB?:number;channels?:number}
-export interface Session {id:string;name:string;observations?:string;createdAt?:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds?:string[];targets:string[];references:string[];modules:string[]}
+export interface SessionSnapshot {pilot?:Resource;track?:Resource;vehicle?:Resource;setup?:Setup;segmentations:SegmentSet[];sources:Dataset[]}
+export function captureSnapshot(session:Pick<Session,"pilot"|"track"|"vehicle"|"setup"|"segmentSetIds"|"targets"|"references">,resources:Record<ResourceKind,Resource[]>,datasets:Dataset[]):SessionSnapshot {
+ const clone=<T,>(item:T):T=>JSON.parse(JSON.stringify(item)) as T
+ const pilot=resources.pilots.find(x=>x.id===session.pilot)
+ const track=resources.tracks.find(x=>x.id===session.track)
+ const vehicle=resources.vehicles.find(x=>x.id===session.vehicle)
+ const setup=vehicle?.setups?.find(x=>x.id===session.setup)
+ const segmentation=track?.segmentSets?.filter(x=>(session.segmentSetIds??[]).includes(x.id))??[]
+ const sources=datasets.filter(x=>[...session.targets,...session.references].includes(x.id))
+ return {pilot:pilot?clone(pilot):undefined,track:track?clone(track):undefined,vehicle:vehicle?clone(vehicle):undefined,setup:setup?clone(setup):undefined,segmentations:clone(segmentation),sources:clone(sources)}
+}
+export interface Session {snapshot?:SessionSnapshot;id:string;name:string;observations?:string;createdAt?:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds?:string[];targets:string[];references:string[];modules:string[]}
 export interface Draft {name:string;observations:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds:string[];targets:string[];references:string[];modules:string[]}
 export const emptyDraft=():Draft=>({name:"",observations:"",pilot:"",track:"",vehicle:"",setup:"",segmentSetIds:[],targets:[],references:[],modules:[]})
 export const initialResources:Record<ResourceKind,Resource[]>={
