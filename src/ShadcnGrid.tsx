@@ -162,7 +162,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     enableSorting: true,
     enableGrouping: groups.length > 0 || groupers.length > 0,
     groupedColumnMode: "remove",
-    enableExpanding: groups.length > 0 || groupers.length > 0 || Boolean(props.detail),
+    enableExpanding: Boolean(group) || Boolean(props.detail),
     enableGlobalFilterRankedResults: false,
     enableColumnFilters: true,
     columnFilterDisplayMode: "custom",
@@ -217,6 +217,8 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       "aria-label": "Seleccionar " + String(latest.current.columns[0]?.value(row.original) ?? row.original.id),
     }),
     stExpandButtonProps: ({ row }) => ({
+       disabled: !row.getIsGrouped() && !Boolean(latest.current.detail),
+       className: !row.getIsGrouped() && !latest.current.detail ? "invisible" : undefined,
       "aria-label": row.getIsGrouped()
         ? (row.getIsExpanded() ? "Contraer grupo " : "Expandir grupo ") + String(row.groupingValue ?? "")
         : "Detalle de " + String(latest.current.columns[0]?.value(row.original) ?? row.original.id),
