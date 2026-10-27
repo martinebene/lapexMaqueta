@@ -1,7 +1,0 @@
-import{j as e}from"./jsx-runtime-u17CrQMm.js";import{C as t}from"./checkbox-CGrQqzUc.js";import"./utils-CHfrMcqn.js";import"./clsx-B-dksMZM.js";import"./createLucideIcon-IuSaRLQN.js";import"./iframe-Ck_v8FVf.js";import"./preload-helper-lTcTpUi0.js";import"./useRenderElement-BnN5nUoc.js";import"./useAriaLabelledBy-Cf28aC6v.js";import"./useButton-CbcRiYsd.js";import"./useValueChanged-BukRTVyl.js";import"./index-jdbEzs5v.js";import"./index-CiRifK-n.js";import"./useOnMount-DcwLNJP3.js";const L={title:"Controles/Checkbox",component:t,parameters:{layout:"centered"}},s=({initial:i=!1,disabled:c=!1})=>e.jsxs("label",{className:"flex items-center gap-2 text-sm",children:[e.jsx(t,{"aria-label":"Seleccionar referencia",defaultChecked:i,disabled:c})," Rodaje de referencia"]}),r={render:()=>e.jsx(s,{})},a={render:()=>e.jsx(s,{initial:!0})},o={render:()=>e.jsx(s,{disabled:!0})},k=["SinSeleccionar","Seleccionado","Deshabilitado"];r.parameters={...r.parameters,docs:{...r.parameters?.docs,source:{originalSource:`{
-  render: () => <Labelled />
-}`,...r.parameters?.docs?.source}}};a.parameters={...a.parameters,docs:{...a.parameters?.docs,source:{originalSource:`{
-  render: () => <Labelled initial />
-}`,...a.parameters?.docs?.source}}};o.parameters={...o.parameters,docs:{...o.parameters?.docs,source:{originalSource:`{
-  render: () => <Labelled disabled />
-}`,...o.parameters?.docs?.source}}};export{o as Deshabilitado,a as Seleccionado,r as SinSeleccionar,k as __namedExportsOrder,L as default};
