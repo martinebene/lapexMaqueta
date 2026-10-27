@@ -225,6 +225,15 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       title: row.getIsGrouped() ? (row.getIsExpanded() ? "Contraer grupo" : "Expandir grupo") : (row.getIsExpanded() ? "Ocultar detalle" : "Ver detalle"),
     }),
     renderDetailPanel: props.detail ? ({ row }) => row.getIsGrouped() ? null : latest.current.detail?.(row.original) : undefined,
+    stTableBodyCellProps: ({ column, row }) => ({
+      "data-column-id": column.id,
+      align: (column.id === "st-row-select" || column.id === "lapex-leading-control" ||
+        (column.id === "st-row-expand" && !row.getIsGrouped())) ? "center" as const : "left" as const,
+    }),
+    stTableHeadCellProps: ({ column }) => ({
+      "data-column-id": column.id,
+      align: ["st-row-select","st-row-expand","lapex-leading-control"].includes(column.id) ? "center" as const : "left" as const,
+    }),
     stTableBodyRowProps: ({ row, isDetailPanel }) => ({
       className: isDetailPanel ? "dg-expanded" : row.getIsGrouped() ? "dg-record dg-group-record" :
         selection && row.getCanSelect() ? "dg-record dg-selectable-row" : "dg-record",
