@@ -1,13 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import type { Resource, ResourceKind, Setup, SegmentSet } from "./data"
+import type { Resource, ResourceKind, SegmentSet } from "./data"
+import { ShadcnGrid } from "./ShadcnGrid"
 
 const vehicleTypes=["Moto de velocidad","Karting","Auto de Fórmula","Auto de Turismo","Vehículo de Rally"]
-type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void}
+type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void;onEditSetup?:(id:string|null,current:Resource)=>void;dirtyBaseline?:Resource;onDirtyChange?:(dirty:boolean)=>void}
 type StrKey="name"|"detail"|"number"|"shortName"|"nickname"|"nationality"|"city"|"province"|"country"|"birthDate"|"photo"|"email"|"phone"|"description"|"drivingStyle"|"manufacturer"|"model"|"enginePower"|"category"|"vehicleType"|"drivenWheels"|"location"|"direction"|"trackType"
 type NumericKey="experience"|"speed"|"referenceWeight"|"handicapBallastWeight"|"dragCoefficient"|"lengthKm"|"distanceKm"
 type FormField={key:StrKey|NumericKey;label:string;required?:boolean;type?:"date"|"email"|"number"|"url"|"text"|"textarea"|"select";options?:string[];note?:string}
@@ -35,7 +36,7 @@ const trackFields:FormField[]=[
  {key:"lengthKm",label:"Longitud declarada (km)",type:"number"},
  {key:"description",label:"Descripción",type:"textarea"}
 ]
-export function ResourceForm({kind,initial,editing,onSave,onCancel}:Props){
+export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,dirtyBaseline,onDirtyChange}:Props){
  const [value,setValue]=useState<Resource>(initial)
  const [tagsText,setTagsText]=useState((initial.tags??[]).join(", "))
  const [attributesText,setAttributesText]=useState(Object.entries(initial.customAttributes??{}).map(([k,v])=>k+": "+v).join("\n"))
@@ -45,22 +46,27 @@ export function ResourceForm({kind,initial,editing,onSave,onCancel}:Props){
   setValue(old=>({...old,[key]:numeric?(raw===""?undefined:Number(raw)):raw}))
   setValidation("")
  }
- const addSetup=()=>setValue(old=>({...old,setups:[...(old.setups??[]),{id:"su"+Date.now(),name:"",date:""}]}))
- const editSetup=(id:string,key:keyof Setup,text:string)=>setValue(old=>({...old,setups:old.setups?.map(s=>s.id===id?{...s,[key]:text}:s)}))
  const addSegment=()=>setValue(old=>({...old,segmentSets:[...(old.segmentSets??[]),{id:"seg"+Date.now(),name:"",type:"analysis" as const}]}))
  const editSegment=(id:string,key:keyof SegmentSet,text:string)=>setValue(old=>({...old,segmentSets:old.segmentSets?.map(s=>s.id===id?{...s,[key]:text}:s)}))
+ const normalize=()=>({...value,tags:tagsText.split(",").map(x=>x.trim()).filter(Boolean),customAttributes:Object.fromEntries(attributesText.split("\n").map(x=>x.split(":").map(y=>y.trim())).filter(([k,v])=>k&&v))})
+ useEffect(()=>{
+  if(!onDirtyChange)return
+  const original=dirtyBaseline??initial
+  const changed=JSON.stringify(normalize())!==JSON.stringify({...original,tags:original.tags??[],customAttributes:original.customAttributes??{}})
+  onDirtyChange(changed)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[value,tagsText,attributesText,dirtyBaseline])
  function submit(){
   if(!value.name.trim())return setValidation("El nombre es obligatorio.")
   if(kind==="vehicles"){
    if(!value.vehicleType||!value.drivenWheels?.trim()||!(Number(value.referenceWeight)>0))return setValidation("Completá el tipo, peso de referencia positivo y tracción.")
-   if(!(value.setups??[]).length||value.setups?.some(s=>!s.name.trim()))return setValidation("El vehículo debe tener al menos un setup con nombre.")
   }
   if(kind==="tracks"&&!value.trackType)return setValidation("Elegí el tipo de trazado.")
   if(kind==="pilots"&&(["experience","speed"] as const).some(k=>value[k]!=null&&(!Number.isInteger(value[k])||(value[k] as number)<1||(value[k] as number)>10)))return setValidation("Las valoraciones deben ser números enteros entre 1 y 10.")
   const attrs=Object.fromEntries(attributesText.split("\n").map(t=>t.split(":").map(s=>s.trim())).filter(([k,v])=>k&&v))
   onSave({...value,name:value.name.trim(),tags:tagsText.split(",").map(s=>s.trim()).filter(Boolean),customAttributes:attrs,segments:value.segmentSets?.length??value.segments})
  }
- return <Card className="resource-form-card">
+ return <div className="resource-edit-stack"><Card className="resource-form-card">
   <CardHeader><CardTitle>{editing?"Editar":"Nuevo"} · {kind==="pilots"?"Piloto":kind==="vehicles"?"Vehículo":"Circuito"}</CardTitle><CardDescription>Los campos con * son obligatorios. Los demás son opcionales, según la especificación del producto.</CardDescription></CardHeader>
   <CardContent>
    <form noValidate className="resource-form" onSubmit={e=>{e.preventDefault();submit()}}>
@@ -84,11 +90,6 @@ export function ResourceForm({kind,initial,editing,onSave,onCancel}:Props){
      {kind==="vehicles"&&<div className="resource-form-field"><span>Peso total calculado</span><output className="session-timestamp">{value.referenceWeight==null?"—":Number(value.referenceWeight)+Number(value.handicapBallastWeight??0)} kg</output></div>}
     </div>
     {kind==="pilots"&&<div className="resource-form-section"><h3>Etiquetas</h3><Input aria-label="Etiquetas del piloto" placeholder="Separadas por coma" value={tagsText} onChange={e=>setTagsText(e.target.value)}/></div>}
-    {kind==="vehicles"&&<div className="resource-form-section">
-     <h3>Setups del vehículo</h3><p>Debe existir al menos un preset. Cada uno tiene nombre obligatorio; la fecha es descriptiva en esta maqueta.</p>
-     {(value.setups??[]).map(s=><div className="resource-form-collection" key={s.id}><Input aria-label={"Nombre del setup "+s.id} placeholder="Nombre del setup" required value={s.name} onChange={e=>editSetup(s.id,"name",e.target.value)}/><Input aria-label={"Fecha del setup "+s.id} type="date" value={s.date??""} onChange={e=>editSetup(s.id,"date",e.target.value)}/><Button type="button" variant="ghost" aria-label={"Quitar setup "+s.name} onClick={()=>setValue(old=>({...old,setups:old.setups?.filter(x=>x.id!==s.id)}))}><Trash2 size={14}/></Button></div>)}
-     <Button type="button" variant="outline" onClick={addSetup}><Plus size={14}/> Agregar setup</Button>
-    </div>}
     {kind==="tracks"&&<div className="resource-form-section">
      <h3>Conjuntos de segmentación</h3><p>Son opcionales. Análisis de parciales y nomenclatura de curvas tienen identidad propia. La edición de geometría y cortes corresponde al creador GPS de un futuro hito.</p>
      {(value.segmentSets??[]).map(s=><div className="resource-form-collection" key={s.id}><Input aria-label={"Nombre del conjunto "+s.id} placeholder="Nombre opcional" value={s.name} onChange={e=>editSegment(s.id,"name",e.target.value)}/><select aria-label={"Tipo del conjunto "+s.id} value={s.type} onChange={e=>editSegment(s.id,"type",e.target.value)}><option value="analysis">Parciales</option><option value="nomenclature">Nomenclatura de curvas</option></select><Button type="button" variant="ghost" aria-label={"Quitar conjunto "+s.id} onClick={()=>setValue(old=>({...old,segmentSets:old.segmentSets?.filter(x=>x.id!==s.id)}))}><Trash2 size={14}/></Button></div>)}
@@ -101,4 +102,22 @@ export function ResourceForm({kind,initial,editing,onSave,onCancel}:Props){
    </form>
   </CardContent>
  </Card>
+ {kind==="vehicles"&&<Card className="resource-setups-card">
+  <CardHeader><CardTitle>Setups del vehículo</CardTitle><CardDescription>Configuraciones independientes de la ficha. Puede haber cero o cientos de setups; la planilla depende del tipo de vehículo.</CardDescription></CardHeader>
+  <CardContent>
+   {!editing?<p className="setup-form-note">Guardá primero el vehículo para habilitar sus setups.</p>:<>
+   <ShadcnGrid label="Setups del vehículo" rows={value.setups??[]}
+    columns={[
+      {key:"name",title:"Nombre",value:s=>s.name},
+      {key:"date",title:"Fecha",value:s=>s.date??"—",filter:true},
+      {key:"detail",title:"Descripción",value:s=>s.detail??"—"}
+    ]}
+    groupers={[{key:"month",title:"Mes",value:s=>s.date?.slice(0,7)??""}]}
+    actions={setup=><Button type="button" size="sm" variant="outline" onClick={()=>onEditSetup?.(setup.id,normalize())}>Editar</Button>}
+    emptyMessage="El vehículo no tiene setups. Podés crear el primero."/>
+   <div className="pill-row"><Button type="button" onClick={()=>onEditSetup?.(null,normalize())}><Plus size={15}/>Nuevo setup</Button></div>
+   </>}
+  </CardContent>
+ </Card>}
+ </div>
 }

@@ -2,7 +2,7 @@
 export type ResourceKind="pilots"|"tracks"|"vehicles"|"modules"
 export type SourceKind="weather"|"run"|"reference"|"timing"
 export type DatasetType="weather"|"run"|"timing"
-export type Setup={id:string;name:string;date?:string;detail?:string}
+export type Setup={id:string;name:string;date?:string;detail?:string;parameters?:Record<string,string>}
 export type SegmentSet={id:string;name:string;type:"analysis"|"nomenclature";detail?:string}
 export interface Resource {
  id:string;name:string;detail:string;number?:string;shortName?:string;nickname?:string;nationality?:string;birthDate?:string;photo?:string;drivingStyle?:string;tags?:string[];customAttributes?:Record<string,string>;country?:string;province?:string;city?:string;email?:string;phone?:string;experience?:number;speed?:number;description?:string

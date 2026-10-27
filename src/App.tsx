@@ -2,7 +2,7 @@
 import { useState } from "react"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Send, X, Database, Layers3, BookOpen, HardDrive, Settings2, CircleCheck, CircleX } from "lucide-react"
+import { Plus, FolderOpen, Upload, Check, Trash2, Pencil, Share2, ArrowRight, Send, X, Database, Layers3, BookOpen, HardDrive, Settings2, CircleCheck, CircleX, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,15 +10,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { ResourceForm } from "./ResourceForm"
+import { SetupForm } from "./SetupForm"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
 import type { GridColumn } from "./ShadcnGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar07 } from "./Sidebar07"
-import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind } from "./data"
+import type { Draft, Dataset, Resource, ResourceKind, Session, SourceKind, Setup } from "./data"
 
 type Mode="analysis"|"resources"|"data"|"config"
-type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"moduleEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
+type View="home"|"new"|"session"|"source"|"context"|"module"|"library"|"resourceEdit"|"setupEdit"|"moduleConfig"|"moduleDoc"|"datasets"|"dataDetail"|"dataEdit"|"import"|"settings"|"account"|"help"
 type ContextKey="pilot"|"track"|"vehicle"
 type PickItem={id:string;name:string;detail:string}
 const ctxKinds:ContextKey[]=["pilot","track","vehicle"]
@@ -53,6 +54,11 @@ const [moduleId,setModuleId]=useState("best")
 const [kind,setKind]=useState<ResourceKind>("pilots")
 const [itemId,setItemId]=useState<string|null>(null)
 const [resourceDraft,setResourceDraft]=useState<Resource>({id:"",name:"",detail:""})
+const [resourceOriginal,setResourceOriginal]=useState<Resource|null>(null)
+const [resourceDirty,setResourceDirty]=useState(false)
+const [setupDraft,setSetupDraft]=useState<Setup>({id:"",name:"",parameters:{}})
+const [setupOriginal,setSetupOriginal]=useState<Setup>({id:"",name:"",parameters:{}})
+const [setupId,setSetupId]=useState<string|null>(null)
 const [datasetId,setDatasetId]=useState("")
 const [dataDraft,setDataDraft]=useState<Dataset|null>(null)
 const [moduleSettings,setModuleSettings]=useState<string|null>(null)
@@ -74,11 +80,26 @@ const storageUsed=datasets.reduce((s,d)=>s+(d.sizeMB??0),0)
 const storageTotal=2048
 
 function show(message:string){setToast(message);window.setTimeout(()=>setToast(""),2800)}
-function navigate(target:View,group?:Mode){setView(target);if(group)setMode(group)}
-function selectMode(m:Mode){setMode(m);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":"settings");if(m==="resources")setKind("pilots")}
+function hasChanges(){
+ if(view==="resourceEdit")return resourceDirty
+ if(view==="new")return JSON.stringify(draft)!==JSON.stringify(emptyDraft())
+ if(view==="setupEdit")return JSON.stringify(setupDraft)!==JSON.stringify(setupOriginal)
+ if(view==="dataEdit")return dataDraft!==null&&JSON.stringify(dataDraft)!==JSON.stringify(targetDataset)
+ return false
+}
+function canLeave(){return !hasChanges()||window.confirm("Hay cambios sin guardar. ¿Querés descartarlos y salir?")}
+function navigate(target:View,group?:Mode,skipGuard=false){
+ if(target!==view&&!skipGuard&&!canLeave())return
+ setView(target);if(group)setMode(group)
+}
+function selectMode(m:Mode){
+ if(!canLeave())return
+ setMode(m);setView(m==="analysis"?(active?"session":"home"):m==="resources"?"library":m==="data"?"datasets":"settings")
+ if(m==="resources")setKind("pilots")
+}
 function beginNew(){setDraft(emptyDraft());setCreationPreview(new Date().toISOString());navigate("new","analysis")}
 function openSession(id:string){if(!sessions.some(s=>s.id===id))return;setActiveId(id);setSelectedId(id);navigate("session","analysis")}
-function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim(),observations:draft.observations.trim(),createdAt:new Date().toISOString()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);navigate("session","analysis");show(t("create.created"))}
+function createSession(){if(!validDraft(draft,resources,datasets))return;const id="s"+Date.now();setSessions(old=>[{...draft,id,name:draft.name.trim(),observations:draft.observations.trim(),createdAt:new Date().toISOString()},...old]);setActiveId(id);setSelectedId(id);setModuleId(draft.modules[0]);setView("session");setMode("analysis");show(t("create.created"))}
 function setSingle(key:ContextKey,value:string){setDraft(old=>({...old,[key]:value,...(key==="vehicle"?{setup:""}:key==="track"?{segmentSetIds:[]}:{})}))}
 function toggleMulti(key:"targets"|"references"|"modules",id:string,checked:boolean){
 setDraft(old=>{
@@ -88,20 +109,45 @@ if(checked&&key==="references")next.targets=old.targets.filter(x=>x!==id);
 return next;
 })
 }
-function openLibrary(k:ResourceKind){setKind(k);setModuleSettings(null);navigate("library","resources")}
+function openLibrary(k:ResourceKind){if(!canLeave())return;setKind(k);setModuleSettings(null);navigate("library","resources",true)}
 function beginResource(id:string|null=null){
  const original=id?resources[kind].find(r=>r.id===id):null
- setItemId(id)
- setResourceDraft(original?{...original}:{id:"",name:"",detail:"",...(kind==="tracks"?{trackType:"",segmentSets:[]}:kind==="vehicles"?{setups:[],vehicleType:""}:{})})
+ const base=original?{...original}:{id:"",name:"",detail:"",...(kind==="tracks"?{trackType:"",segmentSets:[]}:kind==="vehicles"?{setups:[],vehicleType:""}:{})}
+ setItemId(id);setResourceOriginal(base);setResourceDraft(base);setResourceDirty(false)
  navigate("resourceEdit","resources")
 }
 function saveResource(resource:Resource){
  setResources(old=>({...old,[kind]:itemId?old[kind].map(x=>x.id===itemId?{...resource,id:x.id,vehicleType:kind==="vehicles"?x.vehicleType:resource.vehicleType}:x):[...old[kind],{...resource,id:"r"+Date.now()}]}))
- setItemId(null);navigate("library","resources");show(t("form.saved"))
+ setItemId(null);setResourceOriginal(null);setResourceDirty(false);setView("library");setMode("resources");show(t("form.saved"))
+}
+function beginSetup(id:string|null,current:Resource){
+ if(!itemId)return
+ const original=id?current.setups?.find(x=>x.id===id):null
+ const base:Setup=original?{...original,parameters:{...original.parameters}}:{id:"",name:"",date:"",detail:"",parameters:{}}
+ setResourceDraft(current);setSetupId(id);setSetupDraft(base);setSetupOriginal(base)
+ setView("setupEdit")
+}
+function saveSetup(next:Setup){
+ if(!itemId)return
+ const saved={...next,id:setupId??"su"+Date.now()}
+ const replace=(items:Setup[])=>(setupId?items.map(x=>x.id===setupId?saved:x):[...items,saved])
+ setResources(old=>({...old,vehicles:old.vehicles.map(v=>v.id===itemId?{...v,setups:replace(v.setups??[])}:v)}))
+ setResourceDraft(old=>({...old,setups:replace(old.setups??[])}))
+ setResourceOriginal(old=>old?{...old,setups:replace(old.setups??[])}:old)
+ setSetupOriginal(saved);setView("resourceEdit");show("Setup guardado en la maqueta")
+}
+function goBack(){
+ if(view==="setupEdit")return navigate("resourceEdit","resources")
+ if(view==="resourceEdit")return openLibrary(kind)
+ if(view==="dataEdit")return navigate("dataDetail","data")
+ if(view==="dataDetail")return navigate("datasets","data")
+ if(view==="new")return navigate("home","analysis")
+ if(["source","context","module"].includes(view))return navigate("session","analysis")
+ if(["moduleConfig","moduleDoc"].includes(view))return openLibrary("modules")
 }
 function deleteResource(id:string){if(!window.confirm(t("data.deleteConfirm")))return;setResources(old=>({...old,[kind]:old[kind].filter(x=>x.id!==id)}));show(t("data.deleted"))}
 function editDataset(id:string){const d=datasets.find(x=>x.id===id);if(!d)return;setDatasetId(id);setDataDraft({...d});navigate("dataEdit","data")}
-function saveDataset(){if(!dataDraft?.name.trim())return;setDatasets(old=>old.map(x=>x.id===dataDraft.id?{...dataDraft,name:dataDraft.name.trim()}:x));navigate("dataDetail","data");show(t("form.saved"))}
+function saveDataset(){if(!dataDraft?.name.trim())return;setDatasets(old=>old.map(x=>x.id===dataDraft.id?{...dataDraft,name:dataDraft.name.trim()}:x));setView("dataDetail");setMode("data");show(t("form.saved"))}
 function removeDataset(id:string){if(sessions.some(s=>s.targets.includes(id)||s.references.includes(id))){show(t("data.linkedDelete"));return}if(!window.confirm(t("data.deleteConfirm")))return;setDatasets(old=>old.filter(x=>x.id!==id));setSessions(old=>old.map(s=>({...s,targets:s.targets.filter(x=>x!==id),references:s.references.filter(x=>x!==id)})));navigate("datasets","data");show(t("data.deleted"))}
 function toggleSource(id:string,checked:boolean){
 if(!active)return;
@@ -154,11 +200,13 @@ if(view==="context")a.push({label:t("nav.context")},{label:t(names[contextKind])
 if(view==="module")a.push({label:t("nav.modules")},{label:t("module."+moduleId)});
 return a;
 }
-if(["moduleEdit","moduleConfig","moduleDoc"].includes(view)){
- return [first,{label:t("nav.modules"),onClick:()=>openLibrary("modules")},{label:itemName(moduleSettings??"",resources.modules),onClick:()=>navigate("moduleEdit","resources")},{label:view==="moduleDoc"?"Documentación":view==="moduleConfig"?"Configuración":"Editar"}]
+if(["moduleConfig","moduleDoc"].includes(view)){
+ return [first,{label:t("nav.modules"),onClick:()=>openLibrary("modules")},{label:itemName(moduleSettings??"",resources.modules)},{label:view==="moduleDoc"?"Documentación":"Configuración"}]
 }
-if(["library","resourceEdit"].includes(view)){
-return [first,{label:t("nav."+kind),onClick:()=>openLibrary(kind)},...(view==="resourceEdit"?[{label:t(itemId?"common.edit":"common.new")}]:[])]
+if(["library","resourceEdit","setupEdit"].includes(view)){
+return [first,{label:t("nav."+kind),onClick:()=>openLibrary(kind)},
+ ...(view!=="library"?[{label:itemId?itemName(itemId,resources[kind]):t("common.new"),onClick:view==="setupEdit"?()=>navigate("resourceEdit","resources"):undefined}]:[]),
+ ...(view==="setupEdit"?[{label:"Setups"},{label:setupId?"Editar":"Nuevo"}]:[])]
 }
 if(["datasets","dataDetail","dataEdit"].includes(view)){
 return [first,{label:t("nav.library"),onClick:()=>navigate("datasets","data")},...(view!=="datasets"?[{label:targetDataset?.name??t("meta.notFound")}]:[]),...(view==="dataEdit"?[{label:t("common.edit")}]:[])]
@@ -174,7 +222,7 @@ if(view==="context")return t(names[contextKind])
 if(view==="module")return t("module."+moduleId)
 if(view==="library")return t("nav."+kind)
 if(view==="resourceEdit")return (itemId?"Editar ":"Nuevo ")+(kind==="pilots"?"piloto":kind==="vehicles"?"vehículo":"circuito")
- if(view==="moduleEdit")return "Editar módulo · "+itemName(moduleSettings??"",resources.modules)
+if(view==="setupEdit")return (setupId?"Editar ":"Nuevo ")+"setup · "+resourceDraft.name
  if(view==="moduleConfig")return "Configuración · "+itemName(moduleSettings??"",resources.modules)
  if(view==="moduleDoc")return "Documentación · "+itemName(moduleSettings??"",resources.modules)
 if(view==="datasets")return t("nav.library")
@@ -204,7 +252,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   onProfile={profileAction}
 />
 <SidebarInset className="workspace">
-<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/><nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
+<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(["new","source","context","module","resourceEdit","setupEdit","moduleConfig","moduleDoc","dataDetail","dataEdit"].includes(view))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
 <header className="screen-header"><div><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
 <div className="page-tools">{view==="new"&&<Button variant="outline" onClick={()=>navigate("home","analysis")}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={()=>beginResource()}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
 
@@ -343,15 +391,15 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  {key:"length",title:"Longitud km",value:r=>r.lengthKm??"—"},
  {key:"segments",title:"Conjuntos",value:r=>r.segmentSets?.length??r.segments??0}
  ]:[
- {key:"name",title:"Módulo",value:r=>r.name},
- {key:"enabled",title:"Estado",value:r=>r.enabled!==false?"Activado":"Desactivado",status:r=>r.enabled!==false?"success":"error"},
- {key:"needs",title:"Dependencias",value:r=>r.requirements?.length??0}
+ {key:"name",title:"Módulo",value:r=>r.name,width:30},
+ {key:"enabled",title:"Estado",value:r=>r.enabled!==false?"Activado":"Desactivado",status:r=>r.enabled!==false?"success":"error",width:12},
+ {key:"needs",title:"Dependencias",value:r=>r.requirements?.length??0,width:16}
  ]}
+ searchable={kind!=="modules"} compact={kind==="modules"}
  groups={kind==="tracks"?["country","province"]:[]}
  detail={resourceInfo}
  leadingControl={kind==="modules"?(r=><Switch aria-label={"Habilitar módulo "+r.name} checked={r.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===r.id?{...x,enabled:checked}:x)}))}/>):undefined}
  actions={r=>kind==="modules"?<>
-  <Button size="sm" variant="outline" onClick={()=>{setModuleSettings(r.id);navigate("moduleEdit","resources")}}><Pencil size={14}/>Editar</Button>
   <Button size="sm" variant="outline" aria-label={"Configurar "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleConfig","resources")}}><Settings2 size={14}/>Configurar</Button>
   <Button size="sm" variant="outline" aria-label={"Documentación de "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources")}}><BookOpen size={14}/>Documentación</Button>
  </>:<>
@@ -360,24 +408,21 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  </>}/>
 </CardContent></Card></div>}
 
-{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} onSave={saveResource} onCancel={()=>navigate("library","resources")}/>}
+{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} dirtyBaseline={resourceOriginal??resourceDraft} onDirtyChange={setResourceDirty} onEditSetup={beginSetup} onSave={saveResource} onCancel={()=>navigate("library","resources")}/>}
+{view==="setupEdit"&&itemId&&<SetupForm vehicleName={resourceDraft.name} vehicleType={resourceDraft.vehicleType??""}
+  setup={setupDraft} onChange={setSetupDraft} onSave={saveSetup} onCancel={()=>navigate("resourceEdit","resources")}/>}
 
-{["moduleEdit","moduleConfig","moduleDoc"].includes(view)&&moduleSettings&&(()=>{const module=resources.modules.find(x=>x.id===moduleSettings);if(!module)return null;return <Card className="edit-card">
- <CardHeader><CardTitle>{view==="moduleDoc"?"Documentación":view==="moduleConfig"?"Configurar módulo":"Editar módulo"} · {module.name}</CardTitle><CardDescription>{module.detail}</CardDescription></CardHeader>
+{["moduleConfig","moduleDoc"].includes(view)&&moduleSettings&&(()=>{const module=resources.modules.find(x=>x.id===moduleSettings);if(!module)return null;return <Card className="edit-card">
+ <CardHeader><CardTitle>{view==="moduleDoc"?"Documentación":"Configurar módulo"} · {module.name}</CardTitle><CardDescription>{module.detail}</CardDescription></CardHeader>
  <CardContent><div className="stack-fields">
   {view==="moduleDoc"?<>
     <h3>Descripción y requisitos</h3><p>{module.detail}</p>
     <p>{(module.requirements??[]).join("; ")||"No hay requisitos declarados en la maqueta."}</p>
     <p>Los módulos son código integrado de Lapex. Esta página representa la documentación propia del módulo; sus contratos completos se desarrollan en los hitos correspondientes.</p>
     <a href="https://github.com/martinebene/Lapex2/blob/main/docs/02-especificacion/dominio/MODULOS-ANALISIS.md" target="_blank" rel="noopener noreferrer">Consultar especificación oficial <BookOpen size={14}/></a>
-  </>:view==="moduleConfig"?<>
+  </>:<>
     <label className="module-config-row">Disponibilidad para nuevas sesiones <Switch aria-label={"Habilitar módulo "+module.name} checked={module.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===module.id?{...x,enabled:checked}:x)}))}/></label>
     <p>Desactivar el módulo solamente lo retira de las nuevas selecciones; no afecta sesiones existentes.</p>
-  </>:<>
-    <p><strong>Nombre:</strong> {module.name}</p><p><strong>Descripción:</strong> {module.detail}</p>
-    <p><strong>Requisitos declarados:</strong> {(module.requirements??[]).join("; ")}</p>
-    <p>La implementación de un módulo es código de plataforma; no admite edición desde un formulario de usuario. La gestión de disponibilidad está en Configurar.</p>
-    <Button variant="outline" onClick={()=>navigate("moduleConfig","resources")}>Ir a configuración</Button>
   </>}
   <Button variant="outline" onClick={()=>openLibrary("modules")}>Volver a módulos</Button>
  </div></CardContent></Card>})()}

@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut, BookOpen } from "lucide-react"
+import { Activity, Layers3, Database, Settings2, UserRound, ChevronRight, ChevronsUpDown, BarChart3, CreditCard, RefreshCw, LogOut } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -25,7 +25,7 @@ interface Props {
 }
 export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,onData,onConfig,onProfile}:Props){
   const {t}=useTranslation()
-  const [openGroups,setOpenGroups]=useState<Record<NavSection,boolean>>({analysis:true,resources:false,data:false,config:false})
+  const [openGroup,setOpenGroup]=useState<NavSection|null>("analysis")
   const [profileOpen,setProfileOpen]=useState(false)
   const profileAreaRef=useRef<HTMLLIElement>(null)
   const {setOpenMobile,isMobile}=useSidebar()
@@ -72,10 +72,10 @@ export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,o
       <SidebarGroup>
           <SidebarMenu>
           {entries.map(entry=><SidebarMenuItem key={entry.id}>
-            <Collapsible open={openGroups[entry.id]} onOpenChange={opened=>setOpenGroups(prev=>({...prev,[entry.id]:opened}))}>
+            <Collapsible open={openGroup===entry.id} onOpenChange={opened=>setOpenGroup(opened?entry.id:null)}>
               <CollapsibleTrigger render={<SidebarMenuButton tooltip={entry.title} isActive={mode===entry.id} className="sidebar07-main-item"/>}>
                 <entry.icon size={18}/><span>{entry.title}</span>
-                <ChevronRight className={"sidebar07-chevron"+(openGroups[entry.id]?" rotated":"")} size={15}/>
+                <ChevronRight className={"sidebar07-chevron"+(openGroup===entry.id?" rotated":"")} size={15}/>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenuSub>
@@ -92,11 +92,6 @@ export function AppSidebar07({mode,plan,onNewSession,onOpenSessions,onResource,o
       </SidebarGroup>
     </SidebarContent>
     <SidebarFooter className="sidebar07-footer">
-      <a className="sidebar07-storybook-link" href="/lapexMaqueta/storybook/"
-        target="_blank" rel="noopener noreferrer"
-        aria-label="Abrir catálogo de componentes Storybook" title="Catálogo de desarrollo · Storybook">
-        <BookOpen size={14}/><span>Componentes · Storybook</span>
-      </a>
       <SidebarMenu>
         <SidebarMenuItem ref={profileAreaRef} className="sidebar07-user-anchor">
           <SidebarMenuButton size="lg" className="sidebar07-user" onClick={()=>setProfileOpen(p=>!p)} aria-haspopup="menu" aria-expanded={profileOpen} aria-controls="lapex-profile-menu" aria-label={t("nav.profile")}>

@@ -65,3 +65,13 @@ export const DetalleCompacto: Story = {
     groups:["track"]
   }
 }
+
+export const CatalogoCompacto: Story = {
+ args: {compact:true,searchable:false,groups:[],actions:(r:DemoRecord)=><>
+  <Button size="sm" variant="outline" onClick={()=>{void navigator.clipboard?.writeText(r.name)}}>Configurar</Button>
+  <Button size="sm" variant="outline">Documentación</Button>
+ </>}
+}
+export const GrupoDeAnchoCompleto: Story = {
+ args: {groups:["track"],detail:(r:DemoRecord)=><div className="dg-detail">Detalle de {r.name}</div>}
+}

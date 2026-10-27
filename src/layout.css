@@ -429,12 +429,6 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .shadcn-grid .dg-selectable-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .shadcn-grid .dg-selectable-row:has(button:hover){cursor:default}
 .shadcn-grid .dg-group-record td{background:var(--muted)}
-.shadcn-grid .dg-group-record td:has(button[aria-label^="Expandir grupo"]),
-.shadcn-grid .dg-group-record td:has(button[aria-label^="Contraer grupo"]){white-space:nowrap!important;overflow:visible}
-.shadcn-grid .dg-group-record td:has(button[aria-label^="Expandir grupo"])>div,
-.shadcn-grid .dg-group-record td:has(button[aria-label^="Contraer grupo"])>div{display:flex;align-items:center;flex-wrap:nowrap;white-space:nowrap;gap:4px}
-.shadcn-grid .dg-group-record td:has(button[aria-label^="Expandir grupo"]) span,
-.shadcn-grid .dg-group-record td:has(button[aria-label^="Contraer grupo"]) span{white-space:nowrap}
 .shadcn-grid .dg-value-status{display:inline-flex;padding:3px 7px;border-radius:6px;font-weight:700}
 .shadcn-grid .dg-value-success{color:#167348;background:#e3f6ea}
 .shadcn-grid .dg-value-error{color:#b43c42;background:#fdecee}
@@ -465,13 +459,6 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 /* Igualar el comienzo del cuerpo de las dos tablas del vehículo a pesar de sus filtros diferentes. */
 .vehicle-card-grid .vehicle-inner-card .shadcn-grid{flex:1}
 .vehicle-card-grid .vehicle-inner-card .shadcn-grid .dg-panel{margin-top:auto}
-
-/* Enlace discreto de desarrollo al catálogo de componentes reales. */
-.sidebar07-storybook-link{display:flex;gap:8px;align-items:center;min-height:28px;padding:5px 10px;margin:0 2px 8px;border-radius:7px;color:#91aab8;text-decoration:none;font-size:11px;line-height:1.25}
-.sidebar07-storybook-link:hover,.sidebar07-storybook-link:focus-visible{background:#243b48;color:#fff}
-.sidebar07-storybook-link svg{flex:none}
-[data-collapsible="icon"] .sidebar07-storybook-link span{display:none}
-
 
 /* Jerarquía Nova más distinguible y separadores sutiles entre columnas. */
 .style-nova .workspace{background:#e9eff3}
@@ -509,3 +496,50 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 .module-control-state.enabled{color:#157d50}
 .vehicle-card-grid.track-card-grid .vehicle-inner-card{min-width:0}
 @media(max-width:740px){.resource-form-fields{grid-template-columns:1fr}.resource-form-collection{grid-template-columns:1fr auto}.resource-form-collection input[type=date]{grid-column:1}}
+
+/* Issue #4: encabezado semántico de grupo en celda extendida, sin CSS sobre nodos
+   internos de Shadcn Table. El renderer lo emite únicamente para grupos. */
+.shadcn-grid .dg-group-record>.lapex-group-heading{
+  width:auto!important;min-width:0!important;max-width:none!important;
+  padding:5px 12px!important;background:var(--muted);border-right:0!important;
+  color:var(--foreground);font-weight:650;overflow-wrap:normal!important
+}
+.lapex-group-heading-content{display:flex;align-items:center;gap:7px;max-width:100%;min-width:0}
+.lapex-group-heading-content strong{font-weight:650;min-width:0;overflow-wrap:anywhere}
+.lapex-group-heading-content>span{white-space:nowrap;flex:none}
+.lapex-group-heading-content button{flex:none}
+.style-nova .shadcn-grid .dg-rows tbody tr.dg-group-record td.lapex-group-heading{border-right:0!important}
+.style-nova .shadcn-grid .dg-rows tbody tr.dg-group-record:hover td{background:var(--muted)}
+
+/* Tabla de catálogos reducidos: crecimiento natural y acciones en línea. */
+.shadcn-grid--compact .dg-rows,
+.shadcn-grid--compact .dg-rows>div,
+.shadcn-grid--compact .dg-rows>div>div{
+  --dg-min-height:0px;min-height:0!important;height:auto!important;
+  max-height:none!important;overflow:visible!important;
+}
+.shadcn-grid--compact .dg-rows{overflow-x:auto!important;scrollbar-gutter:auto}
+.shadcn-grid--compact .dg-actions{display:flex;flex-wrap:nowrap;min-width:0;gap:4px}
+.shadcn-grid--compact .dg-actions [data-slot="button"]{flex:none}
+.shadcn-grid--compact .dg-status{font-size:11px}
+
+/* Formulario de recursos y setups: etiquetas seminegrita, contenido regular. */
+.resource-form-field{font-weight:500}
+.resource-form-field>span{font-weight:600;font-size:12px;color:var(--foreground)}
+.resource-form-field input,.resource-form-field textarea,.resource-form-field select,
+.resource-form-collection input,.resource-form-collection select{font-weight:400}
+.resource-edit-stack,.setup-form{display:flex;flex-direction:column;gap:18px}
+.resource-setups-card .pill-row{justify-content:flex-end;margin-top:14px}
+.setup-form-note{font-size:12px;color:var(--muted-foreground)}
+.setup-category{border:1px solid var(--border);border-radius:8px;background:var(--card)}
+.setup-category>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;font-size:13px;font-weight:650}
+.setup-category>summary:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.setup-field-count{font-size:11px;color:var(--muted-foreground);font-weight:400}
+.setup-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 18px;padding:10px 16px 18px}
+.breadcrumb-back{flex:none;min-height:32px}
+@media(max-width:740px){
+ .setup-field-grid{grid-template-columns:1fr}
+ .setup-category>summary{flex-wrap:wrap}
+ .sidebar07-breadcrumb-bar{gap:7px;height:auto;min-height:39px}
+ .breadcrumb-back{padding-inline:6px}
+}

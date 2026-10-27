@@ -18,6 +18,7 @@ import {
   Memo_ST_TableBodyCell,
 } from '@/components/ui/shadcn-table/body/ST_TableBodyCell';
 import { ST_TableDetailPanel } from '@/components/ui/shadcn-table/body/ST_TableDetailPanel';
+import { ST_ExpandButton } from '@/components/ui/shadcn-table/buttons/ST_ExpandButton';
 
 export interface ST_TableBodyRowProps<TData extends ST_RowData>
   extends TableRowProps {
@@ -238,6 +239,18 @@ export const ST_TableBodyRow = <TData extends ST_RowData>({
           tableRowProps?.className,
         )}
       >
+        {row.getIsGrouped() && !columnVirtualizer ? (
+          // Única adaptación local al renderer vendorizado: una sola celda real
+          // para el encabezado del grupo, sin ensanchar la columna de detalle.
+          // Sólo actúa en layout semántico no virtualizado.
+          <td colSpan={visibleCells.length} className="lapex-group-heading">
+            <div className="lapex-group-heading-content">
+              <ST_ExpandButton row={row} table={table} staticRowIndex={staticRowIndex}/>
+              <strong>{String(row.groupingValue ?? "Sin categoría")}</strong>
+              <span>({row.subRows?.length??0})</span>
+            </div>
+          </td>
+        ) : <>
         {virtualPaddingLeft ? (
           <td style={{ display: 'flex', width: virtualPaddingLeft }} />
         ) : null}
@@ -274,6 +287,7 @@ export const ST_TableBodyRow = <TData extends ST_RowData>({
         {virtualPaddingRight ? (
           <td style={{ display: 'flex', width: virtualPaddingRight }} />
         ) : null}
+        </>}
       </tr>
       {renderDetailPanel && !row.getIsGrouped() && (
         <ST_TableDetailPanel

@@ -43,6 +43,8 @@ interface Props<T extends { id: string }> {
   /** Permite igualar altura entre tablas vecinas (vehículo/setup). */
   tableHeight?: string
   searchable?: boolean
+  /** Variante para catálogos pequeños: altura natural y columnas compactas. */
+  compact?: boolean
 }
 
 function missingLabel(key: string, title: string) {
@@ -80,6 +82,9 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
   const [query, setQuery] = useState("")
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [group, setGroup] = useState("")
+  // TanStack v9: controlar explícitamente expanded mantiene detalle individual
+  // independiente de selección y de los cambios de agrupación.
+  const [expanded,setExpanded] = useState<Record<string,boolean>>({})
 
   // App.tsx construye algunas columnas inline. Solo cambian las definiciones
   // si cambia su estructura; los renderizadores siempre consultan latest.current.
@@ -105,7 +110,11 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       enableGrouping: true,
       enableColumnFilter: Boolean(col.filter),
       filterFn: "equalsString",
-      size: col.width ? Math.max(90, col.width * 8) : Math.max(86, Math.min(155, col.title.length * 7 + 38)),
+      size: col.width ? Math.max(56, col.width * 8) :
+        props.compact && col.key === "needs" ? 128 :
+        props.compact && col.key === "enabled" ? 100 :
+        props.compact && col.key === "name" ? 240 :
+        Math.max(86, Math.min(155, col.title.length * 7 + 38)),
     }))
     for (const g of [...groupers, ...extraCols.filter(extra => !groupers.some(g => g.key === extra.key))]) {
       fields.push({
@@ -126,7 +135,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       id: "lapex-leading-control", header: "Activar", enableSorting: false,
       enableGrouping: false, enableColumnFilter: false,
       Cell: ({ row }) => <div className="dg-inline-toggle">{latest.current.leadingControl?.(row.original)}</div>,
-      size: 60,
+      size: props.compact ? 48 : 60,
     })
     if (props.actions) fields.push({
       id: "lapex-actions",
@@ -135,12 +144,12 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       enableGrouping: false,
       enableColumnFilter: false,
       Cell: ({ row }) => <div className="dg-actions">{latest.current.actions?.(row.original)}</div>,
-      size: 138,
+      size: props.compact ? 226 : 138,
     })
     return fields
     // Structural signature intentionally captures definition changes, not render functions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature, grouperSignature, Boolean(props.actions), Boolean(props.leadingControl)])
+  }, [signature, grouperSignature, Boolean(props.actions), Boolean(props.leadingControl), props.compact])
 
   const currentSelected = selectedState(selected)
   const table = useShadcnTable<T>({
@@ -189,7 +198,11 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       showColumnFilters: false,
       columnVisibility: Object.fromEntries([...groupers, ...extraCols].map(g => [g.key, false])),
     },
-    state: { rowSelection: currentSelected },
+    state: { rowSelection: currentSelected, expanded },
+    onExpandedChange: updater=>setExpanded(old=>{
+      const next=typeof updater==="function"?updater(old):updater
+      return next===true?Object.fromEntries(rows.map(r=>[r.id,true])):next
+    }),
     onRowSelectionChange: updater => {
       const previous = selectedState(latest.current.selected)
       const next = typeof updater === "function" ? updater(previous) : updater
@@ -246,11 +259,11 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
   // detalles individuales, mientras la vista agrupada necesita sólo categorías.
   useEffect(() => {
     if (!group) {
-      table.setExpanded({})
+      setExpanded({})
       return
     }
     const grouped = table.getGroupedRowModel().flatRows.filter(row => row.getIsGrouped())
-    table.setExpanded(Object.fromEntries(grouped.map(row => [row.id, true])))
+    setExpanded(Object.fromEntries(grouped.map(row => [row.id, true])))
     // El cambio de group provoca un render con el nuevo row model.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group])
@@ -296,7 +309,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
   )
 
   return (
-    <section className="dg shadcn-grid" aria-label={label}
+    <section className={"dg shadcn-grid"+(props.compact?" shadcn-grid--compact":"")} aria-label={label}
       style={props.tableHeight ? { "--dg-table-height": props.tableHeight } as CSSProperties : undefined}>
       {(searchable || allFilters.length > 0 || availableGroupings.length > 0) && (
         <div className="dg-toolbar">

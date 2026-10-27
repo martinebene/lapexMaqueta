@@ -10,6 +10,7 @@ permissions:
 jobs:
   publish-maqueta:
     name: Compilar y publicar Maqueta Lapex y Storybook
+    needs: test-browser
     runs-on: ubuntu-latest
     concurrency:
       group: lapex-maqueta-preview
