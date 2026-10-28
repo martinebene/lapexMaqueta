@@ -749,3 +749,80 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 :root[data-theme="dark"] .style-nova .resource-form-field select{background:var(--background);color:var(--foreground)}
 :root[data-theme="dark"] .style-nova .dg-detail,:root[data-theme="dark"] .style-nova .dg-detail strong{color:var(--foreground)}
 :root[data-contrast="high"] [data-slot="card"]{outline:1px solid var(--foreground)}
+
+
+/* Iteración #8: importación a ancho de área útil y selector de fichero accesible. */
+.style-nova .import-card{width:100%;max-width:none;min-width:0}
+.import-file-field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.import-file-field>label{font-size:11px;font-weight:680;color:var(--foreground)}
+.import-file-picker{display:flex;align-items:center;flex-wrap:wrap;gap:12px;min-width:0}
+.import-file-picker [data-slot="button"]{flex:none}
+.import-file-name{flex:1 1 180px;min-width:0;overflow-wrap:anywhere;font-size:12px;color:var(--muted-foreground)}
+.import-file-error{font-size:12px;color:var(--destructive);margin:0}
+.import-native-input{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.import-card .import-continue{align-self:flex-start}
+@media(max-width:540px){.import-file-picker{align-items:flex-start;flex-direction:column}.import-file-name{flex:auto}}
+
+/* Iteración #8: metadatos próximos al divisor del perfil. */
+.sidebar07-build-time{padding-bottom:2px}
+
+/* Iteración #8: el modo oscuro utiliza las parejas semánticas del tema Nova.
+   Estas reglas superan los fondos y textos claros heredados sin cambiar el modo claro
+   ni sobrescribir el código interno de los componentes shadcn. */
+:root[data-theme="dark"] .style-nova .cn-card,
+:root[data-theme="dark"] .style-nova [data-slot="card"]{
+  background:var(--card);color:var(--card-foreground);border-color:var(--border)
+}
+:root[data-theme="dark"] .style-nova .cn-card .cn-card{background:var(--secondary);border-color:var(--border)}
+:root[data-theme="dark"] .style-nova .cn-card [data-slot="card-description"]{color:var(--muted-foreground)}
+:root[data-theme="dark"] .style-nova .stack-fields label,
+:root[data-theme="dark"] .style-nova .filters label,
+:root[data-theme="dark"] .style-nova .field-label,
+:root[data-theme="dark"] .style-nova .pref-row,
+:root[data-theme="dark"] .style-nova .unit-field,
+:root[data-theme="dark"] .style-nova .account-detail>label,
+:root[data-theme="dark"] .style-nova .dg-filter{color:var(--foreground)}
+:root[data-theme="dark"] .style-nova .stack-fields select,
+:root[data-theme="dark"] .style-nova .filters select,
+:root[data-theme="dark"] .style-nova .module-top select,
+:root[data-theme="dark"] .style-nova .dg-filter select,
+:root[data-theme="dark"] .style-nova .setup-select,
+:root[data-theme="dark"] .style-nova .segment-edit-panel select,
+:root[data-theme="dark"] .style-nova input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+:root[data-theme="dark"] .style-nova textarea{
+  background:var(--background);color:var(--foreground);border-color:var(--input)
+}
+:root[data-theme="dark"] .style-nova input::placeholder,
+:root[data-theme="dark"] .style-nova textarea::placeholder{color:var(--muted-foreground)}
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-panel,
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows{
+  background:var(--card);color:var(--card-foreground);border-color:var(--border)
+}
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows thead th,
+:root[data-theme="dark"] .style-nova .dg-head,
+:root[data-theme="dark"] .style-nova .picker-columns{background:var(--secondary);color:var(--foreground);border-color:var(--border)}
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows tbody tr,
+:root[data-theme="dark"] .style-nova .picker-row{background:var(--card);color:var(--card-foreground);border-color:var(--border)}
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows tbody td{color:var(--card-foreground);border-color:var(--border)!important}
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows thead th:not(:last-child),
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows tbody td:not(:last-child){border-right-color:var(--border)!important}
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows tbody tr:hover td,
+:root[data-theme="dark"] .style-nova .picker-row:hover{background:var(--accent);color:var(--accent-foreground)}
+:root[data-theme="dark"] .style-nova .shadcn-grid .dg-rows tbody tr[data-state="selected"] td,
+:root[data-theme="dark"] .style-nova .picker-row.selected{background:#205257;color:#e4fcfa}
+:root[data-theme="dark"] .style-nova .picker-detail,
+:root[data-theme="dark"] .style-nova .summary-item small,
+:root[data-theme="dark"] .style-nova .metric small{color:var(--muted-foreground)}
+:root[data-theme="dark"] .style-nova .summary-item,
+:root[data-theme="dark"] .style-nova .sector,
+:root[data-theme="dark"] .style-nova .session-shortcuts-group,
+:root[data-theme="dark"] .style-nova .module-chat .chat-messages,
+:root[data-theme="dark"] .style-nova .modal-body{background:var(--card);color:var(--card-foreground);border-color:var(--border)}
+:root[data-theme="dark"] .style-nova .summary-item strong,
+:root[data-theme="dark"] .style-nova .empty-page h2{color:var(--foreground)}
+:root[data-theme="dark"] .style-nova .chat-bubble{background:var(--secondary);color:var(--secondary-foreground);border-color:var(--border)}
+:root[data-theme="dark"] .style-nova .chat-bubble.user{background:var(--accent);color:var(--accent-foreground)}
+:root[data-theme="dark"] .style-nova .breadcrumbs,
+:root[data-theme="dark"] .style-nova .sidebar07-dropdown-user small{color:var(--muted-foreground)}
+:root[data-theme="dark"] .style-nova .sidebar07-breadcrumb-divider{background:var(--border)}
+:root[data-theme="dark"] .style-nova .demo-banner{background:var(--secondary);color:var(--secondary-foreground);border-color:var(--border)}

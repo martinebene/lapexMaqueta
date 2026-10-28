@@ -38,6 +38,8 @@ function uniq(list:string[]){return [...new Set(list)]}
 function itemName(id:string,items:Resource[]){return items.find(x=>x.id===id)?.name??"—"}
 function formatSessionTimestamp(iso:string){return new Date(iso).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})}
 const compiledAt=import.meta.env.VITE_DEPLOYED_AT??""
+const importTypes={CSV:".csv",TXT:".txt",XLS:".xls",XLSX:".xlsx",JSON:".json",XRK:".xrk",XRZ:".xrz"} as const
+type ImportFormat=keyof typeof importTypes
 const buildLabel=compiledAt?"Versión: "+new Date(compiledAt).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})+" ART":"Versión de desarrollo"
 function SectionStatus({title,complete}:{title:string;complete:boolean}){
  return <span className={"session-status-icon"+(complete?" complete":" incomplete")} role="img" aria-label={complete?"Requisitos cumplidos: "+title:"Requisitos pendientes: "+title} title={complete?"Requisitos cumplidos":"Requisitos pendientes"}>
@@ -82,7 +84,9 @@ const [toast,setToast]=useState("")
 const [modal,setModal]=useState<"usage"|"membership"|"switch"|"signout"|null>(null)
 const [importStep,setImportStep]=useState(1)
 const [filename,setFilename]=useState("")
-const [fileType,setFileType]=useState("")
+const [fileType,setFileType]=useState<ImportFormat>("CSV")
+const [importError,setImportError]=useState("")
+const importFileRef=useRef<HTMLInputElement>(null)
 const [chatDraft,setChatDraft]=useState("")
 const [chats,setChats]=useState<Record<string,{who:"bot"|"user";text:string}[]>>({})
 const [lap,setLap]=useState("best")
@@ -545,7 +549,31 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 
 {view==="dataEdit"&&dataDraft&&<Card className="edit-card"><CardHeader><CardTitle>{t("common.observations")}</CardTitle><CardDescription>Las mediciones y metadatos importados no se modifican aquí.</CardDescription></CardHeader><CardContent><label className="field-label">{t("common.observations")}<Input aria-label={t("common.observations")} value={dataDraft.observation} onChange={e=>setDataDraft(old=>old?{...old,observation:e.target.value}:old)}/></label><div className="pill-row"><Button variant="outline" onClick={goBack}>{t("common.cancel")}</Button><Button onClick={saveDataset}>{t("common.save")}</Button></div></CardContent></Card>}
 
-{view==="import"&&<Card className="edit-card"><CardHeader><CardTitle>{importStep===1?t("nav.import"):t("import.prep")}</CardTitle><CardDescription>{t(importStep===1?"import.noRead":"import.prepHint")}</CardDescription></CardHeader><CardContent>{importStep===1?<div className="stack-fields"><label>{t("import.file")}<Input type="file" accept=".csv,.txt,.xlsx,.xls,.json,.xrk,.xrz" onChange={e=>setFilename(e.target.files?.[0]?.name??"")}/></label><label>{t("import.type")}<select value={fileType} onChange={e=>setFileType(e.target.value)}><option value="">{t("import.select")}</option>{["CSV","TXT","XLSX","XRK","XRZ","Otro"].map(x=><option key={x}>{x}</option>)}</select></label><Button disabled={!filename||!fileType} onClick={()=>setImportStep(2)}>{t("import.continue")}<ArrowRight size={16}/></Button></div>:<div className="stack-fields"><p>{filename} · {fileType}</p><p>{t("import.prepHint")}</p><Button variant="outline" onClick={()=>setImportStep(1)}>{t("common.back")}</Button></div>}</CardContent></Card>}
+{view==="import"&&<Card className="import-card">
+ <CardHeader><CardTitle>{importStep===1?t("nav.import"):t("import.prep")}</CardTitle><CardDescription>{t(importStep===1?"import.noRead":"import.prepHint")}</CardDescription></CardHeader>
+ <CardContent>{importStep===1?<div className="stack-fields">
+  <label className="import-type-field">{t("import.type")}
+   <select aria-label={t("import.type")} value={fileType} onChange={e=>{setFileType(e.target.value as ImportFormat);setFilename("");setImportError("");if(importFileRef.current)importFileRef.current.value=""}}>
+    {(Object.keys(importTypes) as ImportFormat[]).map(format=><option key={format} value={format}>{format}</option>)}
+   </select>
+  </label>
+  <div className="import-file-field">
+   <label htmlFor="import-file">{t("import.file")}</label>
+   <div className="import-file-picker">
+    <input ref={importFileRef} id="import-file" type="file" tabIndex={-1} className="import-native-input" aria-label={t("import.file")} accept={importTypes[fileType]} onChange={e=>{
+     const file=e.currentTarget.files?.[0]
+     if(!file){setFilename("");setImportError("");return}
+     if(!file.name.toLowerCase().endsWith(importTypes[fileType])){setFilename("");setImportError("El archivo debe tener extensión "+importTypes[fileType]+" para el tipo "+fileType+".");e.currentTarget.value="";return}
+     setFilename(file.name);setImportError("")
+    }}/>
+    <Button type="button" variant="outline" onClick={()=>importFileRef.current?.click()}>Seleccionar archivo</Button>
+    <span className="import-file-name" role="status">{filename||"Ningún archivo seleccionado"}</span>
+   </div>
+   {importError&&<p className="import-file-error" role="alert">{importError}</p>}
+  </div>
+  <Button type="button" className="import-continue" disabled={!filename} onClick={()=>setImportStep(2)}>{t("import.continue")}<ArrowRight size={16}/></Button>
+ </div>:<div className="stack-fields"><p>{filename} · {fileType}</p><p>{t("import.prepHint")}</p><Button variant="outline" onClick={()=>setImportStep(1)}>{t("common.back")}</Button></div>}</CardContent>
+</Card>}
 
 {view==="settings"&&<PreferencesPanel/>}
 {view==="account"&&<AccountPanel plan={plan} datasets={datasets} sessions={sessions} storageUsed={storageUsed} storageTotal={storageTotal} onMembership={()=>profileAction("membership")}/>}
