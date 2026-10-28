@@ -748,4 +748,4 @@ button.summary-item:hover{background:#edf6f6}.pill-row{display:flex;gap:9px;alig
 :root[data-theme="dark"] .style-nova .resource-form-field{color:var(--foreground)}
 :root[data-theme="dark"] .style-nova .resource-form-field select{background:var(--background);color:var(--foreground)}
 :root[data-theme="dark"] .style-nova .dg-detail,:root[data-theme="dark"] .style-nova .dg-detail strong{color:var(--foreground)}
-:root[data-theme="high"] [data-slot="card"]{outline:1px solid var(--foreground)}
+:root[data-contrast="high"] [data-slot="card"]{outline:1px solid var(--foreground)}
