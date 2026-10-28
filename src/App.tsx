@@ -19,6 +19,9 @@ import { Documentation, FAQ, VersionInfo } from "./HelpContent"
 import { seriesOf, DURATION } from "./seriesMock"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing, captureSnapshot } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
+import { ResourceAvatar } from "./ResourceAvatar"
+import { PreferencesPanel } from "./PreferencesPanel"
+import { AccountPanel } from "./AccountPanel"
 import type { GridColumn } from "./ShadcnGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar07 } from "./Sidebar07"
@@ -150,11 +153,21 @@ function beginResource(id:string|null=null,forcedKind?:ResourceKind){
  const original=id?resources[currentKind].find(r=>r.id===id):null
  const base=original?{...original}:{id:"",name:"",detail:"",...(currentKind==="tracks"?{trackType:"",segmentSets:[]}:currentKind==="vehicles"?{setups:[],vehicleType:""}:{})}
  setKind(currentKind);setItemId(id);setResourceOriginal(base);setResourceDraft(base);setResourceDirty(false)
- navigate("resourceEdit","resources")
+ navigate("resourceEdit","resources",view==="new")
+}
+function openPickerSetup(id:string){
+ const vehicle=resources.vehicles.find(v=>v.id===draft.vehicle)
+ const setup=vehicle?.setups?.find(s=>s.id===id)
+ if(!vehicle||!setup)return
+ setKind("vehicles");setItemId(vehicle.id);setResourceDraft({...vehicle});setResourceOriginal({...vehicle});setResourceDirty(false)
+ const clone={...setup,parameters:{...setup.parameters}};setSetupId(id);setSetupDraft(clone);setSetupOriginal(clone)
+ navigate("setupEdit","resources",true)
 }
 function saveResource(resource:Resource){
  setResources(old=>({...old,[kind]:itemId?old[kind].map(x=>x.id===itemId?{...resource,id:x.id,vehicleType:kind==="vehicles"?x.vehicleType:resource.vehicleType}:x):[...old[kind],{...resource,id:"r"+Date.now()}]}))
- if(historyRef.current.at(-1)?.view==="library")historyRef.current.pop();setItemId(null);setResourceOriginal(null);setResourceDirty(false);setView("library");setMode("resources");show(t("form.saved"))
+ const backToSession=historyRef.current.at(-1)?.view==="new"
+ if(backToSession)historyRef.current.pop();else if(historyRef.current.at(-1)?.view==="library")historyRef.current.pop()
+ setItemId(null);setResourceOriginal(null);setResourceDirty(false);setView(backToSession?"new":"library");setMode(backToSession?"analysis":"resources");show(t("form.saved"))
 }
 function beginSetup(id:string|null,current:Resource){
  if(!itemId)return
@@ -219,9 +232,9 @@ function datasetColumns():GridColumn<Dataset>[] {
  ]
 }
 function resourceInfo(r:Resource){
- if(kind==="pilots")return <div className="dg-detail"><strong>{r.name}</strong><span>Nombre corto: {r.shortName??"—"}</span><span>Apodo: {r.nickname??"—"}</span><span>Localidad: {r.city??"—"} · {r.country??"—"}</span><span>Correo: {r.email??"—"}</span><span>Teléfono: {r.phone??"—"}</span><span>Experiencia: {r.experience??"—"}/10</span><span>Velocidad: {r.speed??"—"}/10</span><span>{r.description??r.detail}</span></div>
- if(kind==="vehicles")return <div className="dg-detail"><strong>{r.name}</strong><span>Tipo: {r.vehicleType??"—"}</span><span>Peso referencia: {r.referenceWeight??"—"} kg</span><span>Tracción: {r.drivenWheels??"—"}</span><span>Potencia: {r.enginePower??"—"}</span><span>Setups: {(r.setups??[]).map(s=>s.name).join(", ")||"Sin setups"}</span></div>
- if(kind==="tracks")return <div className="dg-detail"><strong>{r.name}</strong><span>País: {r.country??"—"} · Provincia: {r.province??"—"}</span><span>Longitud: {r.lengthKm??"—"} km</span><span>Conjuntos de segmentación: {r.segments??0}</span>{r.geometry?<svg viewBox="0 0 180 78" role="img" aria-label={"Geometría esquemática de "+r.name} className="track-geometry"><polyline points="12,54 45,12 148,23 12,54" fill="none" stroke="currentColor" strokeWidth="3"/></svg>:<span>Geometría no disponible</span>}</div>
+ if(kind==="pilots")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="pilots" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>Nombre corto: {r.shortName??"—"}</span><span>Apodo: {r.nickname??"—"}</span><span>Localidad: {r.city??"—"} · {r.country??"—"}</span><span>Correo: {r.email??"—"}</span><span>Teléfono: {r.phone??"—"}</span><span>Experiencia: {r.experience??"—"}/10</span><span>Velocidad: {r.speed??"—"}/10</span><span>{r.description??r.detail}</span></div></div>
+ if(kind==="vehicles")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="vehicles" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>Tipo: {r.vehicleType??"—"}</span><span>Peso referencia: {r.referenceWeight??"—"} kg</span><span>Tracción: {r.drivenWheels??"—"}</span><span>Potencia: {r.enginePower??"—"}</span><span>Setups: {(r.setups??[]).map(s=>s.name).join(", ")||"Sin setups"}</span></div></div>
+ if(kind==="tracks")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="tracks" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>País: {r.country??"—"} · Provincia: {r.province??"—"}</span><span>Longitud: {r.lengthKm??"—"} km</span><span>Conjuntos de segmentación: {r.segments??0}</span>{r.geometry?<svg viewBox="0 0 180 78" role="img" aria-label={"Geometría esquemática de "+r.name} className="track-geometry"><polyline points="12,54 45,12 148,23 12,54" fill="none" stroke="currentColor" strokeWidth="3"/></svg>:<span>Geometría no disponible</span>}</div></div>
  return <div className="dg-detail"><strong>{r.name}</strong><span>{r.detail}</span><span>Requisitos: {(r.requirements??[]).join("; ")||"Sin requisitos declarados"}</span></div>
 }
 function moduleAvailable(r:Resource){return r.enabled!==false&&moduleMissing(r,draft,datasets).length===0}
@@ -355,14 +368,14 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 <div className="context-list">
  <Card className="session-context-card">
   <CardHeader><SessionCardHeading title={t("create.pilot")} complete={Boolean(draft.pilot)}/></CardHeader>
-  <CardContent><ShadcnGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]}/></CardContent>
+  <CardContent><ShadcnGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"pilots")}>Abrir</Button>}/></CardContent>
  </Card>
  <Card className="session-context-card vehicle-parent-card">
   <CardHeader><SessionCardHeading title={t("create.vehicle")} complete={Boolean(draft.vehicle)}/><CardDescription>Seleccioná un vehículo. El setup es opcional, incluso si existen configuraciones.</CardDescription></CardHeader>
   <CardContent><div className="vehicle-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar vehículo</CardTitle><CardDescription>Filtrá por categoría y tipo de vehículo.</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]}/></CardContent>
+    <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"vehicles")}>Abrir</Button>}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card vehicle-setups-card">
     <CardHeader><CardTitle>Seleccionar setup del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
@@ -372,7 +385,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
         selection="single" selected={draft.setup||"__none__"}
         onSelect={id=>setDraft(d=>({...d,setup:id==="__none__"?"":id}))}
         emptyMessage={draft.vehicle?"No hay registros":"Elegí primero un vehículo."}
-        columns={[{key:"name",title:"Nombre",value:s=>s.name},{key:"date",title:"Fecha",value:s=>s.date??"—"}]}/>
+        columns={[{key:"name",title:"Nombre",value:s=>s.name},{key:"date",title:"Fecha",value:s=>s.date??"—"}]} actions={s=>s.id==="__none__"?null:<Button size="sm" variant="outline" onClick={()=>openPickerSetup(s.id)}>Abrir</Button>}/>
       {draft.vehicle&&!resources.vehicles.find(r=>r.id===draft.vehicle)?.setups?.length&&<p className="setup-empty" role="status">Este vehículo no tiene setups cargados. Se puede continuar sin uno.</p>}
     </CardContent>
    </Card>
@@ -383,11 +396,11 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   <CardContent><div className="vehicle-card-grid track-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar circuito</CardTitle><CardDescription>Un circuito por sesión</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]}/></CardContent>
+    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"tracks")}>Abrir</Button>}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Conjuntos de segmentación</CardTitle><CardDescription>{draft.track?"Opcional: uno o varios conjuntos":"Elegí primero un circuito"}</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Segmentaciones del circuito" tableHeight="264px" rows={resources.tracks.find(r=>r.id===draft.track)?.segmentSets??[]} selection="multiple" selected={draft.segmentSetIds??[]} onSelect={(id,checked)=>setDraft(d=>({...d,segmentSetIds:checked?uniq([...d.segmentSetIds,id]):d.segmentSetIds.filter(x=>x!==id)}))} emptyMessage={draft.track?"Este circuito no tiene conjuntos cargados":"Elegí primero un circuito."} columns={[{key:"name",title:"Nombre",value:x=>x.name||"Sin nombre"},{key:"type",title:"Tipo",value:x=>x.type==="analysis"?"Parciales":"Nomenclatura de curvas"}]}/></CardContent>
+    <CardContent><ShadcnGrid label="Segmentaciones del circuito" tableHeight="264px" rows={resources.tracks.find(r=>r.id===draft.track)?.segmentSets??[]} selection="multiple" selected={draft.segmentSetIds??[]} onSelect={(id,checked)=>setDraft(d=>({...d,segmentSetIds:checked?uniq([...d.segmentSetIds,id]):d.segmentSetIds.filter(x=>x!==id)}))} emptyMessage={draft.track?"Este circuito no tiene conjuntos cargados":"Elegí primero un circuito."} columns={[{key:"name",title:"Nombre",value:x=>x.name||"Sin nombre"},{key:"type",title:"Tipo",value:x=>x.type==="analysis"?"Parciales":"Nomenclatura de curvas"}]} actions={x=><Button size="sm" variant="outline" onClick={()=>beginResource(draft.track,"tracks")}>Abrir</Button>}/></CardContent>
    </Card>
   </div></CardContent>
  </Card>
@@ -398,7 +411,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
  return <Card className="session-context-card" key={role}>
   <CardHeader>{isObjective?<SessionCardHeading title={title} complete={draft.targets.length<=1&&!draft.targets.some(id=>draft.references.includes(id))}/>:<CardTitle>{title}</CardTitle>}
   <CardDescription>{isObjective?"Un rodaje objetivo como máximo; la selección es opcional. Si no se selecciona ninguno, esta condición también está cumplida.":"Podés elegir varias referencias, incluso sin objetivo."}</CardDescription></CardHeader>
-  <CardContent><ShadcnGrid label={isObjective?"Datos objetivos":"Datos de referencia"} rows={datasets.filter(d=>!isObjective||d.type==="run")} selection={isObjective?"single":"multiple"} selected={draft[role]} onSelect={(id,checked)=>toggleMulti(role,id,checked)} disabled={d=>isObjective&&draft.references.includes(d.id)||!isObjective&&draft.targets.includes(d.id)} columns={datasetColumns()} groups={["type","track"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}/></CardContent>
+  <CardContent><ShadcnGrid label={isObjective?"Datos objetivos":"Datos de referencia"} rows={datasets.filter(d=>!isObjective||d.type==="run")} selection={isObjective?"single":"multiple"} selected={draft[role]} onSelect={(id,checked)=>toggleMulti(role,id,checked)} disabled={d=>isObjective&&draft.references.includes(d.id)||!isObjective&&draft.targets.includes(d.id)} columns={datasetColumns()} groups={["type","track"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset} actions={d=><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail","data",true)}}>Abrir</Button>}/></CardContent>
  </Card>
 })}
 <Card className="session-context-card">
@@ -406,7 +419,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
  <CardContent><ShadcnGrid label="Módulos de análisis" rows={resources.modules.filter(r=>r.enabled!==false)}
  leadingControl={r=><Switch aria-label={"Activar módulo "+r.name} checked={draft.modules.includes(r.id)&&moduleAvailable(r)} disabled={!moduleAvailable(r)} onCheckedChange={checked=>toggleMulti("modules",r.id,checked)}/>}
  columns={[{key:"name",title:"Módulo",value:r=>r.name},{key:"detail",title:"Descripción",value:r=>r.detail},{key:"status",title:"Requisitos",value:r=>moduleAvailable(r)?"Cumplidos":"Incumplidos",status:r=>moduleAvailable(r)?"success":"error"}]}
- detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>}/></CardContent>
+ detail={r=><div className="dg-detail"><strong>{r.detail}</strong>{(moduleMissing(r,draft,datasets).length?moduleMissing(r,draft,datasets):r.requirements??[]).map(x=><span key={x}>{x}</span>)}</div>} actions={r=><Button size="sm" variant="outline" onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources",true)}}>Abrir</Button>}/></CardContent>
 </Card>
 <Card className="create-footer"><CardContent><span>{t(draftReady?"create.ready":"create.pending")}</span><Button disabled={!draftReady} onClick={createSession}><Plus size={16}/>{editingSessionId?"Guardar cambios":t("create.action")}</Button></CardContent></Card>
 </div>}
@@ -461,6 +474,7 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
   <Button size="sm" variant="outline" aria-label={"Documentación de "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources")}}><BookOpen size={14}/>Documentación</Button>
  </>:<>
   <Button size="sm" variant="outline" onClick={()=>beginResource(r.id)}><Pencil size={14}/>Editar</Button>
+  <Button size="sm" variant="outline" aria-label={"Compartir "+r.name} onClick={()=>show("Compartir "+r.name+": disponible próximamente (maqueta).")}><Share2 size={14}/>Compartir</Button>
   <Button size="sm" variant="ghost" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={14}/></Button>
  </>}/>
 </CardContent></Card></div>}
@@ -489,7 +503,7 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 <Card><CardContent className="metric"><div><small>Registros</small><strong>{datasets.length}</strong></div><Database size={20}/></CardContent></Card>
 <Card><CardContent className="metric"><div><small>Circuitos</small><strong>{distinctTracks}</strong></div><Layers3 size={20}/></CardContent></Card>
 <Card><CardContent className="source-stat"><strong>Fuentes de datos</strong><div>{(["run","weather","timing"] as const).map(tp=><span key={tp}>{t("source."+tp)}: <b>{datasets.filter(d=>d.type===tp).length}</b></span>)}</div></CardContent></Card>
-<Card className="storage-stat"><CardContent><HardDrive size={19}/><strong>Almacenamiento</strong><span>{storageUsed} MB usados / {storageTotal} MB totales (simulado)</span><progress aria-label="Almacenamiento usado" value={storageUsed} max={storageTotal}/></CardContent></Card>
+<Card className="storage-stat"><CardContent><HardDrive size={19}/><strong>Almacenamiento</strong><span>{storageUsed} MB usados / {storageTotal} MB totales</span><progress aria-label="Almacenamiento usado" value={storageUsed} max={storageTotal}/></CardContent></Card>
 <Card className="docs-stat"><CardContent><BookOpen size={19}/><strong>Documentación</strong><button type="button" className="docs-link" onClick={()=>openDocumentation("import")}>Cómo importar datos</button><button type="button" className="docs-link" onClick={()=>openDocumentation("records")}>Cómo funcionan los registros</button></CardContent></Card>
 </div>
 <Card><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>Filtros avanzados y agrupaciones; las observaciones se editan dentro de cada registro.</CardDescription></CardHeader><CardContent>
@@ -531,8 +545,8 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 
 {view==="import"&&<Card className="edit-card"><CardHeader><CardTitle>{importStep===1?t("nav.import"):t("import.prep")}</CardTitle><CardDescription>{t(importStep===1?"import.noRead":"import.prepHint")}</CardDescription></CardHeader><CardContent>{importStep===1?<div className="stack-fields"><label>{t("import.file")}<Input type="file" accept=".csv,.txt,.xlsx,.xls,.json,.xrk,.xrz" onChange={e=>setFilename(e.target.files?.[0]?.name??"")}/></label><label>{t("import.type")}<select value={fileType} onChange={e=>setFileType(e.target.value)}><option value="">{t("import.select")}</option>{["CSV","TXT","XLSX","XRK","XRZ","Otro"].map(x=><option key={x}>{x}</option>)}</select></label><Button disabled={!filename||!fileType} onClick={()=>setImportStep(2)}>{t("import.continue")}<ArrowRight size={16}/></Button></div>:<div className="stack-fields"><p>{filename} · {fileType}</p><p>{t("import.prepHint")}</p><Button variant="outline" onClick={()=>setImportStep(1)}>{t("common.back")}</Button></div>}</CardContent></Card>}
 
-{view==="settings"&&<Card className="edit-card"><CardHeader><CardTitle>{t("settings.title")}</CardTitle></CardHeader><CardContent><label className="stack-fields">{t("settings.speed")}<select><option>km/h</option><option>mph</option></select></label></CardContent></Card>}
-{view==="account"&&<Card className="edit-card"><CardHeader><CardTitle>{t("nav.account")}</CardTitle></CardHeader><CardContent><p>{t("profile.user")} · {t("profile.plan",{plan})}</p><div className="pill-row"><Button onClick={()=>profileAction("membership")}>{t("profile.membership")}</Button><Button variant="outline" onClick={()=>profileAction("usage")}>{t("profile.usage")}</Button></div></CardContent></Card>}
+{view==="settings"&&<PreferencesPanel/>}
+{view==="account"&&<AccountPanel plan={plan} datasets={datasets} sessions={sessions} storageUsed={storageUsed} storageTotal={storageTotal} onMembership={()=>profileAction("membership")}/>}
 {view==="documentation"&&<Documentation section={docSection} setSection={setDocSection} onImport={()=>{setImportStep(1);navigate("import","data")}} onLibrary={()=>navigate("datasets","data")}/>}
  {view==="faq"&&<FAQ/>}
  {view==="version"&&<VersionInfo label={buildLabel} published={Boolean(compiledAt)}/>}
