@@ -5,7 +5,7 @@ export type DatasetType="weather"|"run"|"timing"
 export type Setup={id:string;name:string;date?:string;detail?:string;parameters?:Record<string,string>}
 export type SegmentSet={id:string;name:string;type:"analysis"|"nomenclature";detail?:string;date?:string;segmentNames?:string[]}
 export interface Resource {
- id:string;name:string;detail:string;number?:string;shortName?:string;nickname?:string;nationality?:string;birthDate?:string;photo?:string;drivingStyle?:string;tags?:string[];customAttributes?:Record<string,string>;country?:string;province?:string;city?:string;email?:string;phone?:string;experience?:number;speed?:number;description?:string
+ id:string;name:string;detail:string;avatar?:string;number?:string;shortName?:string;nickname?:string;nationality?:string;birthDate?:string;photo?:string;drivingStyle?:string;tags?:string[];customAttributes?:Record<string,string>;country?:string;province?:string;city?:string;email?:string;phone?:string;experience?:number;speed?:number;description?:string
  category?:string;vehicleType?:string;manufacturer?:string;model?:string;referenceWeight?:number;drivenWheels?:string;enginePower?:string;dragCoefficient?:number;handicapBallastWeight?:number;setups?:Setup[]
  trackType?:string;lengthKm?:number;distanceKm?:number;segments?:number;segmentSets?:SegmentSet[];geometry?:[number,number][];location?:string;direction?:string;visibility?:"public"|"private"
  enabled?:boolean;requirements?:string[];docsUrl?:string
