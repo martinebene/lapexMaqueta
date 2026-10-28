@@ -67,6 +67,7 @@ const [itemId,setItemId]=useState<string|null>(null)
 const [resourceDraft,setResourceDraft]=useState<Resource>({id:"",name:"",detail:""})
 const [resourceOriginal,setResourceOriginal]=useState<Resource|null>(null)
 const [resourceDirty,setResourceDirty]=useState(false)
+const [selectedPickerSegment,setSelectedPickerSegment]=useState<string|null>(null)
 const [setupDraft,setSetupDraft]=useState<Setup>({id:"",name:"",parameters:{}})
 const [setupOriginal,setSetupOriginal]=useState<Setup>({id:"",name:"",parameters:{}})
 const [setupId,setSetupId]=useState<string|null>(null)
@@ -152,9 +153,10 @@ function beginResource(id:string|null=null,forcedKind?:ResourceKind){
   const currentKind=forcedKind??kind
  const original=id?resources[currentKind].find(r=>r.id===id):null
  const base=original?{...original}:{id:"",name:"",detail:"",...(currentKind==="tracks"?{trackType:"",segmentSets:[]}:currentKind==="vehicles"?{setups:[],vehicleType:""}:{})}
- setKind(currentKind);setItemId(id);setResourceOriginal(base);setResourceDraft(base);setResourceDirty(false)
+ setKind(currentKind);setItemId(id);setResourceOriginal(base);setResourceDraft(base);setResourceDirty(false);setSelectedPickerSegment(null)
  navigate("resourceEdit","resources",view==="new")
 }
+function openPickerSegment(id:string){beginResource(draft.track,"tracks");setSelectedPickerSegment(id)}
 function openPickerSetup(id:string){
  const vehicle=resources.vehicles.find(v=>v.id===draft.vehicle)
  const setup=vehicle?.setups?.find(s=>s.id===id)
@@ -183,7 +185,7 @@ function saveSetup(next:Setup){
  setResources(old=>({...old,vehicles:old.vehicles.map(v=>v.id===itemId?{...v,setups:replace(v.setups??[])}:v)}))
  setResourceDraft(old=>({...old,setups:replace(old.setups??[])}))
  setResourceOriginal(old=>old?{...old,setups:replace(old.setups??[])}:old)
- setSetupOriginal(saved);setView("resourceEdit");show("Setup guardado en la maqueta")
+ const backToSession=historyRef.current.at(-1)?.view==="new";if(backToSession)historyRef.current.pop();setSetupOriginal(saved);setView(backToSession?"new":"resourceEdit");if(backToSession)setMode("analysis");show("Setup guardado en la maqueta")
 }
 function goBack(){
  if(!canLeave())return
@@ -400,7 +402,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
    </Card>
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Conjuntos de segmentación</CardTitle><CardDescription>{draft.track?"Opcional: uno o varios conjuntos":"Elegí primero un circuito"}</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Segmentaciones del circuito" tableHeight="264px" rows={resources.tracks.find(r=>r.id===draft.track)?.segmentSets??[]} selection="multiple" selected={draft.segmentSetIds??[]} onSelect={(id,checked)=>setDraft(d=>({...d,segmentSetIds:checked?uniq([...d.segmentSetIds,id]):d.segmentSetIds.filter(x=>x!==id)}))} emptyMessage={draft.track?"Este circuito no tiene conjuntos cargados":"Elegí primero un circuito."} columns={[{key:"name",title:"Nombre",value:x=>x.name||"Sin nombre"},{key:"type",title:"Tipo",value:x=>x.type==="analysis"?"Parciales":"Nomenclatura de curvas"}]} actions={()=><Button size="sm" variant="outline" onClick={()=>beginResource(draft.track,"tracks")}>Abrir</Button>}/></CardContent>
+    <CardContent><ShadcnGrid label="Segmentaciones del circuito" tableHeight="264px" rows={resources.tracks.find(r=>r.id===draft.track)?.segmentSets??[]} selection="multiple" selected={draft.segmentSetIds??[]} onSelect={(id,checked)=>setDraft(d=>({...d,segmentSetIds:checked?uniq([...d.segmentSetIds,id]):d.segmentSetIds.filter(x=>x!==id)}))} emptyMessage={draft.track?"Este circuito no tiene conjuntos cargados":"Elegí primero un circuito."} columns={[{key:"name",title:"Nombre",value:x=>x.name||"Sin nombre"},{key:"type",title:"Tipo",value:x=>x.type==="analysis"?"Parciales":"Nomenclatura de curvas"}]} actions={segment=><Button size="sm" variant="outline" onClick={()=>openPickerSegment(segment.id)}>Abrir</Button>}/></CardContent>
    </Card>
   </div></CardContent>
  </Card>
@@ -479,9 +481,9 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  </>}/>
 </CardContent></Card></div>}
 
-{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} dirtyBaseline={resourceOriginal??resourceDraft} onDirtyChange={setResourceDirty} onEditSetup={beginSetup} onShare={what=>show("Compartir "+what+": disponible próximamente (maqueta).")} onSave={saveResource} onCancel={goBack}/>}
+{view==="resourceEdit"&&kind!=="modules"&&<ResourceForm key={kind+":"+(itemId??"new")} kind={kind} initial={resourceDraft} editing={Boolean(itemId)} initialSegmentId={selectedPickerSegment} dirtyBaseline={resourceOriginal??resourceDraft} onDirtyChange={setResourceDirty} onEditSetup={beginSetup} onShare={what=>show("Compartir "+what+": disponible próximamente (maqueta).")} onSave={saveResource} onCancel={goBack}/>}
 {view==="setupEdit"&&itemId&&<SetupForm vehicleName={resourceDraft.name} vehicleType={resourceDraft.vehicleType??""}
-  setup={setupDraft} onChange={setSetupDraft} onSave={saveSetup} onCancel={()=>{if(canLeave())setView("resourceEdit")}}/>}
+  setup={setupDraft} onChange={setSetupDraft} onSave={saveSetup} onCancel={()=>{if(!canLeave())return;if(historyRef.current.at(-1)?.view==="new"){historyRef.current.pop();setView("new");setMode("analysis")}else setView("resourceEdit")}}/>}
 
 {["moduleConfig","moduleDoc"].includes(view)&&moduleSettings&&(()=>{const module=resources.modules.find(x=>x.id===moduleSettings);if(!module)return null;return <Card className="edit-card module-full-width">
  <CardHeader><CardTitle>{view==="moduleDoc"?"Documentación":"Configurar módulo"} · {module.name}</CardTitle><CardDescription>{module.detail}</CardDescription></CardHeader>
@@ -495,7 +497,7 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
     <label className="module-config-row">Disponibilidad para nuevas sesiones <Switch aria-label={"Habilitar módulo "+module.name} checked={module.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===module.id?{...x,enabled:checked}:x)}))}/></label>
     <p>Desactivar el módulo solamente lo retira de las nuevas selecciones; no afecta sesiones existentes.</p>
   </>}
-  <Button variant="outline" onClick={()=>openLibrary("modules")}>Volver a módulos</Button>
+  <Button variant="outline" onClick={historyRef.current.at(-1)?.view==="new"?goBack:()=>openLibrary("modules")}>Volver</Button>
  </div></CardContent></Card>})()}
 
 {view==="datasets"&&<div className="data-page">
