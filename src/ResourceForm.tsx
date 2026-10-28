@@ -9,7 +9,7 @@ import { ShadcnGrid } from "./ShadcnGrid"
 import { ResourceAvatarPicker } from "./ResourceAvatar"
 
 const vehicleTypes=["Moto de velocidad","Karting","Auto de Fórmula","Auto de Turismo","Vehículo de Rally"]
-type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void;onEditSetup?:(id:string|null,current:Resource)=>void;onShare?:(item:string)=>void;dirtyBaseline?:Resource;onDirtyChange?:(dirty:boolean)=>void}
+type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void;onEditSetup?:(id:string|null,current:Resource)=>void;onShare?:(item:string)=>void;dirtyBaseline?:Resource;onDirtyChange?:(dirty:boolean)=>void;initialSegmentId?:string|null}
 type StrKey="name"|"detail"|"number"|"shortName"|"nickname"|"nationality"|"city"|"province"|"country"|"birthDate"|"photo"|"email"|"phone"|"description"|"drivingStyle"|"manufacturer"|"model"|"enginePower"|"category"|"vehicleType"|"drivenWheels"|"location"|"direction"|"trackType"
 type NumericKey="experience"|"speed"|"referenceWeight"|"handicapBallastWeight"|"dragCoefficient"|"lengthKm"|"distanceKm"
 type FormField={key:StrKey|NumericKey;label:string;required?:boolean;type?:"date"|"email"|"number"|"url"|"text"|"textarea"|"select";options?:string[];note?:string}
@@ -37,12 +37,12 @@ const trackFields:FormField[]=[
  {key:"lengthKm",label:"Longitud declarada (km)",type:"number"},
  {key:"description",label:"Descripción",type:"textarea"}
 ]
-export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,onShare,dirtyBaseline,onDirtyChange}:Props){
+export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,onShare,dirtyBaseline,onDirtyChange,initialSegmentId}:Props){
  const [value,setValue]=useState<Resource>(initial)
  const [tagsText,setTagsText]=useState((initial.tags??[]).join(", "))
  const [attributesText,setAttributesText]=useState(Object.entries(initial.customAttributes??{}).map(([k,v])=>k+": "+v).join("\n"))
  const [validation,setValidation]=useState("")
- const [selectedSegmentId,setSelectedSegmentId]=useState<string|null>(null)
+ const [selectedSegmentId,setSelectedSegmentId]=useState<string|null>(initialSegmentId??null)
  const fields=kind==="pilots"?pilotFields:kind==="vehicles"?vehicleFields:trackFields
  const update=(key:string,raw:string,numeric:boolean)=>{
   setValue(old=>({...old,[key]:numeric?(raw===""?undefined:Number(raw)):raw}))
