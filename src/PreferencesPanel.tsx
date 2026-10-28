@@ -52,6 +52,7 @@ export function displayMeasure(value:number,kind:UnitKey){
 function apply(p:Options){
  document.documentElement.dataset.theme=p.theme==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):p.theme
  document.documentElement.dataset.contrast=p.contrast
+ document.documentElement.classList.toggle("dark",document.documentElement.dataset.theme==="dark")
 }
 export function PreferencesPanel(){
  const {i18n}=useTranslation()
