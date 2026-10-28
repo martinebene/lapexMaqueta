@@ -41,7 +41,7 @@ test("Preferencias: tarjetas, etiquetas y controles con contraste coherente en m
  const card=page.locator(".settings-stack > [data-slot=card]").first()
  const label=page.locator(".pref-row span").first()
  const contrast=await label.evaluate(el=>{
-  const rgb=(color:string)=>{const v=color.match(/[\\d.]+/g)?.slice(0,3).map(Number)??[0,0,0];const c=v.map(x=>{const s=x/255;return s<=0.04045?s/12.92:((s+0.055)/1.055)**2.4});return c[0]*0.2126+c[1]*0.7152+c[2]*0.0722}
+  const rgb=(color:string)=>{const v=color.match(/[0-9.]+/g)?.slice(0,3).map(Number)??[0,0,0];const c=v.map(x=>{const s=x/255;return s<=0.04045?s/12.92:((s+0.055)/1.055)**2.4});return c[0]*0.2126+c[1]*0.7152+c[2]*0.0722}
   const fg=rgb(getComputedStyle(el).color),bg=rgb(getComputedStyle(el.closest("[data-slot=card]")!).backgroundColor)
   return (Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05)
  })
