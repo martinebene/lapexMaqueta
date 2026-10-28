@@ -497,7 +497,7 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
     <label className="module-config-row">Disponibilidad para nuevas sesiones <Switch aria-label={"Habilitar módulo "+module.name} checked={module.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===module.id?{...x,enabled:checked}:x)}))}/></label>
     <p>Desactivar el módulo solamente lo retira de las nuevas selecciones; no afecta sesiones existentes.</p>
   </>}
-  <Button variant="outline" onClick={historyRef.current.at(-1)?.view==="new"?goBack:()=>openLibrary("modules")}>Volver</Button>
+  <Button variant="outline" onClick={historyRef.current.at(-1)?.view==="new"?goBack:()=>openLibrary("modules")}>{historyRef.current.at(-1)?.view==="new"?"Volver a sesión":"Volver a módulos"}</Button>
  </div></CardContent></Card>})()}
 
 {view==="datasets"&&<div className="data-page">
