@@ -4,15 +4,16 @@ import {Button} from "@/components/ui/button"
 import {Card,CardHeader,CardTitle,CardDescription,CardContent} from "@/components/ui/card"
 import {ShadcnGrid} from "./ShadcnGrid"
 import {ResourceAvatar} from "./ResourceAvatar"
+import {displayMeasure} from "./PreferencesPanel"
 import type {Session,SessionSnapshot,Resource} from "./data"
 
 export type SnapshotKind="pilot"|"track"|"vehicle"|"setup"|"segmentation"
 const fields=(kind:SnapshotKind,r:Resource)=>kind==="pilot"?[
  ["Número deportivo",r.number],["Nombre corto",r.shortName],["Nacionalidad",r.nationality],["País",r.country],["Ciudad",r.city],["Experiencia",r.experience],["Estilo de conducción",r.drivingStyle],["Descripción",r.description||r.detail]
 ]:kind==="track"?[
- ["Tipo de trazado",r.trackType],["País",r.country],["Provincia",r.province],["Ciudad",r.city],["Longitud",r.lengthKm!=null?r.lengthKm+" km":undefined],["Sentido",r.direction],["Descripción",r.description||r.detail]
+ ["Tipo de trazado",r.trackType],["País",r.country],["Provincia",r.province],["Ciudad",r.city],["Longitud",r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):undefined],["Sentido",r.direction],["Descripción",r.description||r.detail]
 ]:[
- ["Tipo de vehículo",r.vehicleType],["Categoría",r.category],["Fabricante",r.manufacturer],["Modelo",r.model],["Peso de referencia",r.referenceWeight!=null?r.referenceWeight+" kg":undefined],["Tracción",r.drivenWheels],["Potencia",r.enginePower],["Descripción",r.description||r.detail]
+ ["Tipo de vehículo",r.vehicleType],["Categoría",r.category],["Fabricante",r.manufacturer],["Modelo",r.model],["Peso de referencia",r.referenceWeight!=null?displayMeasure(r.referenceWeight,"mass"):undefined],["Tracción",r.drivenWheels],["Potencia",r.enginePower],["Descripción",r.description||r.detail]
 ]
 const names:Record<SnapshotKind,string>={pilot:"Piloto",track:"Circuito",vehicle:"Vehículo",setup:"Setup",segmentation:"Segmentación"}
 const label=(v:unknown)=>v===undefined||v===null||v===""?"—":String(v)
