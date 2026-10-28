@@ -3,6 +3,7 @@ import {Pencil,ArrowUpRight} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Card,CardHeader,CardTitle,CardDescription,CardContent} from "@/components/ui/card"
 import {ShadcnGrid} from "./ShadcnGrid"
+import {ResourceAvatar} from "./ResourceAvatar"
 import type {Session,SessionSnapshot,Resource} from "./data"
 
 export type SnapshotKind="pilot"|"track"|"vehicle"|"setup"|"segmentation"
@@ -16,7 +17,7 @@ const fields=(kind:SnapshotKind,r:Resource)=>kind==="pilot"?[
 const names:Record<SnapshotKind,string>={pilot:"Piloto",track:"Circuito",vehicle:"Vehículo",setup:"Setup",segmentation:"Segmentación"}
 const label=(v:unknown)=>v===undefined||v===null||v===""?"—":String(v)
 function SummaryResource({kind,resource,children,onOpen}:{kind:"pilot"|"track"|"vehicle";resource?:Resource;children?:React.ReactNode;onOpen:(kind:SnapshotKind,id:string)=>void}){
- return <Card className="session-snapshot-card"><CardHeader><CardTitle>{names[kind]}</CardTitle><CardDescription>Instantánea del análisis</CardDescription></CardHeader><CardContent>
+ return <Card className="session-snapshot-card"><CardHeader><CardTitle>{names[kind]}</CardTitle><CardDescription>Instantánea del análisis</CardDescription></CardHeader>{resource&&<div className="snapshot-avatar"><ResourceAvatar kind={kind==="pilot"?"pilots":kind==="track"?"tracks":"vehicles"} resource={resource} size={68}/></div>}<CardContent>
   {resource?<><button type="button" className="snapshot-main-link" onClick={()=>onOpen(kind,resource.id)}>{resource.name}<ArrowUpRight size={15}/></button>
    <dl className="snapshot-fields">{fields(kind,resource).filter(([,v])=>v!==undefined&&v!==null&&v!=="").slice(0,6).map(([k,v])=><div key={String(k)}><dt>{k}</dt><dd>{label(v)}</dd></div>)}</dl>
    {children}</>:<p>Sin datos de contexto guardados.</p>}
