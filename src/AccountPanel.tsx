@@ -1,5 +1,5 @@
 import {useState} from "react"
-import {UserRound,ShieldCheck,CreditCard,KeyRound,ChartNoAxesColumnIncreasing,Download,Trash2,Copy,Lock,CheckCircle2} from "lucide-react"
+import {UserRound,ShieldCheck,CreditCard,KeyRound,ChartNoAxesColumnIncreasing,Download,Trash2,Lock,CheckCircle2} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Card,CardHeader,CardTitle,CardDescription,CardContent} from "@/components/ui/card"
 import {Input} from "@/components/ui/input"
@@ -12,7 +12,7 @@ export function AccountPanel({plan,datasets,sessions,storageUsed,storageTotal,on
  const [message,setMessage]=useState("")
  const [name,setName]=useState("Usuario de demostración")
  const [editing,setEditing]=useState(false)
- const [mfa,setMfa]=useState(false)
+ const mfa=false
  function demo(what:string){setMessage(what+" es una función demostrativa; no se realizó ninguna operación en una cuenta real.")}
  function danger(){if(window.confirm("¿Deseás solicitar la eliminación de la cuenta? En Lapex se requerirá reautenticación y habrá 7 días para cancelar la solicitud."))demo("La solicitud de eliminación")}
  const sequence=period==="30"?values.slice(-4):period==="90"?values.slice(-7):values
