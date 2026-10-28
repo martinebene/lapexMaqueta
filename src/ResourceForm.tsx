@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { Resource, ResourceKind, SegmentSet } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
+import { ResourceAvatarPicker } from "./ResourceAvatar"
 
 const vehicleTypes=["Moto de velocidad","Karting","Auto de Fórmula","Auto de Turismo","Vehículo de Rally"]
 type Props={kind:Exclude<ResourceKind,"modules">;initial:Resource;editing:boolean;onSave:(resource:Resource)=>void;onCancel:()=>void;onEditSetup?:(id:string|null,current:Resource)=>void;onShare?:(item:string)=>void;dirtyBaseline?:Resource;onDirtyChange?:(dirty:boolean)=>void}
@@ -15,7 +16,7 @@ type FormField={key:StrKey|NumericKey;label:string;required?:boolean;type?:"date
 const pilotFields:FormField[]=[
  {key:"name",label:"Nombre",required:true},{key:"number",label:"Número deportivo"},{key:"shortName",label:"Nombre corto"},{key:"nickname",label:"Apodo"},
  {key:"nationality",label:"Nacionalidad"},{key:"country",label:"País"},{key:"city",label:"Localidad"},{key:"birthDate",label:"Fecha de nacimiento",type:"date"},
- {key:"photo",label:"Fotografía (URL)",type:"url"},{key:"email",label:"Correo electrónico",type:"email"},{key:"phone",label:"Teléfono"},
+ {key:"email",label:"Correo electrónico",type:"email"},{key:"phone",label:"Teléfono"},
  {key:"experience",label:"Nivel de experiencia (1–10)",type:"number"},{key:"speed",label:"Nivel de velocidad (1–10)",type:"number"},
  {key:"description",label:"Descripción",type:"textarea"},{key:"drivingStyle",label:"Estilo de conducción",type:"textarea"}
 ]
@@ -70,6 +71,7 @@ export function ResourceForm({kind,initial,editing,onSave,onCancel,onEditSetup,o
  return <div className="resource-edit-stack"><Card className="resource-form-card">
   <CardHeader><CardTitle>{editing?"Editar":"Nuevo"} · {kind==="pilots"?"Piloto":kind==="vehicles"?"Vehículo":"Circuito"}</CardTitle><CardDescription>Los campos con * son obligatorios. Los demás son opcionales, según la especificación del producto.</CardDescription></CardHeader>
   <CardContent>
+   <ResourceAvatarPicker kind={kind} value={value} onChange={setValue}/>
    <form noValidate className="resource-form" onSubmit={e=>{e.preventDefault();submit()}}>
     <div className="resource-form-fields">
      {fields.map(f=>{
