@@ -20,7 +20,7 @@ import { seriesOf, DURATION } from "./seriesMock"
 import { initialDatasets, initialResources, initialSessions, emptyDraft, validDraft, moduleMissing, captureSnapshot } from "./data"
 import { ShadcnGrid } from "./ShadcnGrid"
 import { ResourceAvatar } from "./ResourceAvatar"
-import { PreferencesPanel } from "./PreferencesPanel"
+import { PreferencesPanel, displayMeasure } from "./PreferencesPanel"
 import { AccountPanel } from "./AccountPanel"
 import type { GridColumn } from "./ShadcnGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -235,8 +235,8 @@ function datasetColumns():GridColumn<Dataset>[] {
 }
 function resourceInfo(r:Resource){
  if(kind==="pilots")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="pilots" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>Nombre corto: {r.shortName??"—"}</span><span>Apodo: {r.nickname??"—"}</span><span>Localidad: {r.city??"—"} · {r.country??"—"}</span><span>Correo: {r.email??"—"}</span><span>Teléfono: {r.phone??"—"}</span><span>Experiencia: {r.experience??"—"}/10</span><span>Velocidad: {r.speed??"—"}/10</span><span>{r.description??r.detail}</span></div></div>
- if(kind==="vehicles")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="vehicles" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>Tipo: {r.vehicleType??"—"}</span><span>Peso referencia: {r.referenceWeight??"—"} kg</span><span>Tracción: {r.drivenWheels??"—"}</span><span>Potencia: {r.enginePower??"—"}</span><span>Setups: {(r.setups??[]).map(s=>s.name).join(", ")||"Sin setups"}</span></div></div>
- if(kind==="tracks")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="tracks" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>País: {r.country??"—"} · Provincia: {r.province??"—"}</span><span>Longitud: {r.lengthKm??"—"} km</span><span>Conjuntos de segmentación: {r.segments??0}</span>{r.geometry?<svg viewBox="0 0 180 78" role="img" aria-label={"Geometría esquemática de "+r.name} className="track-geometry"><polyline points="12,54 45,12 148,23 12,54" fill="none" stroke="currentColor" strokeWidth="3"/></svg>:<span>Geometría no disponible</span>}</div></div>
+ if(kind==="vehicles")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="vehicles" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>Tipo: {r.vehicleType??"—"}</span><span>Peso referencia: {r.referenceWeight!=null?displayMeasure(r.referenceWeight,"mass"):"—"}</span><span>Tracción: {r.drivenWheels??"—"}</span><span>Potencia: {r.enginePower??"—"}</span><span>Setups: {(r.setups??[]).map(s=>s.name).join(", ")||"Sin setups"}</span></div></div>
+ if(kind==="tracks")return <div className="resource-detail-with-avatar"><ResourceAvatar kind="tracks" resource={r} size={108}/><div className="dg-detail"><strong>{r.name}</strong><span>País: {r.country??"—"} · Provincia: {r.province??"—"}</span><span>Longitud: {r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"}</span><span>Conjuntos de segmentación: {r.segments??0}</span>{r.geometry?<svg viewBox="0 0 180 78" role="img" aria-label={"Geometría esquemática de "+r.name} className="track-geometry"><polyline points="12,54 45,12 148,23 12,54" fill="none" stroke="currentColor" strokeWidth="3"/></svg>:<span>Geometría no disponible</span>}</div></div>
  return <div className="dg-detail"><strong>{r.name}</strong><span>{r.detail}</span><span>Requisitos: {(r.requirements??[]).join("; ")||"Sin requisitos declarados"}</span></div>
 }
 function moduleAvailable(r:Resource){return r.enabled!==false&&moduleMissing(r,draft,datasets).length===0}
@@ -398,7 +398,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   <CardContent><div className="vehicle-card-grid track-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar circuito</CardTitle><CardDescription>Un circuito por sesión</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Long. km",value:r=>r.lengthKm??"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"tracks")}>Abrir</Button>}/></CardContent>
+    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"tracks")}>Abrir</Button>}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Conjuntos de segmentación</CardTitle><CardDescription>{draft.track?"Opcional: uno o varios conjuntos":"Elegí primero un circuito"}</CardDescription></CardHeader>
@@ -460,7 +460,7 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  {key:"country",title:"País",value:r=>r.country??"—",filter:true},
  {key:"province",title:"Provincia",value:r=>r.province??"—",filter:true},
  {key:"type",title:"Tipo",value:r=>r.trackType??"—"},
- {key:"length",title:"Longitud km",value:r=>r.lengthKm??"—"},
+ {key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"},
  {key:"segments",title:"Conjuntos",value:r=>r.segmentSets?.length??r.segments??0}
  ]:[
  {key:"name",title:"Módulo",value:r=>r.name,width:30},
