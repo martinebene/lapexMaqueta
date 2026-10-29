@@ -21,6 +21,7 @@ import { initialDatasets, initialResources, initialSessions, emptyDraft, validDr
 import { ShadcnGrid } from "./ShadcnGrid"
 import { ResourceAvatar } from "./ResourceAvatar"
 import { PreferencesPanel, displayMeasure } from "./PreferencesPanel"
+import {circuitDistanceKm,distanceText,rankRecent,useCircuitLocation} from "./listOrdering"
 import { AccountPanel } from "./AccountPanel"
 import type { GridColumn } from "./ShadcnGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -52,8 +53,8 @@ function SessionCardHeading({title,complete}:{title:string;complete:boolean}){
 
 export default function App(){
 const {t}=useTranslation()
-const [view,setView]=useState<View>("home")
-const [mode,setMode]=useState<Mode>("analysis")
+const [view,setView]=useState<View>("start")
+const [mode,setMode]=useState<Mode>("start")
 const [resources,setResources]=useState<Record<ResourceKind,Resource[]>>(initialResources)
 const [datasets,setDatasets]=useState<Dataset[]>(initialDatasets)
 const [sessions,setSessions]=useState<Session[]>(initialSessions)
@@ -94,6 +95,15 @@ const [lap,setLap]=useState("best")
  const [snapshotSelection,setSnapshotSelection]=useState<{kind:SnapshotKind;id:string}|null>(null)
  const historyRef=useRef<{view:View;mode:Mode;kind:ResourceKind;itemId:string|null;datasetId:string;moduleSettings:string|null;docSection:"import"|"records"}[]>([])
 
+const {position:browserPosition,status:geoStatus,request:requestPosition}=useCircuitLocation()
+const nearbyDistance=(track:Resource)=>circuitDistanceKm(track,browserPosition)
+const nearestTracks=[...resources.tracks].sort((a,b)=>(nearbyDistance(a)??Number.MAX_SAFE_INTEGER)-(nearbyDistance(b)??Number.MAX_SAFE_INTEGER)||a.name.localeCompare(b.name,"es"))
+const rankedPilots=rankRecent(resources.pilots,sessions,"pilot")
+const rankedVehicles=rankRecent(resources.vehicles,sessions,"vehicle")
+const geoToolbar=<div className="dg-location-action">
+ {geoStatus!=="ready"&&<Button size="sm" variant="outline" type="button" onClick={requestPosition}>Usar mi ubicación</Button>}
+ <p>{geoStatus==="ready"?"Distancia geográfica aproximada (demo), no recorrido vial.":geoStatus==="loading"?"Consultando ubicación…":geoStatus==="denied"?"Sin permiso de ubicación: distancia no disponible.":"Activá tu ubicación para ordenar por cercanía; es opcional."}</p>
+</div>
 const active=sessions.find(x=>x.id===activeId)??null
  const activeSnapshot=active?(active.snapshot??captureSnapshot(active,initialResources,initialDatasets)):null
 const targetDataset=datasets.find(x=>x.id===datasetId)??null
@@ -331,7 +341,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   onProfile={profileAction}
 />
 <SidebarInset className="workspace">
-<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(historyRef.current.length>0||!["start","home","session","library","datasets"].includes(view))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
+<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(view!=="start"&&(historyRef.current.length>0||!["home","session","library","datasets"].includes(view)))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
 <header className="screen-header"><div><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
 <div className="page-tools">{view==="new"&&<Button variant="outline" onClick={goBack}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={()=>beginResource()}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
 
@@ -346,7 +356,8 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
  {key:"pilot",title:"Piloto",value:s=>itemName(s.pilot,resources.pilots),filter:true},
  {key:"vehicle",title:"Vehículo",value:s=>itemName(s.vehicle,resources.vehicles),filter:true},
  {key:"track",title:"Circuito",value:s=>itemName(s.track,resources.tracks),filter:true},
- {key:"createdAt",title:"Fecha de creación",value:s=>s.createdAt?formatSessionTimestamp(s.createdAt):"Sin fecha"}
+ {key:"createdAt",title:"Fecha de creación",value:s=>s.createdAt?formatSessionTimestamp(s.createdAt):"Sin fecha"},
+ {key:"sizeBytes",title:"Espacio (demo)",value:s=>s.sizeBytes==null?"Sin medición":s.sizeBytes<1024?s.sizeBytes+" B":(s.sizeBytes/1024).toLocaleString("es-AR",{maximumFractionDigits:1})+" KB"}
  ]}
  groups={["pilot","vehicle","track"]}
  advancedFilterColumns={[{key:"objective",title:"Datos objetivos",value:s=>s.targets.length?"Con objetivo":"Sin objetivo"},{key:"moduleCount",title:"Cantidad de módulos",value:s=>String(s.modules.length)}]}/>
@@ -374,14 +385,14 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 <div className="context-list">
  <Card className="session-context-card">
   <CardHeader><SessionCardHeading title={t("create.pilot")} complete={Boolean(draft.pilot)}/></CardHeader>
-  <CardContent><ShadcnGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"pilots")}>Abrir</Button>}/></CardContent>
+  <CardContent><ShadcnGrid label="Pilotos disponibles" rows={rankedPilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"pilots")}>Abrir</Button>}/></CardContent>
  </Card>
  <Card className="session-context-card vehicle-parent-card">
   <CardHeader><SessionCardHeading title={t("create.vehicle")} complete={Boolean(draft.vehicle)}/><CardDescription>Seleccioná un vehículo. El setup es opcional, incluso si existen configuraciones.</CardDescription></CardHeader>
   <CardContent><div className="vehicle-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar vehículo</CardTitle><CardDescription>Filtrá por categoría y tipo de vehículo.</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"vehicles")}>Abrir</Button>}/></CardContent>
+    <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={rankedVehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"vehicles")}>Abrir</Button>}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card vehicle-setups-card">
     <CardHeader><CardTitle>Seleccionar setup del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
@@ -402,7 +413,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   <CardContent><div className="vehicle-card-grid track-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar circuito</CardTitle><CardDescription>Un circuito por sesión</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"tracks")}>Abrir</Button>}/></CardContent>
+    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={nearestTracks} initialSort={{key:"distance"}} toolbarExtra={geoToolbar} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"},{key:"distance",title:"Distancia",value:r=>distanceText(nearbyDistance(r)),sortValue:r=>nearbyDistance(r)??Number.MAX_SAFE_INTEGER}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"tracks")}>Abrir</Button>}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Conjuntos de segmentación</CardTitle><CardDescription>{draft.track?"Opcional: uno o varios conjuntos":"Elegí primero un circuito"}</CardDescription></CardHeader>
