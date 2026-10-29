@@ -18,7 +18,7 @@ test("Imágenes: avatares siempre acotados, variante original de vehículo",asyn
  await sidebar(page).getByRole("button",{name:"Vehículos"}).click()
  await page.locator(".page-tools").getByRole("button",{name:/Nuevo/}).click()
  const avatar=page.locator(".avatar-picker img.resource-avatar")
- await expect(avatar).toHaveAttribute("src",/vehicles\/vehicle-default\.jpg$/)
+ await expect(avatar).toHaveAttribute("src",/vehicles\/vehicle-default-2\.png$/)
  await expect.poll(()=>avatar.evaluate(el=>(el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
  const box=await avatar.boundingBox()
  expect(box&&box.width).toBeTruthy()

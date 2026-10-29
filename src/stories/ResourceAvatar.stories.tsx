@@ -9,6 +9,10 @@ type Story=StoryObj<typeof meta>
 export const PilotoPredeterminado:Story={args:{kind:"pilots",resource:initialResources.pilots[0],size:115}}
 export const CircuitoPredeterminado:Story={args:{kind:"tracks",resource:initialResources.tracks[0],size:115}}
 export const VehiculoPredeterminado:Story={args:{kind:"vehicles",resource:initialResources.vehicles[0],size:115}}
+// Compatibilidad con claves explícitas de imágenes predeterminadas anteriores.
+export const PilotoAnterior:Story={args:{kind:"pilots",resource:{...initialResources.pilots[0],avatar:"pilot-default"},size:115}}
+export const CircuitoAnterior:Story={args:{kind:"tracks",resource:{...initialResources.tracks[0],avatar:"circuit-default"},size:115}}
+export const VehiculoAnterior:Story={args:{kind:"vehicles",resource:{...initialResources.vehicles[0],avatar:"vehicle-default"},size:115}}
 export const PilotoPredisenado:Story={args:{kind:"pilots",resource:{...initialResources.pilots[0],avatar:"pilot-001"},size:115}}
 export const CircuitoPredisenado:Story={args:{kind:"tracks",resource:{...initialResources.tracks[0],avatar:"circuit-011"},size:115}}
 export const VehiculoPredisenado:Story={args:{kind:"vehicles",resource:{...initialResources.vehicles[0],avatar:"touring-017"},size:115}}

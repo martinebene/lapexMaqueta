@@ -23,13 +23,14 @@ export const avatarOptions: Record<AvatarKind, CatalogImage[]> = {
   key: "pilot-" + numbered(index + 1),
   label,
   path: "pilots/pilot-" + numbered(index + 1) + ".jpg",
- })),
+ })).concat([{ key: "pilot-default", label: "Silueta anterior de piloto", path: "pilots/pilot-default.png" }]),
  tracks: [
   { key: "circuit-001", label: "Autódromo tradicional con paddock", path: "circuits/circuit-001.jpg" },
   { key: "circuit-005", label: "Circuito técnico muy trabado", path: "circuits/circuit-005.jpg" },
   { key: "circuit-008", label: "Óvalo de alta velocidad", path: "circuits/circuit-008.jpg" },
   { key: "circuit-011", label: "Circuito callejero costero", path: "circuits/circuit-011.jpg" },
   { key: "circuit-015", label: "Recorrido abierto de montaña", path: "circuits/circuit-015.jpg" },
+  { key: "circuit-default", label: "Silueta anterior de circuito", path: "circuits/circuit-default.png" },
  ],
  vehicles: [
   { key: "touring-001", label: "Turismo Carretera", path: "vehicles/touring/touring-001.jpg" },
@@ -42,14 +43,15 @@ export const avatarOptions: Record<AvatarKind, CatalogImage[]> = {
   { key: "kart-001", label: "Karting", path: "vehicles/kart/kart-001.jpg" },
   { key: "motorcycle-001", label: "Moto de velocidad", path: "vehicles/motorcycle/motorcycle-001.jpg" },
   { key: "rally-001", label: "Rally", path: "vehicles/rally/rally-001.jpg" },
+  { key: "vehicle-default", label: "Silueta anterior de vehículo deportivo", path: "vehicles/vehicle-default.jpg" },
   { key: "vehicle-neutral", label: "Silueta neutra de automóvil", path: "vehicles/vehicle-default.png" },
  ],
 }
 
 const defaults: Record<AvatarKind, CatalogImage> = {
- pilots: { key: "pilot-default", label: "Imagen genérica de piloto", path: "pilots/pilot-default.png" },
- tracks: { key: "circuit-default", label: "Imagen genérica de circuito", path: "circuits/circuit-default.png" },
- vehicles: { key: "vehicle-default", label: "Imagen genérica de vehículo deportivo", path: "vehicles/vehicle-default.jpg" },
+ pilots: { key: "pilot-default-2", label: "Imagen genérica de piloto", path: "pilots/pilot-default-2.png" },
+ tracks: { key: "circuit-default-2", label: "Imagen genérica de circuito", path: "circuits/circuit-default-2.png" },
+ vehicles: { key: "vehicle-default-2", label: "Imagen genérica de vehículo de turismo", path: "vehicles/vehicle-default-2.png" },
 }
 const labels: Record<AvatarKind, string> = { pilots: "piloto", tracks: "circuito", vehicles: "vehículo" }
 function selectedImage(kind: AvatarKind, key?: string): CatalogImage {
