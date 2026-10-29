@@ -22,7 +22,7 @@ export function captureSnapshot(session:Pick<Session,"pilot"|"track"|"vehicle"|"
  const sources=datasets.filter(x=>[...session.targets,...session.references].includes(x.id))
  return {pilot:pilot?clone(pilot):undefined,track:track?clone(track):undefined,vehicle:vehicle?clone(vehicle):undefined,setup:setup?clone(setup):undefined,segmentations:clone(segmentation),sources:clone(sources)}
 }
-export interface Session {snapshot?:SessionSnapshot;id:string;name:string;observations?:string;createdAt?:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds?:string[];targets:string[];references:string[];modules:string[]}
+export interface Session {snapshot?:SessionSnapshot;sizeBytes?:number;id:string;name:string;observations?:string;createdAt?:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds?:string[];targets:string[];references:string[];modules:string[]}
 export interface Draft {name:string;observations:string;pilot:string;track:string;vehicle:string;setup:string;segmentSetIds:string[];targets:string[];references:string[];modules:string[]}
 export const emptyDraft=():Draft=>({name:"",observations:"",pilot:"",track:"",vehicle:"",setup:"",segmentSetIds:[],targets:[],references:[],modules:[]})
 export const initialResources:Record<ResourceKind,Resource[]>={
@@ -57,12 +57,12 @@ export const initialDatasets:Dataset[]=[
  {id:"d6",name:"Referencia · Ensayo previo",date:"2026-10-17",time:"15:18",observation:"Sesión comparativa",track:"",type:"run",device:"AiM MXG",bestLap:"1:25.710",season:"2026",sizeMB:26,channels:15}
 ]
 export const initialSessions:Session[]=[
- {id:"s1",name:"Ensayo de puesta a punto",pilot:"p1",track:"t1",vehicle:"v1",setup:"su1",segmentSetIds:["seg-t1-a"],targets:["d1"],references:["d2"],modules:["best","gforce","sectors"]},
- {id:"s2",name:"Comparativa de configuración",pilot:"p2",track:"t2",vehicle:"v2",setup:"su3",segmentSetIds:["seg-t2-a"],targets:["d5"],references:[],modules:["best","sectors"]},
- {id:"s3",name:"Clasificación · Fecha 5",pilot:"p1",track:"t1",vehicle:"v1",setup:"su2",targets:["d1"],references:[],modules:["best"]},
- {id:"s4",name:"Pruebas de frenada",pilot:"p2",track:"t2",vehicle:"v2",setup:"su4",targets:["d5"],references:[],modules:["gforce"]},
- {id:"s5",name:"Comparación de trazadas",pilot:"p1",track:"t1",vehicle:"v1",setup:"su1",segmentSetIds:["seg-t1-a"],targets:["d1"],references:["d2"],modules:["best","sectors"]},
- {id:"s6",name:"Ensayo de suspensiones",pilot:"p1",track:"t1",vehicle:"v1",setup:"su1",targets:[],references:["d6"],modules:["gforce"]}
+ {id:"s1",sizeBytes:18432,name:"Ensayo de puesta a punto",pilot:"p1",track:"t1",vehicle:"v1",setup:"su1",segmentSetIds:["seg-t1-a"],targets:["d1"],references:["d2"],modules:["best","gforce","sectors"]},
+ {id:"s2",sizeBytes:9216,name:"Comparativa de configuración",pilot:"p2",track:"t2",vehicle:"v2",setup:"su3",segmentSetIds:["seg-t2-a"],targets:["d5"],references:[],modules:["best","sectors"]},
+ {id:"s3",sizeBytes:31744,name:"Clasificación · Fecha 5",pilot:"p1",track:"t1",vehicle:"v1",setup:"su2",targets:["d1"],references:[],modules:["best"]},
+ {id:"s4",sizeBytes:12288,name:"Pruebas de frenada",pilot:"p2",track:"t2",vehicle:"v2",setup:"su4",targets:["d5"],references:[],modules:["gforce"]},
+ {id:"s5",sizeBytes:24576,name:"Comparación de trazadas",pilot:"p1",track:"t1",vehicle:"v1",setup:"su1",segmentSetIds:["seg-t1-a"],targets:["d1"],references:["d2"],modules:["best","sectors"]},
+ {id:"s6",sizeBytes:15360,name:"Ensayo de suspensiones",pilot:"p1",track:"t1",vehicle:"v1",setup:"su1",targets:[],references:["d6"],modules:["gforce"]}
 ]
 export function moduleMissing(module:Resource,d:Draft,datasets:Dataset[]){
  const used=datasets.filter(x=>[...d.targets,...d.references].includes(x.id))
