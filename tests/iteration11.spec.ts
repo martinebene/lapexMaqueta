@@ -35,9 +35,7 @@ test("Biblioteca: filtros avanzados sólo útiles, circuito y fecha exacta",asyn
  await sidebar(page).getByRole("button",{name:"Biblioteca de datos"}).click()
  await expect(page.getByRole("button",{name:"Filtros avanzados"})).toBeVisible()
  await page.getByRole("button",{name:"Filtros avanzados"}).click()
- const grid=page.getByRole("region",{name:"Biblioteca de datos"})
  await expect(page.getByRole("combobox",{name:"Filtrar Circuito"})).toBeVisible()
- const date=page.getByRole("textbox",{name:"Filtrar Fecha"})
  // input type=date usa el selector de calendario nativo del navegador
  await expect(page.getByLabel("Filtrar Fecha")).toHaveAttribute("type","date")
  await page.getByLabel("Filtrar Fecha").fill("2026-10-19")
@@ -45,7 +43,6 @@ test("Biblioteca: filtros avanzados sólo útiles, circuito y fecha exacta",asyn
  await expect(page.getByRole("region",{name:"Registros de Biblioteca de datos"})).not.toContainText("Cronometraje · Fecha 5")
  for(const label of ["Filtrar Nombre","Filtrar ID","Filtrar Hora","Filtrar Observaciones"])await expect(page.getByLabel(label,{exact:true})).toHaveCount(0)
  await expect(page.getByRole("columnheader",{name:/Espacio \(demo\)/})).toBeVisible()
- void grid;void date
 })
 
 test("Recursos: vehículos y circuitos filtran y agrupan por sus categorías",async({page})=>{
