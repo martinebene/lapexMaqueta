@@ -527,15 +527,16 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 </div>
 <Card><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>Filtros avanzados y agrupaciones; las observaciones se editan dentro de cada registro.</CardDescription></CardHeader><CardContent>
 <ShadcnGrid label="Biblioteca de datos" rows={datasets} columns={[
- {key:"name",title:"Nombre",value:d=>d.name,filter:true},
- {key:"id",title:"ID",value:d=>d.id,filter:true},
+ {key:"name",title:"Nombre",value:d=>d.name},
+ {key:"id",title:"ID",value:d=>d.id},
  {key:"date",title:"Fecha",value:d=>d.date,filter:true},
- {key:"time",title:"Hora",value:d=>d.time,filter:true},
+ {key:"time",title:"Hora",value:d=>d.time},
  {key:"track",title:"Circuito",value:d=>itemName(d.track,resources.tracks),filter:true},
  {key:"type",title:"Tipo de origen",value:d=>t("source."+d.type),filter:true},
- {key:"observation",title:"Observaciones",value:d=>d.observation,filter:true}
- ]} groups={["track","type"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}
- actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/></Button><Button size="sm" variant="ghost" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={14}/></Button></>}/>
+ {key:"observation",title:"Observaciones",value:d=>d.observation},
+ {key:"size",title:"Espacio (demo)",value:d=>d.sizeMB==null?"Sin medición":d.sizeMB.toLocaleString("es-AR")+" MB"}
+ ]} advancedFilterKeys={["track","date"]} groups={["track","type"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}
+ actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" className="dg-icon-button" title="Compartir" aria-label={"Compartir "+d.name} onClick={()=>show(t("data.shareDemo"))}><Share2 size={15}/></Button><Button size="sm" variant="outline" className="dg-icon-button" title="Eliminar" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={15}/></Button></>}/>
 </CardContent></Card></div>}
 
 {view==="dataDetail"&&targetDataset&&<div className="data-detail-stack">
