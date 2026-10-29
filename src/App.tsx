@@ -460,13 +460,14 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 
 
 {view==="library"&&<div className="resources-page"><Card>
-<CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{t("library.subtitle")}</CardDescription></CardHeader>
-<CardContent><ShadcnGrid label={t("nav."+kind)} rows={resources[kind]}
+<CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{kind==="pilots"||kind==="vehicles"?"Orden inicial demostrativo según usos recientes en sesiones de ejemplo.":t("library.subtitle")}</CardDescription></CardHeader>
+<CardContent><ShadcnGrid label={t("nav."+kind)} rows={kind==="pilots"?rankedPilots:kind==="vehicles"?rankedVehicles:kind==="tracks"?nearestTracks:resources[kind]} initialSort={kind==="tracks"?{key:"distance"}:undefined} toolbarExtra={kind==="tracks"?geoToolbar:undefined}
  columns={kind==="pilots"?[
  {key:"name",title:"Nombre",value:r=>r.name},
  {key:"number",title:"Número",value:r=>r.number??"—"}
  ]:kind==="vehicles"?[
  {key:"name",title:"Nombre",value:r=>r.name},
+ {key:"vehicleType",title:"Tipo de vehículo",value:r=>r.vehicleType??"—",filter:true},
  {key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},
  {key:"brand",title:"Marca y modelo",value:r=>(r.manufacturer??"")+" "+(r.model??"")},
  {key:"setups",title:"Setups",value:r=>r.setups?.length??0}
@@ -474,25 +475,26 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  {key:"name",title:"Nombre",value:r=>r.name},
  {key:"country",title:"País",value:r=>r.country??"—",filter:true},
  {key:"province",title:"Provincia",value:r=>r.province??"—",filter:true},
- {key:"type",title:"Tipo",value:r=>r.trackType??"—"},
+ {key:"type",title:"Tipo",value:r=>r.trackType??"—",filter:true},
  {key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"},
- {key:"segments",title:"Conjuntos",value:r=>r.segmentSets?.length??r.segments??0}
+ {key:"segments",title:"Conjuntos",value:r=>r.segmentSets?.length??r.segments??0},
+ {key:"distance",title:"Distancia",value:r=>distanceText(nearbyDistance(r)),sortValue:r=>nearbyDistance(r)??Number.MAX_SAFE_INTEGER}
  ]:[
  {key:"name",title:"Módulo",value:r=>r.name,width:30},
  {key:"enabled",title:"Estado",value:r=>r.enabled!==false?"Activado":"Desactivado",status:r=>r.enabled!==false?"success":"error",width:12},
  {key:"needs",title:"Dependencias",value:r=>r.requirements?.length??0,width:16}
  ]}
  searchable={kind!=="modules"} compact={kind==="modules"}
- groups={kind==="tracks"?["country","province"]:[]}
+ groups={kind==="tracks"?["country","province","type"]:kind==="vehicles"?["vehicleType","category"]:[]}
  detail={resourceInfo}
  leadingControl={kind==="modules"?(r=><Switch aria-label={"Habilitar módulo "+r.name} checked={r.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===r.id?{...x,enabled:checked}:x)}))}/>):undefined}
  actions={r=>kind==="modules"?<>
-  <Button size="sm" variant="outline" aria-label={"Configurar "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleConfig","resources")}}><Settings2 size={14}/>Configurar</Button>
-  <Button size="sm" variant="outline" aria-label={"Documentación de "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources")}}><BookOpen size={14}/>Documentación</Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Configurar" aria-label={"Configurar "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleConfig","resources")}}><Settings2 size={15}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Documentación" aria-label={"Documentación de "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources")}}><BookOpen size={15}/></Button>
  </>:<>
-  <Button size="sm" variant="outline" onClick={()=>beginResource(r.id)}><Pencil size={14}/>Editar</Button>
-  <Button size="sm" variant="outline" aria-label={"Compartir "+r.name} onClick={()=>show("Compartir "+r.name+": disponible próximamente (maqueta).")}><Share2 size={14}/>Compartir</Button>
-  <Button size="sm" variant="ghost" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={14}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Editar" aria-label={"Editar "+r.name} onClick={()=>beginResource(r.id)}><Pencil size={15}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Compartir" aria-label={"Compartir "+r.name} onClick={()=>show("Compartir "+r.name+": disponible próximamente (maqueta).")}><Share2 size={15}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Eliminar" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={15}/></Button>
  </>}/>
 </CardContent></Card></div>}
 
