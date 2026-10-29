@@ -15,6 +15,7 @@ export interface GridColumn<T> {
   value: (record: T) => string | number
   render?: (record: T) => ReactNode
   filter?: boolean
+  sortValue?: (record: T) => number
   width?: number
   /** Estilo semántico para estados de las celdas, no modifica el filtro. */
   status?: (record: T) => "success" | "error" | undefined
@@ -39,6 +40,9 @@ interface Props<T extends { id: string }> {
   /** Control principal independiente del selector; aparece junto al detalle. */
   leadingControl?: (record: T) => ReactNode
   advancedFilterColumns?: GridGrouping<T>[]
+  advancedFilterKeys?: string[]
+  initialSort?: {key:string;desc?:boolean}
+  toolbarExtra?: ReactNode
   emptyMessage?: string
   /** Permite igualar altura entre tablas vecinas (vehículo/setup). */
   tableHeight?: string
@@ -96,7 +100,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       id: col.key,
       accessorFn: (record: T) => {
         const current = latest.current.columns.find(c => c.key === col.key)
-        return current ? normalizedGroupValue(current.value(record), col.key, col.title) : ""
+        return current ? (current.sortValue ? current.sortValue(record) : normalizedGroupValue(current.value(record), col.key, col.title)) : ""
       },
       header: col.title,
       Cell: ({ row }) => {
@@ -144,7 +148,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
       enableGrouping: false,
       enableColumnFilter: false,
       Cell: ({ row }) => <div className="dg-actions">{latest.current.actions?.(row.original)}</div>,
-      size: props.compact ? 226 : 138,
+      size: props.compact ? 100 : 125,
     })
     return fields
     // Structural signature intentionally captures definition changes, not render functions.
@@ -194,6 +198,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     stTableContainerProps: { className: "overflow-visible" },
     initialState: {
       density: "compact",
+      sorting: props.initialSort ? [{id:props.initialSort.key,desc:Boolean(props.initialSort.desc)}] : [],
       showGlobalFilter: false,
       showColumnFilters: false,
       columnVisibility: Object.fromEntries([...groupers, ...extraCols].map(g => [g.key, false])),
@@ -232,7 +237,7 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
     }),
     stTableHeadCellProps: ({ column }) => ({
       "data-column-id": column.id,
-      align: ["st-row-select","st-row-expand","lapex-leading-control"].includes(column.id) ? "center" as const : "left" as const,
+      align: "center" as const,
     }),
     stTableBodyRowProps: ({ row, isDetailPanel }) => ({
       className: isDetailPanel ? "dg-expanded" : row.getIsGrouped() ? "dg-record dg-group-record" :
@@ -280,12 +285,14 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
   }, [group])
 
   const filterCols = columns.filter(col => col.filter)
+  const advancedKeys = new Set(props.advancedFilterKeys ?? [])
+  const primaryCols = filterCols.filter(col => !advancedKeys.has(col.key))
   const priority = ["track", "type", "category", "vehicleType", "date"]
-  const defaultFilterKeys = filterCols.length <= 3
-    ? filterCols.map(col => col.key)
+  const defaultFilterKeys = primaryCols.length <= 3
+    ? primaryCols.map(col => col.key)
     : [
-        ...filterCols.filter(col => priority.includes(col.key)).sort((a,b) => priority.indexOf(a.key)-priority.indexOf(b.key)),
-        ...filterCols.filter(col => !priority.includes(col.key)),
+        ...primaryCols.filter(col => priority.includes(col.key)).sort((a,b) => priority.indexOf(a.key)-priority.indexOf(b.key)),
+        ...primaryCols.filter(col => !priority.includes(col.key)),
       ].slice(0,3).map(col => col.key)
   const baseFilterCols = filterCols.filter(col => defaultFilterKeys.includes(col.key))
   const hiddenFilterCols = filterCols.filter(col => !defaultFilterKeys.includes(col.key))
@@ -302,7 +309,10 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
   const filterSelect = (col: {key:string;title:string;value:(r:T)=>string|number}) => (
     <label key={col.key} className="dg-filter">
       <span>{col.title}</span>
-      <select
+      {col.key === "date" ? <input type="date" aria-label={"Filtrar " + col.title}
+        value={filters[col.key]??""}
+        onChange={event=>{const value=event.target.value;setFilters(old=>({...old,[col.key]:value}));table.getColumn(col.key)?.setFilterValue(value||undefined)}}
+      /> : <select
         aria-label={"Filtrar " + col.title}
         value={filters[col.key] ?? ""}
         onChange={event => {
@@ -315,13 +325,14 @@ export function ShadcnGrid<T extends { id: string }>(props: Props<T>) {
         {[...new Set(rows.map(row => normalizedGroupValue(col.value(row), col.key, col.title)))]
           .sort((a,b)=>a.localeCompare(b,"es",{numeric:true})).map(value =>
             <option key={value} value={value}>{value}</option>)}
-      </select>
+      </select>}
     </label>
   )
 
   return (
     <section className={"dg shadcn-grid"+(props.compact?" shadcn-grid--compact":"")} aria-label={label}
       style={props.tableHeight ? { "--dg-table-height": props.tableHeight } as CSSProperties : undefined}>
+      {props.toolbarExtra}
       {(searchable || allFilters.length > 0 || availableGroupings.length > 0) && (
         <div className="dg-toolbar">
           <div className="dg-search-row">

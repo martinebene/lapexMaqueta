@@ -21,6 +21,7 @@ import { initialDatasets, initialResources, initialSessions, emptyDraft, validDr
 import { ShadcnGrid } from "./ShadcnGrid"
 import { ResourceAvatar } from "./ResourceAvatar"
 import { PreferencesPanel, displayMeasure } from "./PreferencesPanel"
+import {circuitDistanceKm,distanceText,rankRecent,useCircuitLocation} from "./listOrdering"
 import { AccountPanel } from "./AccountPanel"
 import type { GridColumn } from "./ShadcnGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -52,8 +53,8 @@ function SessionCardHeading({title,complete}:{title:string;complete:boolean}){
 
 export default function App(){
 const {t}=useTranslation()
-const [view,setView]=useState<View>("home")
-const [mode,setMode]=useState<Mode>("analysis")
+const [view,setView]=useState<View>("start")
+const [mode,setMode]=useState<Mode>("start")
 const [resources,setResources]=useState<Record<ResourceKind,Resource[]>>(initialResources)
 const [datasets,setDatasets]=useState<Dataset[]>(initialDatasets)
 const [sessions,setSessions]=useState<Session[]>(initialSessions)
@@ -94,6 +95,15 @@ const [lap,setLap]=useState("best")
  const [snapshotSelection,setSnapshotSelection]=useState<{kind:SnapshotKind;id:string}|null>(null)
  const historyRef=useRef<{view:View;mode:Mode;kind:ResourceKind;itemId:string|null;datasetId:string;moduleSettings:string|null;docSection:"import"|"records"}[]>([])
 
+const {position:browserPosition,status:geoStatus,request:requestPosition}=useCircuitLocation()
+const nearbyDistance=(track:Resource)=>circuitDistanceKm(track,browserPosition)
+const nearestTracks=[...resources.tracks].sort((a,b)=>(nearbyDistance(a)??Number.MAX_SAFE_INTEGER)-(nearbyDistance(b)??Number.MAX_SAFE_INTEGER)||a.name.localeCompare(b.name,"es"))
+const rankedPilots=rankRecent(resources.pilots,sessions,"pilot")
+const rankedVehicles=rankRecent(resources.vehicles,sessions,"vehicle")
+const geoToolbar=<div className="dg-location-action">
+ {geoStatus!=="ready"&&<Button size="sm" variant="outline" type="button" onClick={requestPosition}>Usar mi ubicación</Button>}
+ <p>{geoStatus==="ready"?"Distancia geográfica aproximada (demo), no recorrido vial.":geoStatus==="loading"?"Consultando ubicación…":geoStatus==="denied"?"Sin permiso de ubicación: distancia no disponible.":"Activá tu ubicación para ordenar por cercanía; es opcional."}</p>
+</div>
 const active=sessions.find(x=>x.id===activeId)??null
  const activeSnapshot=active?(active.snapshot??captureSnapshot(active,initialResources,initialDatasets)):null
 const targetDataset=datasets.find(x=>x.id===datasetId)??null
@@ -331,7 +341,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   onProfile={profileAction}
 />
 <SidebarInset className="workspace">
-<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(historyRef.current.length>0||!["start","home","session","library","datasets"].includes(view))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
+<div className="sidebar07-breadcrumb-bar"><SidebarTrigger aria-label="Alternar barra lateral"/><span className="sidebar07-breadcrumb-divider" aria-hidden="true"/>{(view!=="start"&&(historyRef.current.length>0||!["home","session","library","datasets"].includes(view)))&&<Button className="breadcrumb-back" type="button" variant="ghost" size="sm" onClick={goBack}><ArrowLeft size={15}/>Volver</Button>}<nav className="breadcrumbs" aria-label="Breadcrumb">{crumbs().map((c,i)=><span key={i}>{i>0&&<span className="crumb-sep">/</span>}{c.onClick?<button onClick={c.onClick}>{c.label}</button>:<span aria-current="page">{c.label}</span>}</span>)}</nav></div>
 <header className="screen-header"><div><h1>{pageTitle()}</h1>{pageSubtitle()&&<p>{pageSubtitle()}</p>}</div>
 <div className="page-tools">{view==="new"&&<Button variant="outline" onClick={goBack}>{t("common.cancel")}</Button>}{view==="library"&&kind!=="modules"&&<Button onClick={()=>beginResource()}><Plus size={15}/>{t("common.new")}</Button>}{view==="datasets"&&<Button onClick={()=>{setImportStep(1);navigate("import","data")}}><Upload size={16}/>{t("nav.import")}</Button>}</div></header>
 
@@ -346,7 +356,8 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
  {key:"pilot",title:"Piloto",value:s=>itemName(s.pilot,resources.pilots),filter:true},
  {key:"vehicle",title:"Vehículo",value:s=>itemName(s.vehicle,resources.vehicles),filter:true},
  {key:"track",title:"Circuito",value:s=>itemName(s.track,resources.tracks),filter:true},
- {key:"createdAt",title:"Fecha de creación",value:s=>s.createdAt?formatSessionTimestamp(s.createdAt):"Sin fecha"}
+ {key:"createdAt",title:"Fecha de creación",value:s=>s.createdAt?formatSessionTimestamp(s.createdAt):"Sin fecha"},
+ {key:"sizeBytes",title:"Espacio (demo)",value:s=>s.sizeBytes==null?"Sin medición":s.sizeBytes<1024?s.sizeBytes+" B":(s.sizeBytes/1024).toLocaleString("es-AR",{maximumFractionDigits:1})+" KB"}
  ]}
  groups={["pilot","vehicle","track"]}
  advancedFilterColumns={[{key:"objective",title:"Datos objetivos",value:s=>s.targets.length?"Con objetivo":"Sin objetivo"},{key:"moduleCount",title:"Cantidad de módulos",value:s=>String(s.modules.length)}]}/>
@@ -374,14 +385,14 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
 <div className="context-list">
  <Card className="session-context-card">
   <CardHeader><SessionCardHeading title={t("create.pilot")} complete={Boolean(draft.pilot)}/></CardHeader>
-  <CardContent><ShadcnGrid label="Pilotos disponibles" rows={resources.pilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"pilots")}>Abrir</Button>}/></CardContent>
+  <CardContent><ShadcnGrid label="Pilotos disponibles" rows={rankedPilots} selection="single" selected={draft.pilot} onSelect={id=>setSingle("pilot",id)} columns={[{key:"name",title:"Nombre",value:r=>r.name},{key:"number",title:"Número",value:r=>r.number??"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"pilots")}>Abrir</Button>}/></CardContent>
  </Card>
  <Card className="session-context-card vehicle-parent-card">
   <CardHeader><SessionCardHeading title={t("create.vehicle")} complete={Boolean(draft.vehicle)}/><CardDescription>Seleccioná un vehículo. El setup es opcional, incluso si existen configuraciones.</CardDescription></CardHeader>
   <CardContent><div className="vehicle-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar vehículo</CardTitle><CardDescription>Filtrá por categoría y tipo de vehículo.</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={resources.vehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"vehicles")}>Abrir</Button>}/></CardContent>
+    <CardContent><ShadcnGrid label="Vehículos disponibles" tableHeight="264px" rows={rankedVehicles} selection="single" selected={draft.vehicle} onSelect={id=>setSingle("vehicle",id)} columns={[{key:"name",title:"Vehículo",value:r=>r.name},{key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},{key:"vehicleType",title:"Tipo",value:r=>r.vehicleType??"—",filter:true}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"vehicles")}>Abrir</Button>}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card vehicle-setups-card">
     <CardHeader><CardTitle>Seleccionar setup del vehículo</CardTitle><CardDescription>{draft.vehicle?"Configuraciones disponibles para "+itemName(draft.vehicle,resources.vehicles):"Elegí primero un vehículo."}</CardDescription></CardHeader>
@@ -402,7 +413,7 @@ return <SidebarProvider className="lapex-app style-nova sidebar07-layout" defaul
   <CardContent><div className="vehicle-card-grid track-card-grid">
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Seleccionar circuito</CardTitle><CardDescription>Un circuito por sesión</CardDescription></CardHeader>
-    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={resources.tracks} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"tracks")}>Abrir</Button>}/></CardContent>
+    <CardContent><ShadcnGrid label="Circuitos disponibles" tableHeight="264px" rows={nearestTracks} initialSort={{key:"distance"}} toolbarExtra={geoToolbar} selection="single" selected={draft.track} onSelect={id=>setSingle("track",id)} columns={[{key:"name",title:"Circuito",value:r=>r.name},{key:"type",title:"Trazado",value:r=>r.trackType??"—",filter:true},{key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"},{key:"distance",title:"Distancia",value:r=>distanceText(nearbyDistance(r)),sortValue:r=>nearbyDistance(r)??Number.MAX_SAFE_INTEGER}]} actions={r=><Button size="sm" variant="outline" onClick={()=>beginResource(r.id,"tracks")}>Abrir</Button>}/></CardContent>
    </Card>
    <Card className="vehicle-inner-card">
     <CardHeader><CardTitle>Conjuntos de segmentación</CardTitle><CardDescription>{draft.track?"Opcional: uno o varios conjuntos":"Elegí primero un circuito"}</CardDescription></CardHeader>
@@ -449,13 +460,14 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 
 
 {view==="library"&&<div className="resources-page"><Card>
-<CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{t("library.subtitle")}</CardDescription></CardHeader>
-<CardContent><ShadcnGrid label={t("nav."+kind)} rows={resources[kind]}
+<CardHeader><CardTitle>{t("nav."+kind)}</CardTitle><CardDescription>{kind==="pilots"||kind==="vehicles"?"Orden inicial demostrativo según usos recientes en sesiones de ejemplo.":t("library.subtitle")}</CardDescription></CardHeader>
+<CardContent><ShadcnGrid label={t("nav."+kind)} rows={kind==="pilots"?rankedPilots:kind==="vehicles"?rankedVehicles:kind==="tracks"?nearestTracks:resources[kind]} initialSort={kind==="tracks"?{key:"distance"}:undefined} toolbarExtra={kind==="tracks"?geoToolbar:undefined}
  columns={kind==="pilots"?[
  {key:"name",title:"Nombre",value:r=>r.name},
  {key:"number",title:"Número",value:r=>r.number??"—"}
  ]:kind==="vehicles"?[
  {key:"name",title:"Nombre",value:r=>r.name},
+ {key:"vehicleType",title:"Tipo de vehículo",value:r=>r.vehicleType??"—",filter:true},
  {key:"category",title:"Categoría",value:r=>r.category??"—",filter:true},
  {key:"brand",title:"Marca y modelo",value:r=>(r.manufacturer??"")+" "+(r.model??"")},
  {key:"setups",title:"Setups",value:r=>r.setups?.length??0}
@@ -463,25 +475,26 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
  {key:"name",title:"Nombre",value:r=>r.name},
  {key:"country",title:"País",value:r=>r.country??"—",filter:true},
  {key:"province",title:"Provincia",value:r=>r.province??"—",filter:true},
- {key:"type",title:"Tipo",value:r=>r.trackType??"—"},
+ {key:"type",title:"Tipo",value:r=>r.trackType??"—",filter:true},
  {key:"length",title:"Longitud",value:r=>r.lengthKm!=null?displayMeasure(r.lengthKm,"distance"):"—"},
- {key:"segments",title:"Conjuntos",value:r=>r.segmentSets?.length??r.segments??0}
+ {key:"segments",title:"Conjuntos",value:r=>r.segmentSets?.length??r.segments??0},
+ {key:"distance",title:"Distancia",value:r=>distanceText(nearbyDistance(r)),sortValue:r=>nearbyDistance(r)??Number.MAX_SAFE_INTEGER}
  ]:[
  {key:"name",title:"Módulo",value:r=>r.name,width:30},
  {key:"enabled",title:"Estado",value:r=>r.enabled!==false?"Activado":"Desactivado",status:r=>r.enabled!==false?"success":"error",width:12},
  {key:"needs",title:"Dependencias",value:r=>r.requirements?.length??0,width:16}
  ]}
  searchable={kind!=="modules"} compact={kind==="modules"}
- groups={kind==="tracks"?["country","province"]:[]}
+ groups={kind==="tracks"?["country","province","type"]:kind==="vehicles"?["vehicleType","category"]:[]}
  detail={resourceInfo}
  leadingControl={kind==="modules"?(r=><Switch aria-label={"Habilitar módulo "+r.name} checked={r.enabled!==false} onCheckedChange={checked=>setResources(old=>({...old,modules:old.modules.map(x=>x.id===r.id?{...x,enabled:checked}:x)}))}/>):undefined}
  actions={r=>kind==="modules"?<>
-  <Button size="sm" variant="outline" aria-label={"Configurar "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleConfig","resources")}}><Settings2 size={14}/>Configurar</Button>
-  <Button size="sm" variant="outline" aria-label={"Documentación de "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources")}}><BookOpen size={14}/>Documentación</Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Configurar" aria-label={"Configurar "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleConfig","resources")}}><Settings2 size={15}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Documentación" aria-label={"Documentación de "+r.name} onClick={()=>{setModuleSettings(r.id);navigate("moduleDoc","resources")}}><BookOpen size={15}/></Button>
  </>:<>
-  <Button size="sm" variant="outline" onClick={()=>beginResource(r.id)}><Pencil size={14}/>Editar</Button>
-  <Button size="sm" variant="outline" aria-label={"Compartir "+r.name} onClick={()=>show("Compartir "+r.name+": disponible próximamente (maqueta).")}><Share2 size={14}/>Compartir</Button>
-  <Button size="sm" variant="ghost" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={14}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Editar" aria-label={"Editar "+r.name} onClick={()=>beginResource(r.id)}><Pencil size={15}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Compartir" aria-label={"Compartir "+r.name} onClick={()=>show("Compartir "+r.name+": disponible próximamente (maqueta).")}><Share2 size={15}/></Button>
+  <Button size="sm" variant="outline" className="dg-icon-button" title="Eliminar" aria-label={"Eliminar "+r.name} onClick={()=>deleteResource(r.id)}><Trash2 size={15}/></Button>
  </>}/>
 </CardContent></Card></div>}
 
@@ -514,15 +527,16 @@ moduleId==="gforce"?<svg className="module-graph" viewBox="0 0 550 180" role="im
 </div>
 <Card><CardHeader><CardTitle>{t("nav.library")}</CardTitle><CardDescription>Filtros avanzados y agrupaciones; las observaciones se editan dentro de cada registro.</CardDescription></CardHeader><CardContent>
 <ShadcnGrid label="Biblioteca de datos" rows={datasets} columns={[
- {key:"name",title:"Nombre",value:d=>d.name,filter:true},
- {key:"id",title:"ID",value:d=>d.id,filter:true},
+ {key:"name",title:"Nombre",value:d=>d.name},
+ {key:"id",title:"ID",value:d=>d.id},
  {key:"date",title:"Fecha",value:d=>d.date,filter:true},
- {key:"time",title:"Hora",value:d=>d.time,filter:true},
+ {key:"time",title:"Hora",value:d=>d.time},
  {key:"track",title:"Circuito",value:d=>itemName(d.track,resources.tracks),filter:true},
  {key:"type",title:"Tipo de origen",value:d=>t("source."+d.type),filter:true},
- {key:"observation",title:"Observaciones",value:d=>d.observation,filter:true}
- ]} groups={["track","type"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}
- actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" onClick={()=>show(t("data.shareDemo"))}><Share2 size={14}/></Button><Button size="sm" variant="ghost" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={14}/></Button></>}/>
+ {key:"observation",title:"Observaciones",value:d=>d.observation},
+ {key:"size",title:"Espacio (demo)",value:d=>d.sizeMB==null?"Sin medición":d.sizeMB.toLocaleString("es-AR")+" MB"}
+ ]} advancedFilterKeys={["track","date"]} groups={["track","type"]} groupers={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} advancedFilterColumns={[{key:"month",title:"Mes",value:d=>d.date?.slice(0,7)??""},{key:"season",title:"Temporada",value:d=>d.season??""},{key:"category",title:"Categoría",value:d=>d.category??""}]} detail={detailDataset}
+ actions={d=><><Button size="sm" variant="outline" onClick={()=>{setDatasetId(d.id);navigate("dataDetail")}}>Abrir</Button><Button size="sm" variant="outline" className="dg-icon-button" title="Compartir" aria-label={"Compartir "+d.name} onClick={()=>show(t("data.shareDemo"))}><Share2 size={15}/></Button><Button size="sm" variant="outline" className="dg-icon-button" title="Eliminar" aria-label={"Eliminar "+d.name} onClick={()=>removeDataset(d.id)}><Trash2 size={15}/></Button></>}/>
 </CardContent></Card></div>}
 
 {view==="dataDetail"&&targetDataset&&<div className="data-detail-stack">

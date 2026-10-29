@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { ShadcnGrid } from "@/ShadcnGrid"
 
-type DemoRecord = { id: string; name: string; track: string; category: string; status: string; available: boolean }
+type DemoRecord = { id: string; name: string; track: string; category: string; status: string; date?:string; available: boolean }
 const records: DemoRecord[] = [
-  { id:"d1",name:"Rodaje · Tanda 02",track:"Circuito Delta",category:"Turismo",status:"Cumplidos",available:true },
+  { id:"d1",name:"Rodaje · Tanda 02",track:"Circuito Delta",category:"Turismo",status:"Cumplidos",date:"2026-10-19",available:true },
   { id:"d2",name:"Rodaje · Referencia 01",track:"Circuito Delta",category:"Turismo",status:"Cumplidos",available:true },
-  { id:"d3",name:"Ensayo previo",track:"",category:"Karting",status:"Incumplidos",available:false },
+  { id:"d3",name:"Ensayo previo",track:"",category:"Karting",status:"Incumplidos",date:"2026-10-18",available:false },
 ]
 const columns = [
   { key:"name",title:"Nombre",value:(r:DemoRecord)=>r.name,filter:true },
@@ -51,6 +51,14 @@ export const Deshabilitada: Story = {
   args: { selection:"single",disabled:(r:DemoRecord)=>!r.available,selected:"d1" },
 }
 
+export const FechaExactaYFiltrosAvanzados: Story = {
+ args:{
+  columns:[...columns,{key:"date",title:"Fecha",value:(r:DemoRecord)=>r.date??"—",filter:true}],
+  advancedFilterKeys:["track","date"],
+  groups:["track"],
+  initialSort:{key:"name"},
+ },
+}
 export const ConSwitchDeActivacion: Story = {
   render: () => <ShadcnGrid label="Módulos y estados" rows={records}
     columns={columns}

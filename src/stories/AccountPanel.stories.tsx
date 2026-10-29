@@ -6,3 +6,5 @@ export default meta
 type Story=StoryObj<typeof meta>
 export const Free:Story={}
 export const Pro:Story={args:{plan:"Pro"}}
+
+export const PerfilYNotificaciones:Story={parameters:{docs:{description:{story:"Perfil personal editable y controles de notificaciones; datos de demostración locales sin servicios reales."}}}}
