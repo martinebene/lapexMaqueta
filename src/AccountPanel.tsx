@@ -1,4 +1,4 @@
-import {useState} from "react"
+import {useEffect,useState} from "react"
 import {UserRound,ShieldCheck,CreditCard,KeyRound,ChartNoAxesColumnIncreasing,Download,Trash2,Lock,CheckCircle2,Bell} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Card,CardHeader,CardTitle,CardDescription,CardContent} from "@/components/ui/card"
@@ -16,9 +16,12 @@ export function AccountPanel({plan,datasets,sessions,storageUsed,storageTotal,on
  const [phone,setPhone]=useState("")
  const [address,setAddress]=useState("")
  const [billingAddress,setBillingAddress]=useState("")
- const [notifications,setNotifications]=useState<Record<string,boolean>>({
-  updates:true,promotions:false,billing:true,shared:true,imports:false
+ const [notifications,setNotifications]=useState<Record<string,boolean>>(()=>{
+  const defaults={updates:true,promotions:false,billing:true,shared:true,imports:false}
+  try {return {...defaults,...JSON.parse(localStorage.getItem("lapex-demo-notifications")||"{}")}}
+  catch{return defaults}
  })
+ useEffect(()=>{localStorage.setItem("lapex-demo-notifications",JSON.stringify(notifications))},[notifications])
  const [editing,setEditing]=useState(false)
  const mfa=false
  function demo(what:string){setMessage(what+" es una función demostrativa; no se realizó ninguna operación en una cuenta real.")}
