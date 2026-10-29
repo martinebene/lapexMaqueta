@@ -42,13 +42,14 @@ export const avatarOptions: Record<AvatarKind, CatalogImage[]> = {
   { key: "kart-001", label: "Karting", path: "vehicles/kart/kart-001.jpg" },
   { key: "motorcycle-001", label: "Moto de velocidad", path: "vehicles/motorcycle/motorcycle-001.jpg" },
   { key: "rally-001", label: "Rally", path: "vehicles/rally/rally-001.jpg" },
+  { key: "vehicle-neutral", label: "Silueta neutra de automóvil", path: "vehicles/vehicle-default.png" },
  ],
 }
 
 const defaults: Record<AvatarKind, CatalogImage> = {
  pilots: { key: "pilot-default", label: "Imagen genérica de piloto", path: "pilots/pilot-default.png" },
  tracks: { key: "circuit-default", label: "Imagen genérica de circuito", path: "circuits/circuit-default.png" },
- vehicles: { key: "vehicle-default", label: "Imagen genérica de vehículo", path: "vehicles/vehicle-default.png" },
+ vehicles: { key: "vehicle-default", label: "Imagen genérica de vehículo deportivo", path: "vehicles/vehicle-default.jpg" },
 }
 const labels: Record<AvatarKind, string> = { pilots: "piloto", tracks: "circuito", vehicles: "vehículo" }
 function selectedImage(kind: AvatarKind, key?: string): CatalogImage {
@@ -62,7 +63,7 @@ export function ResourceAvatar({ kind, resource, size = 76 }: { kind: ResourceKi
  const src = resource?.photo || assetUrl(entry.path)
  const description = resource?.photo ? "Imagen propia" : entry.label
  return <img className="resource-avatar" src={src} alt={description + (resource?.name ? " · " + resource.name : "")}
-  width={size} height={size} loading="lazy" onError={(event) => {
+  width={size} height={size} style={{width:size,height:size,minWidth:size,minHeight:size,maxWidth:"none",objectFit:"contain"}} loading="lazy" onError={(event) => {
    if (event.currentTarget.src !== new URL(fallback, document.baseURI).href) event.currentTarget.src = fallback
   }} />
 }
