@@ -1,9 +1,10 @@
 import {useState} from "react"
-import {UserRound,ShieldCheck,CreditCard,KeyRound,ChartNoAxesColumnIncreasing,Download,Trash2,Lock,CheckCircle2} from "lucide-react"
+import {UserRound,ShieldCheck,CreditCard,KeyRound,ChartNoAxesColumnIncreasing,Download,Trash2,Lock,CheckCircle2,Bell} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Card,CardHeader,CardTitle,CardDescription,CardContent} from "@/components/ui/card"
 import {Input} from "@/components/ui/input"
 import {NativeSelect} from "@/components/ui/native-select"
+import {Switch} from "@/components/ui/switch"
 import type {Dataset,Session} from "./data"
 type Props={plan:"Free"|"Pro";datasets:Dataset[];sessions:Session[];storageUsed:number;storageTotal:number;onMembership:()=>void}
 const values=[5,8,7,12,14,11,18,15,24,19,28,23]
@@ -11,6 +12,13 @@ export function AccountPanel({plan,datasets,sessions,storageUsed,storageTotal,on
  const [period,setPeriod]=useState("90")
  const [message,setMessage]=useState("")
  const [name,setName]=useState("Usuario de demostración")
+ const [realName,setRealName]=useState("")
+ const [phone,setPhone]=useState("")
+ const [address,setAddress]=useState("")
+ const [billingAddress,setBillingAddress]=useState("")
+ const [notifications,setNotifications]=useState<Record<string,boolean>>({
+  updates:true,promotions:false,billing:true,shared:true,imports:false
+ })
  const [editing,setEditing]=useState(false)
  const mfa=false
  function demo(what:string){setMessage(what+" es una función demostrativa; no se realizó ninguna operación en una cuenta real.")}
@@ -19,10 +27,28 @@ export function AccountPanel({plan,datasets,sessions,storageUsed,storageTotal,on
  return <div className="account-stack">
  <div className="account-grid">
   <Card><CardHeader><CardTitle><UserRound size={19}/>Perfil personal</CardTitle><CardDescription>Datos básicos de tu cuenta</CardDescription></CardHeader><CardContent className="account-detail">
-   <label>Nombre visible<Input aria-label="Nombre visible" value={name} disabled={!editing} onChange={e=>setName(e.target.value)}/></label>
-   <label>Correo electrónico<Input aria-label="Correo electrónico" value="usuario@ejemplo.com" disabled readOnly/></label>
-   <span>Identidad: ejemplo local · Email verificado: demostración</span>
+   <label>Nombre de usuario visible<Input aria-label="Nombre de usuario visible" value={name} disabled={!editing} onChange={e=>setName(e.target.value)}/></label>
+   <label>Nombre real<Input aria-label="Nombre real" value={realName} disabled={!editing} onChange={e=>setRealName(e.target.value)} placeholder="Nombre y apellido"/></label>
+   <label>Teléfono<Input aria-label="Teléfono" type="tel" value={phone} disabled={!editing} onChange={e=>setPhone(e.target.value)} placeholder="Opcional"/></label>
+   <label>Dirección personal<Input aria-label="Dirección personal" value={address} disabled={!editing} onChange={e=>setAddress(e.target.value)} placeholder="Opcional"/></label>
+   <label>Dirección de facturación<Input aria-label="Dirección de facturación" value={billingAddress} disabled={!editing} onChange={e=>setBillingAddress(e.target.value)} placeholder="Opcional"/></label>
+   <label>Correo electrónico de registro<Input aria-label="Correo electrónico de registro" value="usuario@ejemplo.com" disabled readOnly/></label>
+   <span>Datos exclusivamente demostrativos. No se guardan en una cuenta real ni se envían a un servicio.</span>
    <Button variant="outline" onClick={()=>{setEditing(v=>!v);if(editing)demo("Guardar el perfil")}}>{editing?"Guardar perfil":"Editar perfil"}</Button>
+  </CardContent></Card>
+  <Card><CardHeader><CardTitle><Bell size={19}/>Notificaciones</CardTitle><CardDescription>Preferencias de avisos para tu cuenta (simulación local).</CardDescription></CardHeader>
+  <CardContent className="account-notification-list">
+  {([
+    ["updates","Actualizaciones y nuevas funcionalidades","Novedades de Lapex y mejoras del producto"],
+    ["promotions","Promociones","Ofertas y comunicaciones comerciales opcionales"],
+    ["billing","Estado de cuenta y facturación","Movimientos, pagos y datos del plan"],
+    ["shared","Contenido compartido conmigo","Avisos cuando otros usuarios compartan recursos"],
+    ["imports","Importaciones y procesos","Finalización o error de operaciones prolongadas (función futura)"]
+   ] as const).map(([key,label,help])=><label key={key}>
+    <span>{label}<small>{help}</small></span>
+    <Switch aria-label={label} checked={notifications[key]} onCheckedChange={checked=>setNotifications(old=>({...old,[key]:checked}))}/>
+   </label>)}
+   <p className="unit-note">Los avisos esenciales de seguridad no se pueden desactivar. En esta maqueta no se envían notificaciones reales.</p>
   </CardContent></Card>
   <Card><CardHeader><CardTitle><ShieldCheck size={19}/>Seguridad y acceso</CardTitle><CardDescription>Contraseña y dispositivos</CardDescription></CardHeader><CardContent className="account-detail">
    <div className="account-line"><span>Proveedor de acceso</span><strong>Auth0 · Email o Google</strong></div>
