@@ -39,6 +39,9 @@ test("Unidades: nuevas magnitudes y alternativas configurables",async({page})=>{
  await page.getByRole("combobox",{name:"Tiempo / duración"}).selectOption("h")
  await expect(page.getByText("Ejemplo: 1 h")).toBeVisible()
  await page.reload()
+ const sidebar=page.locator("[data-sidebar='sidebar']").first()
+ await sidebar.getByText("Configuración",{exact:true}).click()
+ await sidebar.getByText("Preferencias",{exact:true}).click()
  // Persisten los valores, sin transformar ni sobrescribir mediciones del producto.
  await expect(page.getByRole("combobox",{name:"Ángulo"})).toHaveValue("rad")
  await expect(page.getByRole("combobox",{name:"Tiempo / duración"})).toHaveValue("h")
