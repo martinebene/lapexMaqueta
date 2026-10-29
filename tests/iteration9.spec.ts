@@ -17,7 +17,7 @@ for (const c of cases) {
   const preview = page.locator(".avatar-picker img.resource-avatar")
   await expect(preview).toHaveAttribute("src", new RegExp(c.folder.replace(".", "\\." ) + "$"))
   await expect.poll(() => preview.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
-  await expect(page.getByText("Imagen predeterminada", { exact: true })).toBeVisible()
+  await expect(page.locator(".avatar-picker .avatar-selection-status")).toHaveText("Imagen predeterminada")
 
   await page.getByRole("button", { name: "Elegir ilustración" }).click()
   const modal = page.getByRole("dialog")
